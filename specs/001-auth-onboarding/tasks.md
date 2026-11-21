@@ -400,7 +400,7 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
 
 ### [BE] Backend de US2
 
-- [ ] T059 [P] [US2] [BE] Crear `backend/tests/integration/session.test.ts`. Debe comprobar:
+- [X] T059 [P] [US2] [BE] Crear `backend/tests/integration/session.test.ts`. Debe comprobar:
   - login correcto (cookies con sus atributos);
   - credenciales incorrectas y correo inexistente dan el mismo `INVALID_CREDENTIALS`;
   - 5 fallos desde el mismo origen dan `LOGIN_LOCKED` con `retryAfterSeconds`, mientras que otro `nova_dev` entra;
@@ -412,17 +412,17 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
   - la inactividad y las 12 h dan `SESSION_EXPIRED`;
   - `logout` es idempotente e invalida la sesión al instante;
   - eventos `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGIN_LOCKED` y `SESSION_ENDED`.
-- [ ] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana, `deleteByEmail` y `deleteOlderThan(24 h)`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`), y agregar esa limpieza en `registerAuthJobs` (`backend/src/modules/auth/auth.jobs.ts`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
-- [ ] T061 [US2] [BE] Crear `backend/src/modules/auth/login.service.ts`:
+- [X] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana, `deleteByEmail` y `deleteOlderThan(24 h)`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`), y agregar esa limpieza en `registerAuthJobs` (`backend/src/modules/auth/auth.jobs.ts`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
+- [X] T061 [US2] [BE] Crear `backend/src/modules/auth/login.service.ts`:
   - comprueba el bloqueo por origen y el global antes de verificar, calculando su fin con las reglas de data-model.md `LoginAttempt` («el más reciente + 15 min» sobre los últimos 5 o 20 fallos, research R7) (FR-015); los intentos rechazados por bloqueo no se registran;
   - verifica con Argon2 incluso si el correo no existe, contra un hash ficticio (research R5);
   - registra el fallo y responde `INVALID_CREDENTIALS`, o `LOGIN_LOCKED` con `retryAfterSeconds` al activarse el bloqueo;
   - si es correcto, borra los fallos de ese origen en data-model.md `LoginAttempt.origin_key` y crea la sesión;
   - audita `LOGIN_SUCCEEDED`, `LOGIN_FAILED` y `LOGIN_LOCKED`.
-- [ ] T062 [US2] [BE] Extender `backend/src/modules/auth/session.service.ts` (research R2):
+- [X] T062 [US2] [BE] Extender `backend/src/modules/auth/session.service.ts` (research R2):
   - `refresh(refreshToken)`: rotación con data-model.md `Session.refresh_token_hash`, `Session.previous_refresh_token_hash` y `Session.rotated_at`; ventana de 10 s sin cookies nuevas; fuera de la ventana revoca con `reuse_detected`; actualiza la actividad;
   - `logout(refreshToken)`: data-model.md `Session.revoked_at` y `Session.revoke_reason = logout`; audita `SESSION_ENDED`.
-- [ ] T063 [US2] [BE] Agregar en las rutas y el controlador de `auth`:
+- [X] T063 [US2] [BE] Agregar en las rutas y el controlador de `auth`:
   - `POST /api/v1/auth/login`, con su limitador;
   - `POST /api/v1/auth/refresh`;
   - `POST /api/v1/auth/logout`, que borra `nova_at` y `nova_rt` y responde 204.

@@ -6,6 +6,7 @@ import {
 import {
   CompleteRegistrationRequestSchema,
   ErrorResponseSchema,
+  LoginRequestSchema,
   SessionResponseSchema,
   StartRegistrationRequestSchema,
   VerificationStateSchema,
@@ -88,6 +89,33 @@ export function buildOpenApiDocument() {
       409: err('VERIFICATION_STEP_INVALID o EMAIL_ALREADY_REGISTERED'),
       422: err('VERIFICATION_EXPIRED o PASSWORD_WEAK'),
     },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/login',
+    operationId: 'login',
+    request: body(LoginRequestSchema),
+    responses: {
+      200: json(session, 'Sesión iniciada'),
+      400: err('VALIDATION_ERROR'),
+      401: err('INVALID_CREDENTIALS'),
+      429: err('LOGIN_LOCKED o RATE_LIMITED'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/refresh',
+    operationId: 'refreshSession',
+    responses: { 200: json(session, 'Sesión renovada'), 401: err('Sesión inválida') },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/logout',
+    operationId: 'logout',
+    responses: { 204: { description: 'Sesión cerrada' } },
   });
 
   registry.registerPath({
