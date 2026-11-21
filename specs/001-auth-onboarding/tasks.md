@@ -519,14 +519,14 @@ que el código anterior falla y el nuevo funciona.
 
 ### [BE] Backend de US4
 
-- [ ] T075 [P] [US4] [BE] Crear `backend/tests/integration/resend.test.ts`. Debe comprobar:
+- [X] T075 [P] [US4] [BE] Crear `backend/tests/integration/resend.test.ts`. Debe comprobar:
   - reenviar antes de 60 s da `RESEND_TOO_SOON` con `retryAfterSeconds` y `Retry-After`;
   - el sexto envío en una hora da `CODE_SEND_LIMIT`, también si se reinicia el flujo;
   - el código anterior queda inválido y los intentos se reinician;
   - si el envío anterior sigue pendiente o reintentando, se descarta y solo llega el código nuevo;
   - un flujo señuelo responde igual y cuenta para el límite; el de registro reenvía `already_registered` y el de recuperación no encola nada;
   - un flujo en `verified` da `VERIFICATION_STEP_INVALID`.
-- [ ] T076 [US4] [BE] Agregar `resend(flowToken)` en `backend/src/modules/auth/verification.service.ts`:
+- [X] T076 [US4] [BE] Agregar `resend(flowToken)` en `backend/src/modules/auth/verification.service.ts`:
   - controla data-model.md `VerificationFlow.last_code_sent_at` y el límite por correo con `CodeSend.created_at`;
   - reinicia data-model.md `VerificationFlow.code_attempts` y llama a `requestCode`, que invalida el `VerificationFlow.code_hash` anterior y encola el código nuevo; el worker lo genera al enviar;
   - en un señuelo de registro reenvía `already_registered`; en uno de recuperación no encola nada.

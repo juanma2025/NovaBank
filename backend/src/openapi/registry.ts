@@ -81,6 +81,18 @@ export function buildOpenApiDocument() {
 
   registry.registerPath({
     method: 'post',
+    path: '/auth/resend-verification',
+    operationId: 'resendVerification',
+    responses: {
+      202: json(state, 'Código nuevo encolado'),
+      404: err('VERIFICATION_NOT_FOUND'),
+      409: err('VERIFICATION_STEP_INVALID'),
+      429: err('RESEND_TOO_SOON, CODE_SEND_LIMIT o RATE_LIMITED'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
     path: '/auth/register/complete',
     operationId: 'completeRegistration',
     request: body(CompleteRegistrationRequestSchema),

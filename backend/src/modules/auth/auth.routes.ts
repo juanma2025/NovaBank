@@ -17,6 +17,7 @@ export function createAuthRouter(
   router.post('/register', limiters.start, controller.startRegistration);
   router.get('/verification', controller.getVerification);
   router.post('/verify-email', limiters.verify, controller.verifyEmail);
+  router.post('/resend-verification', limiters.verify, controller.resendVerification);
   router.post('/register/complete', controller.completeRegistration);
   router.post('/password-reset', limiters.start, controller.startPasswordReset);
   router.post('/password-reset/complete', controller.completePasswordReset);

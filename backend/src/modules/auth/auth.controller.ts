@@ -156,6 +156,11 @@ export function createAuthController(
       res.json(await verification.verify(flowToken(req), code, req.requestId));
     },
 
+    /** POST /auth/resend-verification (operación resendVerification). */
+    async resendVerification(req: Request, res: Response): Promise<void> {
+      res.status(202).json(await verification.resend(flowToken(req)));
+    },
+
     /** POST /auth/register/complete (operación completeRegistration). */
     async completeRegistration(req: Request, res: Response): Promise<void> {
       const input = CompleteRegistrationRequestSchema.parse(req.body);
