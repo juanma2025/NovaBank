@@ -90,20 +90,20 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 | V. Simulación segura | Correos a Mailpit en desarrollo y pruebas; SMTP real solo en la demo desplegada | ✅ |
 | VI. Monolito modular | El módulo `auth` es dueño de sus tablas; la auditoría y el correo son servicios de `lib/` | ✅ |
 | VI. API sin estado | Sesiones, flujos, intentos, contadores y bandeja de salida en PostgreSQL (R8) | ✅ |
-| VI. Contratos primero | [contracts/auth.openapi.yaml](contracts/auth.openapi.yaml) + OpenAPI generado desde Zod con prueba de contrato (R12) | ✅ |
+| VI. Contratos primero | [contracts/auth.openapi.json](contracts/auth.openapi.json) + OpenAPI generado desde Zod con prueba de contrato (R12) | ✅ |
 | VI. Configuración y reproducibilidad | Variables validadas con Zod al arrancar; `docker compose up` + `npm install && npm run dev` | ✅ |
-| Stack | Solo tecnologías listadas, **excepto V3** | ⚠️ |
-| Regla de dominio 12 (rutas públicas) | La lista de la constitución no incluye las rutas nuevas de la spec, **ver V1** | ❌ |
-| Formato de error | Se necesita un campo opcional `details`, **ver V2** | ⚠️ |
-| Flujo de equipo (etiquetas) | La configuración raíz no encaja en ninguna etiqueta, **ver V4** | ⚠️ |
-| Persistencia (SQL explícito) | El store de límites (`INSERT … ON CONFLICT`), la bandeja de salida (`FOR UPDATE SKIP LOCKED`) y las transiciones del flujo de verificación (`FOR UPDATE`) necesitan SQL explícito fuera del libro contable, **ver V5** | ❌ |
+| Stack | Solo tecnologías listadas o complementos oficiales permitidos por la v2.3.0 (V3) | ✅ |
+| Regla de dominio 12 (rutas públicas) | Las 11 rutas públicas del contrato coinciden con la lista de la v2.3.0 (V1) | ✅ |
+| Formato de error | `details` opcional según la v2.3.0, definido por código en el contrato (V2) | ✅ |
+| Flujo de equipo (etiquetas) | La configuración raíz va en `[SH]` según la v2.3.0 (V4) | ✅ |
+| Persistencia (SQL explícito) | El store de límites (`INSERT … ON CONFLICT`), la bandeja de salida (`FOR UPDATE SKIP LOCKED`) y las transiciones del flujo de verificación (`FOR UPDATE`) usan SQL explícito permitido por la v2.3.0 y justificado abajo (V5) | ✅ |
 | Estructura y estilo | `/frontend`, `/backend`, `/db`, `/shared`, `/e2e`; archivos de menos de 300 líneas; nombres según la convención | ✅ |
 | Errores y validación | Zod en todas las entradas; middleware central con `requestId`; mensajes en español en un catálogo | ✅ |
 | Seguridad | `helmet`, CORS al origen propio, límites de tasa en las rutas de autenticación, auditoría inmutable con trigger | ✅ |
 
-### Violaciones que requieren la enmienda v2.3.0 (MINOR)
+### Violaciones resueltas por la enmienda v2.3.0 (MINOR)
 
-| # | Conflicto | Enmienda propuesta |
+| # | Conflicto | Enmienda aplicada |
 | :--- | :--- | :--- |
 | **V1** | La regla 12 enumera `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/resend-verification`, `/auth/refresh` y `/health`. La spec (clarificada) también necesita `/auth/register/complete`, `/auth/verification`, `/auth/password-reset`, `/auth/password-reset/complete` y `/auth/logout`, y el Principio VI pide publicar `/openapi.json`. | Agregar esas rutas a la lista de rutas públicas. |
 | **V2** | El formato de error solo define `code`, `message` y `requestId`. La interfaz necesita los intentos restantes, los segundos de espera, el motivo del cierre de sesión y las reglas de contraseña incumplidas. | Agregar un objeto opcional `details`, sin datos sensibles. |
@@ -113,10 +113,9 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 
 Además se agrega la carpeta `/e2e` a la organización del repositorio.
 
-**Estado del gate**: las cinco violaciones se resuelven con la **enmienda v2.3.0**, preparada en
-la rama `docs/constitution-2.3.0`. El diseño puede revisarse, pero **la implementación queda
-bloqueada** hasta que esa enmienda esté integrada en `main` (Gobernanza §2). Después se actualiza
-esta rama desde `main` y la tabla pasa a ✅.
+**Estado del gate**: ✅ **aprobado**. La enmienda v2.3.0 se integró a `main` (PR #3) y esta rama
+se actualizó desde `main`. La implementación puede empezar cuando se integre la rama de
+definición.
 
 **Re-check post-diseño**: la revisión de la constitución durante la preparación de la enmienda
 encontró V5. No hay otras violaciones.
@@ -141,7 +140,7 @@ specs/001-auth-onboarding/
 ├── data-model.md        # Fase 1: 9 tablas y máquinas de estado
 ├── quickstart.md        # Fase 1: cómo levantar y validar
 ├── contracts/
-│   └── auth.openapi.yaml
+│   └── auth.openapi.json
 ├── checklists/
 │   └── requirements.md
 └── tasks.md             # Fase 2 (/speckit-tasks)
@@ -212,7 +211,7 @@ backend/                     # [BE]
 │   └── static.ts            # en producción sirve frontend/dist + fallback a index.html
 └── tests/
     ├── integration/         # Supertest por historia de usuario
-    ├── contract/            # OpenAPI generado vs contracts/auth.openapi.yaml
+    ├── contract/            # OpenAPI generado vs contracts/auth.openapi.json
     └── helpers/             # BD de prueba, MailProvider en memoria, reloj falso
 
 frontend/                    # [FE]
@@ -267,7 +266,7 @@ pertenece a una sola capa.
 
 ### Endpoints
 
-Detalle completo en [contracts/auth.openapi.yaml](contracts/auth.openapi.yaml).
+Detalle completo en [contracts/auth.openapi.json](contracts/auth.openapi.json).
 
 | Método y ruta | Historia | Requisitos |
 | :--- | :--- | :--- |

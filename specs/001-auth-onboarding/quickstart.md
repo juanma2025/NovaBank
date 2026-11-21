@@ -48,7 +48,7 @@ npm run test:e2e       # Playwright; requiere docker compose levantado
 ```
 
 **Resultado esperado**: todo en verde. La prueba de contrato falla si el OpenAPI generado difiere
-de [contracts/auth.openapi.yaml](contracts/auth.openapi.yaml).
+de [contracts/auth.openapi.json](contracts/auth.openapi.json).
 
 ## 5. Validación manual por historia de usuario
 

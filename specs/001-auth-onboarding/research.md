@@ -249,8 +249,9 @@ procesos); copiar los tipos a cada capa (rompe la única fuente del contrato).
 - Los esquemas de `@nova/shared` se registran en `backend/src/openapi/registry.ts`.
 - El documento se sirve en `GET /api/v1/openapi.json`.
 - Una prueba de contrato (Vitest) compara las rutas, métodos, códigos de estado y esquemas
-  generados con [contracts/auth.openapi.yaml](contracts/auth.openapi.yaml), que es la fuente de
-  diseño.
+  generados con [contracts/auth.openapi.json](contracts/auth.openapi.json), que es la fuente de
+  diseño. El contrato está en JSON (formato OpenAPI válido) para que la prueba lo lea con
+  `JSON.parse`, sin agregar una librería de YAML.
 
 **Rationale**: lo exige el Principio VI y evita que el contrato y el código se separen.
 
