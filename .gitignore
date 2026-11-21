@@ -1,0 +1,9 @@
+# Spec Kit local state
+.specify/feature.json
+.specify/extensions/*/local-config.yml
+.specify/integrations/packages/
+.specify/integrations/packages.json
+
+# Environment and secrets
+.env
+*.local
