@@ -1,0 +1,41 @@
+{
+  "name": "nova",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Nova — banca virtual para estudiantes universitarios en Colombia (proyecto académico)",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "shared",
+    "db",
+    "backend",
+    "frontend",
+    "e2e"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "db:generate": "npm run generate --workspaces --if-present",
+    "db:migrate": "npm run migrate --workspaces --if-present",
+    "db:deploy": "npm run deploy --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run e2e --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.73.0"
+  }
+}

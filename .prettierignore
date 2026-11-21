@@ -1,0 +1,24 @@
+node_modules/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+**/generated/
+package-lock.json
+
+# Documentación y herramientas de agentes (se editan a mano o las genera Spec Kit)
+**/*.md
+specs/
+.specify/
+.agent/
+.agents/
+.claude/
+.github/skills/
+skills-lock.json
+
+# Plantilla pendiente de migrar a /frontend (T010)
+Nova_Front/
+
+# Migraciones generadas por Prisma
+db/prisma/migrations/
