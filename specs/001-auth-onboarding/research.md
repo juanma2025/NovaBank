@@ -62,20 +62,29 @@ reutilizaciones», sección Seguridad); refrescar sin coordinar (falsos positivo
 
 | Responsable | Comportamiento |
 | :--- | :--- |
-| Servidor | La sesión vence si `now − last_activity_at > 15 min` o si `now > absolute_expires_at`. |
-| Frontend (`useIdleTimer`) | Escucha interacciones (`pointerdown`, `keydown`, `scroll`, navegación) y las sincroniza entre pestañas con `BroadcastChannel`. |
-| Frontend, al detectar interacción | Si pasó más de 60 s desde el último contacto con el servidor, llama a `POST /auth/refresh`, que también actualiza la actividad. |
-| Frontend, a los 14 min sin interacción | Muestra `InactivityDialog` con cuenta regresiva de 60 s. «Seguir conectado» llama a `POST /auth/refresh`. |
-| Frontend, al terminar la cuenta regresiva | Llama a `POST /auth/logout` y redirige a `/ingresar?motivo=inactividad`. |
+| Servidor | La sesión vence si `now − last_activity_at > idleTimeout` o si `now > absolute_expires_at`. `last_activity_at` se actualiza en cada solicitud autenticada y en cada `POST /auth/refresh`. |
+| Frontend (`useIdleTimer`) | Escucha interacciones (`pointerdown`, `keydown`, `scroll`, navegación) y las sincroniza entre pestañas con `BroadcastChannel('nova-session')`. |
+| Frontend, al detectar interacción | Si pasó más de 60 s desde el último contacto exitoso con el servidor, llama a `POST /auth/refresh`. |
+| Frontend, programación del aviso | El aviso se programa en `lastServerContactAt + idleTimeout − idleWarning`, contando desde el **último contacto exitoso con el servidor** (cualquier respuesta 2xx de la API), no desde la última interacción local. Así el aviso nunca llega después de que el servidor ya cerró la sesión. |
+| Frontend, «Seguir conectado» | Llama a `POST /auth/refresh` y difunde `keepalive` a las demás pestañas, que cierran su aviso. |
+| Frontend, al terminar la cuenta regresiva | Llama a `POST /auth/logout`, difunde `logout` a las demás pestañas y redirige a `/ingresar?motivo=inactividad&redirect=<ruta actual>`. |
+
+Los tiempos (`idleTimeoutSeconds`, `idleWarningSeconds`) vienen siempre de `SessionInfo`:
+- en producción, 900 y 60;
+- en desarrollo y E2E se pueden reducir con `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE`. El esquema de entorno exige que el aviso sea menor que el tiempo de inactividad y rechaza ambos en producción.
 
 Al cumplirse las 12 horas no hay aviso (FR-016a y el caso límite): el siguiente 401 con
 `SESSION_EXPIRED` y `reason=absolute` redirige al inicio de sesión con su mensaje.
 
-**Rationale**: el servidor solo ve solicitudes, no clics. El ping con límite de frecuencia traduce
-la actividad de la interfaz en actividad del servidor sin generar tráfico constante.
+**Rationale**: el servidor solo ve solicitudes, no clics. Como las interacciones se envían como
+mucho una vez por minuto, el reloj del servidor puede ir hasta 60 s «adelantado» respecto a la
+última interacción. Programar el aviso desde el último contacto con el servidor elimina esa
+carrera; a lo sumo, el aviso aparece unos segundos antes de lo estrictamente necesario.
 
 **Alternatives considered**: *solo temporizador en el cliente* (no es seguro: una pestaña
-manipulada nunca cerraría la sesión); *solo en el servidor* (no puede avisar a tiempo).
+manipulada nunca cerraría la sesión); *solo en el servidor* (no puede avisar a tiempo); *contar
+desde la última interacción local* (el servidor podía cerrar la sesión antes de que terminara la
+cuenta regresiva).
 
 ## R4. Flujo de verificación por código y retomar en el mismo navegador
 
@@ -83,7 +92,14 @@ manipulada nunca cerraría la sesión); *solo en el servidor* (no puede avisar a
 - El registro y la recuperación comparten la entidad `verification_flows`, con propósito
   `registration` o `password_reset`.
 - El navegador se identifica con la cookie `nova_vf`: token opaco, solo su hash en la BD,
-  `Path=/api/v1/auth`, 45 minutos.
+  `Path=/api/v1/auth`, `Max-Age` fijo de 2 horas.
+- La **validez real** la decide el servidor con `verification_flows.expires_at`, que es variable
+  (ver [data-model.md](data-model.md)):
+  - al crear el flujo o reenviar el código, `expires_at = code_expires_at`;
+  - al verificar, `expires_at = complete_by`.
+
+  Así el flujo dura lo que el proceso legítimo necesite: hasta 5 reenvíos en una hora más 30
+  minutos para completar. Las 2 horas de la cookie son solo un tope superior.
 - `GET /auth/verification` devuelve el paso actual (`code` o `complete`), el correo enmascarado,
   los vencimientos y los intentos restantes. Así el frontend retoma el paso tras recargar
   (FR-009a).
@@ -114,34 +130,50 @@ de forma síncrona (el tiempo de respuesta revela si se envió).
 
 ## R6. Envío de correos y manejo de fallas del servicio de correo
 
-**Decision**: patrón *outbox* en PostgreSQL.
+**Decision**: patrón *outbox* en PostgreSQL, **sin guardar nunca el código en la bandeja**.
 
 1. **Encolar**: el servicio de negocio inserta una fila en `email_outbox`, en la misma transacción
-   que crea el flujo.
-   - El contenido variable (por ejemplo, el código) se guarda **cifrado** con AES-256-GCM, usando
-     `node:crypto` y la clave `OUTBOX_ENCRYPTION_KEY`.
-   - Al enviarse, el contenido cifrado se borra (`payload_encrypted = NULL`).
-2. **Enviar**: un worker dentro del proceso de la API toma lotes cada 2 s con
-   `SELECT … FOR UPDATE SKIP LOCKED` y envía por SMTP con `nodemailer` (interfaz `MailProvider`).
-3. **Reintentar**: hasta 5 intentos con espera exponencial (10 s, 30 s, 1 min, 2 min, 5 min).
-   Después queda `failed`, se registra con `pino` y deja de reintentarse.
-4. **Qué ve el usuario**: la API responde 202 aunque el servicio de correo esté caído. Si el código
-   no llega, el usuario lo pide de nuevo con «Reenviar código» (historia de usuario 4), y como los
-   códigos vencen a los 15 minutos, reintentar más tarde no tiene sentido.
-5. **Limpieza**: el mismo worker borra cada hora los flujos vencidos hace más de 24 h, los
+   que crea o actualiza el flujo. La fila guarda solo la plantilla, el destinatario, una
+   referencia lógica al flujo (`verification_flow_id`) y un `payload` sin datos secretos.
+2. **Preparar al enviar**: cada módulo registra en el worker un *preparador* por plantilla
+   (`outbox.registerPreparer(template, fn)`). Para `verification_code` y `password_reset_code`,
+   el módulo `auth` registra `verificationService.prepareCodeEmail(flowId, tx)`, que:
+   - bloquea el flujo (`FOR UPDATE`);
+   - si ya no está en `awaiting_code`, descarta el correo;
+   - genera el código, guarda solo su HMAC en `code_hash`, fija `code_expires_at = now + 15 min`
+     y `expires_at`, y devuelve el código para el cuerpo del correo.
+
+   Así el código solo existe en memoria durante el envío, y el worker no toca tablas de `auth`
+   directamente (Principio VI).
+3. **Enviar**: un worker dentro del proceso de la API toma lotes cada 2 s con
+   `SELECT … FOR UPDATE SKIP LOCKED`. Por cada fila abre una transacción: prepara, envía por
+   SMTP con `nodemailer` (interfaz `MailProvider`) y confirma.
+   - Si el envío falla, la transacción se revierte y el código preparado se descarta.
+   - Si la confirmación falla después de enviar (muy raro), el código del correo no coincide;
+     el estudiante usa «Reenviar código».
+4. **Reintentar**: hasta 5 intentos con espera exponencial (10 s, 30 s, 1 min, 2 min, 5 min).
+   Cada reintento genera un código nuevo. Después queda `failed`, se registra con `pino` y deja
+   de reintentarse.
+5. **Qué ve el usuario**: la API responde 202 aunque el servicio de correo esté caído. Si el
+   código no llega, el usuario lo pide de nuevo con «Reenviar código» (historia de usuario 4).
+6. **Limpieza**: el mismo worker borra cada hora los flujos vencidos hace más de 24 h, los
    intentos de login de más de 24 h, los contadores de límite de tasa vencidos y las filas
    `sent`/`failed` de más de 7 días.
 
 **Rationale**:
+- Cumple el Principio III: el código solo se guarda como hash, nunca cifrado ni en claro.
 - Una falla de SMTP no rompe el registro.
 - El tiempo de respuesta no revela si se envió un correo (R5).
 - `SKIP LOCKED` permite varias instancias de la API sin enviar duplicados (Principio VI).
 
 **Alternatives considered**:
 - *Envío síncrono en la solicitud*: una falla de SMTP devolvería 500 y el tiempo delataría cuentas.
+- *Guardar el código cifrado en la bandeja y borrarlo al enviar*: diseño anterior, descartado en
+  `/speckit-analyze` porque el código quedaba guardado de forma reversible (contradice el
+  Principio III).
 - *Cola externa (Redis/BullMQ)*: dependencia nueva, innecesaria para el volumen del MVP.
-- *Guardar el código en claro en la bandeja de salida*: contradice el Principio III; por eso se
-  cifra y se purga.
+- *Mantener la transacción abierta durante el envío SMTP*: aceptado. Dura unos segundos por fila
+  y el volumen del MVP es bajo; si creciera, se separa la preparación del envío.
 
 ## R7. Bloqueo por intentos fallidos: «correo + dispositivo o red»
 
@@ -153,7 +185,15 @@ de forma síncrona (el tiempo de respuesta revela si se envió).
 - **Reglas (FR-015)**:
   - Por origen: 5 fallos del mismo correo y origen en 15 min → bloqueo de 15 min para ese par.
   - Global: 20 fallos del mismo correo en 1 hora → bloqueo de 15 min para todos los orígenes.
-  - Al recuperar la contraseña se borran los intentos de ese correo (FR-020c).
+  - Cómo se calcula el fin del bloqueo:
+    - por origen, si los últimos 5 fallos de `(email, origen)` ocurrieron en un lapso de
+      15 min, el bloqueo dura hasta el último de esos fallos + 15 min;
+    - global, si los últimos 20 fallos del correo ocurrieron en un lapso de 60 min, dura hasta el
+      último + 15 min.
+
+    Los intentos rechazados por bloqueo no se registran como fallos.
+  - Un inicio de sesión exitoso borra los fallos de ese `(email, origen)`.
+  - Al recuperar la contraseña se borran todos los intentos de ese correo (FR-020c).
 - **Capa adicional**: `express-rate-limit` con store en PostgreSQL limita además por IP:
   - 30 solicitudes / 15 min en `/auth/login`;
   - 20 / hora en `/auth/register` y `/auth/password-reset`;
@@ -187,15 +227,16 @@ paquete de terceros (no listado en la constitución).
 ## R9. Códigos de verificación
 
 **Decision**:
-- **Generación**: `crypto.randomInt(0, 1_000_000)`, rellenado a 6 dígitos.
+- **Generación**: `crypto.randomInt(0, 1_000_000)`, rellenado a 6 dígitos, en el momento
+  del envío (R6).
 - **Almacenamiento**: `HMAC-SHA256(CODE_HMAC_SECRET, flowId + ":" + code)`; la comparación usa
   `timingSafeEqual`.
 - **Reglas**:
   - vence a los 15 min;
   - máximo 5 intentos;
   - 60 s entre envíos;
-  - máximo 5 envíos por correo y propósito por hora, contados en la tabla `code_sends`, que
-    cubre también los reinicios del flujo.
+  - máximo 5 envíos por correo por hora, sumando registro y recuperación (FR-005), contados en
+    la tabla `code_sends`, que cubre también los reinicios del flujo y los flujos señuelo.
 
   Un código nuevo reemplaza al anterior en el mismo flujo, y un flujo nuevo del mismo correo y
   propósito marca los anteriores como `superseded`.
@@ -305,8 +346,9 @@ El despliegue en sí es una tarea de la fase final, no bloquea el desarrollo loc
 
 **Decision**:
 - **`docker-compose.yml`**:
-  - `postgres:17` en el puerto 5432, con un script de inicio que crea las bases `nova` y
-    `nova_test`;
+  - `postgres:17` en el puerto 5432, con un script de inicio que crea las bases `nova`
+    (desarrollo), `nova_test` (integración del backend) y `nova_e2e` (Playwright), para que las
+    pruebas no choquen entre sí ni con los datos de desarrollo;
   - `axllent/mailpit` con SMTP en el puerto 1025 y la interfaz web y API en el 8025.
 - **GitHub Actions (`.github/workflows/ci.yml`)**, con dos trabajos:
   - `quality`: `npm ci` → `prisma generate` → `prisma migrate deploy` (contra el servicio
@@ -317,7 +359,7 @@ El despliegue en sí es una tarea de la fase final, no bloquea el desarrollo loc
   | Tipo | Herramienta | Correo |
   | :--- | :--- | :--- |
   | Integración del backend | Supertest contra `nova_test` | `MailProvider` en memoria |
-  | E2E | Playwright | Lee los códigos desde la API de Mailpit (`GET /api/v1/messages`) |
+  | E2E | Playwright contra `nova_e2e` | Lee los códigos desde la API de Mailpit (`GET /api/v1/messages`) |
 
 **Rationale**: entorno reproducible (Principio VI) y nunca se envían correos reales en pruebas.
 

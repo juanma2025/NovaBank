@@ -21,13 +21,14 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 | Inactividad | Medida en el servidor; el frontend avisa a los 14 min (R3) |
 | Verificación por código | Flujo compartido entre registro y recuperación, identificado por la cookie `nova_vf`, que permite retomar el paso tras recargar (R4) |
 | Privacidad de cuentas | Respuestas idénticas exista o no la cuenta (R5) |
-| Correos | Bandeja de salida en PostgreSQL con reintentos (R6) |
+| Correos | Bandeja de salida en PostgreSQL con reintentos; el código se genera al enviar y nunca se guarda en la bandeja (R6) |
 | Bloqueo por intentos | Por correo + dispositivo o red, con un tope global por correo (R7) |
 | Despliegue | Un solo origen: Express sirve el frontend compilado (R14) |
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5 (estricto) sobre Node.js 24 LTS; React 19 en el navegador.
+**Language/Version**: TypeScript estricto (versión fijada en T002, compatible con
+`typescript-eslint`) sobre Node.js 24 LTS; React 19 en el navegador.
 
 **Primary Dependencies**:
 
@@ -46,7 +47,7 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 | Unitarias y de componentes | Vitest; Testing Library + jsdom en el frontend |
 | Integración de la API | Supertest contra la BD `nova_test` |
 | Contrato | Vitest: el OpenAPI generado debe coincidir con [contracts/](contracts/) |
-| E2E | Playwright con Mailpit |
+| E2E | Playwright con Mailpit, contra la BD `nova_e2e` |
 
 **Target Platform**:
 - Navegadores modernos: Chrome, Edge, Firefox y Safari en sus dos últimas versiones, en móvil
@@ -70,7 +71,7 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 **Scale/Scope**:
 - Demo académica: decenas de usuarios, una instancia.
 - El diseño admite varias instancias (outbox con `SKIP LOCKED`, contadores en la BD).
-- 7 pantallas, 12 endpoints y 9 tablas.
+- 6 pantallas, 12 endpoints y 9 tablas.
 
 ## Constitution Check
 
@@ -80,7 +81,7 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 | :--- | :--- | :--- |
 | I. Dinero exacto | La funcionalidad no maneja dinero | N/A |
 | II. SDD y cero código sombra | Todo el diseño se rastrea a requisitos de la spec. Extras justificados: `GET /auth/verification` (FR-009a), `nova_dev` (FR-015), `/privacidad` (FR-002, ver el texto aceptado) | ✅ |
-| III. Correo institucional | Lista por la variable de entorno `STUDENT_EMAIL_DOMAINS`; código de un solo uso con HMAC, 15 min, 5 intentos y reenvío limitado (R9) | ✅ |
+| III. Correo institucional | Lista por la variable de entorno `STUDENT_EMAIL_DOMAINS`; código de un solo uso, guardado solo como HMAC y generado al enviar (nunca en claro ni cifrado en la bandeja), 15 min, 5 intentos y reenvío limitado (R6, R9) | ✅ |
 | III. Credenciales | Argon2id (R10) | ✅ |
 | III. Sesiones | JWT de 15 min y refresh rotativo en cookies `HttpOnly`/`Secure`/`Strict`, sin `localStorage` (R1, R2) | ✅ |
 | III. Mínimo privilegio | Solo `GET /auth/session` devuelve datos del usuario y siempre los propios | ✅ |
@@ -156,7 +157,7 @@ eslint.config.js             # [SH]
 .env.example                 # [SH] todas las variables (sin secretos reales)
 .github/workflows/ci.yml     # [SH] quality + e2e
 docker-compose.yml           # [BE] postgres:17 + mailpit
-docker/postgres/init.sql     # [BE] crea las bases nova y nova_test
+docker/postgres/init.sql     # [BE] crea las bases nova, nova_test y nova_e2e
 
 shared/                      # [SH] @nova/shared — sin Express, React ni Prisma
 └── src/
@@ -183,7 +184,7 @@ backend/                     # [BE]
 │   ├── lib/
 │   │   ├── logger.ts        # pino con redacción
 │   │   ├── errors.ts        # AppError(code, status, details)
-│   │   ├── crypto.ts        # tokens aleatorios, sha256, hmac, AES-GCM
+│   │   ├── crypto.ts        # tokens aleatorios, sha256, hmac
 │   │   ├── clock.ts         # reloj inyectable para pruebas
 │   │   ├── audit/           # audit.service.ts, audit.repository.ts
 │   │   └── mail/            # mail-provider.ts, smtp-provider.ts, outbox.repository.ts,
@@ -261,7 +262,7 @@ pertenece a una sola capa.
 | :--- | :--- |
 | `modules/auth` | Dueño de `users`, `data_consents`, `verification_flows`, `code_sends`, `sessions` y `login_attempts`. Expone `sessionService.validate()` para el middleware y para futuros módulos. |
 | `lib/audit` | `audit.record(type, { userId?, email?, requestId, metadata })`. Solo inserta. |
-| `lib/mail` | `mail.enqueue(template, to, payload, tx)` dentro de la transacción de negocio; `OutboxWorker` envía y limpia (R6). |
+| `lib/mail` | `outbox.enqueue(template, to, { flowId?, payload }, tx)` dentro de la transacción de negocio; `outbox.registerPreparer(template, fn)` para que cada módulo prepare el contenido al enviar (el módulo `auth` genera ahí el código); `OutboxWorker` prepara, envía y limpia (R6). |
 | `middleware/rate-limit` | Límites por IP con `PgRateLimitStore` (R7, R8). |
 
 ### Endpoints
@@ -303,10 +304,10 @@ Detalle completo en [contracts/auth.openapi.json](contracts/auth.openapi.json).
 | :--- | :--- |
 | Servidor | `NODE_ENV`, `PORT`, `APP_ORIGIN`, `TRUST_PROXY`, `LOG_LEVEL`, `SERVE_FRONTEND` |
 | Base de datos | `DATABASE_URL` |
-| Secretos | `JWT_ACCESS_SECRET`, `CODE_HMAC_SECRET`, `OUTBOX_ENCRYPTION_KEY` (32 bytes en base64) |
+| Secretos | `JWT_ACCESS_SECRET`, `CODE_HMAC_SECRET` |
 | Registro | `STUDENT_EMAIL_DOMAINS` (`ucc.edu.co` en la demo; `nova-test.edu.co` solo en `.env.test`) |
 | Correo | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` |
-| Solo desarrollo y E2E | `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE`: reduce la inactividad (ej. 20 s) para probar el aviso sin esperar 14 min. El esquema de entorno la rechaza si `NODE_ENV=production`. El frontend usa los valores de `SessionInfo`, nunca constantes fijas. |
+| Solo desarrollo y E2E | `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE`: reducen la inactividad y el aviso (ej. 20 s y 8 s) para probar el aviso sin esperar 14 min. El aviso debe ser menor que la inactividad. El esquema de entorno la rechaza si `NODE_ENV=production`. El frontend usa los valores de `SessionInfo`, nunca constantes fijas. |
 
 ## Diseño del frontend
 
@@ -321,7 +322,7 @@ Todas se cargan de forma diferida y las de la misma familia comparten `AuthLayou
 | `/registro` | `RegisterPage` | Solo sin sesión | Pasos `EmailStep` → `CodeStep` → `ProfileStep`, según `GET /auth/verification` |
 | `/recuperar` | `PasswordResetPage` | Solo sin sesión | Pasos `EmailStep` → `CodeStep` → `NewPasswordStep` |
 | `/privacidad` | `PrivacyPolicyPage` | Pública | Texto de la política, versión `PRIVACY_POLICY_VERSION` |
-| `/inicio` | `WelcomePage` | `RequireAuth` | «Hola, {nombre}» y «Cerrar sesión»; se reemplaza en la 002 |
+| `/inicio` | `WelcomePage` | `RequireAuth` | «Hola, {primer nombre}» (primera palabra de `fullName`) y «Cerrar sesión»; se reemplaza en la 002 |
 | `*` | `NotFoundPage` | Pública | — |
 
 ### Pantallas, componentes y estados
@@ -355,11 +356,14 @@ vistas con listas aparecen en la 002.
   accesible única y anuncia los errores con `aria-live`.
 - **`PasswordRules`**: lista en vivo de las reglas de `validatePasswordRules()` (FR-024). La regla
   de «contraseña común» solo aparece si el servidor la reporta.
-- **Inactividad** (R3): `useIdleTimer` en `SessionProvider` y `BroadcastChannel('nova-session')`
-  para sincronizar las pestañas.
+- **Inactividad** (R3): `useIdleTimer` en `SessionProvider` programa el aviso desde el último
+  contacto exitoso con el servidor. `BroadcastChannel('nova-session')` difunde `activity`,
+  `keepalive` y `logout` para que todas las pestañas muestren, cierren el aviso o cierren la
+  sesión a la vez.
 - **Refresh automático**: `api-client` reintenta una sola vez tras `ACCESS_TOKEN_EXPIRED`, con
   `navigator.locks.request('nova-refresh')`. Con `SESSION_EXPIRED` limpia la caché y redirige
-  según `details.reason`.
+  según `details.reason` a `/ingresar?motivo=…&redirect=<ruta actual>`, para volver donde estaba
+  al entrar.
 - **Redirección tras login** (FR-018): `RequireAuth` envía a `/ingresar?redirect=<ruta>`, y
   `safe-redirect` acepta solo rutas que empiezan con `/` y no con `//`.
 - **Accesibilidad**:
@@ -430,7 +434,7 @@ Orden sugerido de las historias para los PR incrementales del backend: US1 → U
 
 | Decisión | Por qué se necesita | Alternativa más simple descartada porque |
 | :--- | :--- | :--- |
-| Bandeja de salida con el contenido cifrado (incluye el código) | Reintentar correos sin perderlos y sin que el tiempo de respuesta delate cuentas (R5, R6) | El envío síncrono rompe el registro si falla SMTP y revela cuentas; guardar el código en claro contradice el Principio III, por eso se cifra con AES-GCM y se borra al enviar |
+| Bandeja de salida con preparadores por módulo (el código se genera al enviar) | Reintentar correos sin perderlos, sin que el tiempo de respuesta delate cuentas y sin guardar el código (R5, R6, Principio III) | El envío síncrono rompe el registro si falla SMTP y revela cuentas; guardar el código, aunque sea cifrado, contradice el Principio III |
 | Sesión en BD además del JWT | Revocar al instante (FR-017, FR-020c) y medir la inactividad en el servidor (FR-016) | Solo JWT no permite revocar; solo sesión opaca contradice la constitución |
 | Ventana de 10 s ante reuso del refresh token | Evitar cierres falsos con varias pestañas (R2) | Sin ventana, dos pestañas que refrescan a la vez cerrarían la sesión |
 | Express sirve el frontend en producción | `SameSite=Strict` exige un solo sitio (R14) | Dos servicios en `onrender.com` son sitios distintos y las cookies no viajarían |

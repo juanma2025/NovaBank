@@ -22,7 +22,7 @@ docker compose up -d               # PostgreSQL 17 (5432) y Mailpit (SMTP 1025, 
 npm run db:migrate                 # aplica las migraciones a la base nova
 ```
 
-Para generar secretos locales, por ejemplo el de `OUTBOX_ENCRYPTION_KEY`:
+Para generar secretos locales, por ejemplo `JWT_ACCESS_SECRET` y `CODE_HMAC_SECRET`:
 
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
@@ -79,9 +79,12 @@ Usa un correo `@ucc.edu.co` inventado: los correos llegan a Mailpit, no a un buz
    conectado» → sigues dentro. Repite sin pulsar → vuelves a `/ingresar` con el mensaje de
    inactividad.
 
-   Para no esperar 14 minutos, define temporalmente `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` en
-   `.env` (solo desarrollo y E2E; ver `.env.example`).
+   Para no esperar 14 minutos, define temporalmente `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE=20` y
+   `SESSION_IDLE_WARNING_SECONDS_OVERRIDE=8` en `.env` (solo desarrollo y E2E; ver `.env.example`).
 5. Abre `/inicio` en dos pestañas; interactúa solo en una → ninguna muestra el aviso.
+6. Deja que aparezca el aviso en las dos pestañas y pulsa «Seguir conectado» en una → el aviso se
+   cierra en ambas. Si dejas vencer la cuenta regresiva, las dos vuelven a `/ingresar`.
+7. Con el aviso de sesión vencida, vuelve a ingresar → regresas a la pantalla donde estabas.
 
 ### US3 — Recuperar la contraseña (P3)
 
@@ -106,8 +109,10 @@ Usa un correo `@ucc.edu.co` inventado: los correos llegan a Mailpit, no a un buz
   contraseñas, códigos ni valores de cookies.
 - En la BD (`docker compose exec postgres psql -U nova nova`):
   - `SELECT password_hash FROM users;` → empieza con `$argon2id$`;
-  - `SELECT code_hash FROM verification_flows;` → hashes hexadecimales de 64 caracteres;
-  - `SELECT payload_encrypted FROM email_outbox WHERE status='sent';` → todos `NULL`;
-  - `UPDATE audit_events SET type='LOGOUT';` → error del trigger de inmutabilidad.
+  - `SELECT code_hash FROM verification_flows;` → hashes hexadecimales de 64 caracteres (o
+    `NULL` en flujos señuelo o pendientes de envío);
+  - `SELECT payload FROM email_outbox;` → ningún código, contraseña ni token;
+  - `UPDATE audit_events SET type='SESSION_ENDED';` y `TRUNCATE audit_events;` → ambos fallan
+    por los triggers de inmutabilidad.
 - En las herramientas del navegador (Application → Cookies): `nova_at`, `nova_rt` y `nova_vf`
   tienen `HttpOnly`, `Secure` y `SameSite=Strict`; `localStorage` no tiene tokens.

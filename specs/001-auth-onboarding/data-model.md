@@ -11,8 +11,9 @@
 - Ningún secreto se guarda en claro:
   - contraseñas con Argon2id;
   - códigos con HMAC-SHA256;
-  - tokens de sesión y de flujo con SHA-256;
-  - contenido de los correos pendientes con AES-256-GCM.
+  - tokens de sesión y de flujo con SHA-256.
+- Los códigos de verificación se generan en el momento de enviar el correo y nunca se guardan en
+  la bandeja de salida (research R6).
 
 **Dueño de las tablas**: módulo `auth`, salvo `audit_events` y `email_outbox` (`backend/src/lib`)
 y `rate_limit_hits` (`backend/src/middleware`).
@@ -68,16 +69,16 @@ flujo de registro.
 | `email` | varchar(254) | NOT NULL, normalizado |
 | `flow_token_hash` | char(64) | NOT NULL, UNIQUE; SHA-256 del token de la cookie `nova_vf` |
 | `status` | enum `verification_status` (`awaiting_code`, `verified`, `completed`, `superseded`, `expired`) | NOT NULL |
-| `code_hash` | char(64) | NULL en flujos señuelo (correo ya registrado o sin cuenta, R5) |
-| `code_expires_at` | timestamptz | NOT NULL; emisión + 15 min (FR-003) |
+| `code_hash` | char(64) | NULL hasta que el worker envía el código; siempre NULL en flujos señuelo (correo ya registrado o sin cuenta, R5) |
+| `code_expires_at` | timestamptz | NOT NULL; al solicitar el código, provisional `now + 15 min`; el worker lo fija en `envío + 15 min` (FR-003, R6) |
 | `code_attempts` | smallint | NOT NULL, default 0, 0–5 (FR-004) |
-| `last_code_sent_at` | timestamptz | NOT NULL; para la espera de 60 s (FR-005) |
+| `last_code_sent_at` | timestamptz | NOT NULL; momento de la última solicitud de código; para la espera de 60 s (FR-005) |
 | `verified_at` | timestamptz | NULL hasta verificar |
 | `complete_by` | timestamptz | NULL hasta verificar; `verified_at` + 30 min (FR-007, FR-020b) |
 | `consent_policy_version` | varchar(20) | NOT NULL si `purpose = registration`; NULL si no |
 | `consent_accepted_at` | timestamptz | NOT NULL si `purpose = registration`; NULL si no |
 | `created_at` | timestamptz | NOT NULL |
-| `expires_at` | timestamptz | NOT NULL; `created_at` + 45 min; vida máxima del flujo y de la cookie |
+| `expires_at` | timestamptz | NOT NULL; vida del flujo, **variable**: igual a `code_expires_at` mientras `status = awaiting_code` (se actualiza al reenviar y al enviar) e igual a `complete_by` al verificar. La cookie `nova_vf` tiene un tope fijo de 2 h (research R4) |
 
 **Índices**:
 - `(email, purpose, status)`, para reemplazar los flujos anteriores;
@@ -101,7 +102,9 @@ awaiting_code ──────────────────────
   - un código incorrecto incrementa `code_attempts`;
   - al llegar a 5 intentos, el código queda inutilizable hasta reenviar (`CODE_ATTEMPTS_EXHAUSTED`).
 - **Reenviar**: solo en `awaiting_code`, con `now ≥ last_code_sent_at + 60 s` y menos de 5 filas
-  en `code_sends` para `(email, purpose)` en la última hora.
+  en `code_sends` para el `email` en la última hora (registro y recuperación suman juntos,
+  FR-005). Invalida el código anterior (`code_hash = NULL`) hasta que el worker envíe el nuevo.
+- **Vigencia**: un flujo con `now ≥ expires_at` se trata como `expired` en cualquier operación.
 - **Completar**: solo en `verified` y con `now < complete_by`.
 - **Estados finales**: `completed`, `superseded` y `expired`. Las transiciones se ejecutan en una
   transacción con `SELECT … FOR UPDATE` sobre el flujo.
@@ -115,10 +118,11 @@ awaiting_code ──────────────────────
 | `purpose` | `verification_purpose` | NOT NULL |
 | `created_at` | timestamptz | NOT NULL |
 
-**Índice**: `(email, purpose, created_at)`.
+**Índice**: `(email, created_at)`.
 
-Se registra un envío por cada código emitido, incluidos los flujos señuelo, para que el límite se
-comporte igual exista o no la cuenta. Sirve para el límite de 5 envíos por hora (FR-005).
+Se registra un envío por cada código **solicitado**, incluidos los flujos señuelo, para que el
+límite se comporte igual exista o no la cuenta. Sirve para el límite de 5 envíos por correo y por
+hora, sumando todos los propósitos (FR-005). `purpose` se guarda solo con fines de auditoría.
 
 ## Session (`sessions`) — spec: «Sesión»
 
@@ -137,7 +141,8 @@ comporte igual exista o no la cuenta. Sirve para el límite de 5 envíos por hor
 
 **Índices**:
 - `(user_id) WHERE revoked_at IS NULL`, para revocar todas las sesiones al recuperar la
-  contraseña.
+  contraseña;
+- `(previous_refresh_token_hash)`, para detectar el reuso del refresh token (R2).
 
 **Regla de vigencia** (se evalúa en cada solicitud): una sesión es válida si se cumplen las tres
 condiciones:
@@ -159,12 +164,15 @@ audita `SESSION_ENDED`.
 
 **Índices**: `(email, origin_key, created_at)` y `(email, created_at)`.
 
-**Reglas (FR-015)**: solo se insertan intentos **fallidos**.
-- **Bloqueo por origen**: hay 5 o más filas con el mismo `(email, origin_key)` en los últimos
-  15 min. Termina 15 min después de la quinta falla.
-- **Bloqueo global**: hay 20 o más filas con el mismo `email` en la última hora. Termina 15 min
-  después de la vigésima falla.
-- **Al recuperar la contraseña**: se borran las filas de ese correo (FR-020c).
+**Reglas (FR-015)**: solo se insertan intentos **fallidos**. Los intentos rechazados por un
+bloqueo activo no se insertan.
+- **Bloqueo por origen**: se toman los 5 fallos más recientes de `(email, origin_key)`. Si son 5 y
+  el más antiguo ocurrió a 15 min o menos del más reciente, el bloqueo dura hasta el más
+  reciente + 15 min.
+- **Bloqueo global**: se toman los 20 fallos más recientes del `email`. Si son 20 y el más antiguo
+  ocurrió a 60 min o menos del más reciente, el bloqueo dura hasta el más reciente + 15 min.
+- **Inicio de sesión exitoso**: se borran las filas de ese `(email, origin_key)`.
+- **Al recuperar la contraseña**: se borran todas las filas de ese correo (FR-020c).
 
 ## AuditEvent (`audit_events`) — spec: «Evento de auditoría»
 
@@ -178,7 +186,8 @@ audita `SESSION_ENDED`.
 | `metadata` | jsonb | NOT NULL, default `{}`; nunca contraseñas, códigos ni tokens |
 | `created_at` | timestamptz | NOT NULL |
 
-**Inmutable**: un trigger rechaza `UPDATE` y `DELETE` (R13).
+**Inmutable**: triggers rechazan `UPDATE`, `DELETE` (por fila) y `TRUNCATE` (por sentencia)
+(R13). Las pruebas no vacían esta tabla: reinician la base de prueba completa.
 
 **Valores de `audit_event_type`** (FR-021):
 
@@ -200,7 +209,8 @@ audita `SESSION_ENDED`.
 | `id` | uuid | PK |
 | `to_email` | varchar(254) | NOT NULL |
 | `template` | enum `email_template` (`verification_code`, `already_registered`, `password_reset_code`, `password_changed`) | NOT NULL |
-| `payload_encrypted` | bytea | NULL tras el envío; AES-256-GCM (iv + tag + datos) |
+| `verification_flow_id` | uuid | NULL; referencia lógica (sin FK) al flujo, obligatoria para `verification_code` y `password_reset_code` |
+| `payload` | jsonb | NOT NULL, default `{}`; datos no secretos de la plantilla. Nunca contiene códigos, contraseñas ni tokens |
 | `status` | enum `outbox_status` (`pending`, `sent`, `failed`) | NOT NULL |
 | `attempts` | smallint | NOT NULL, default 0, máximo 5 |
 | `next_attempt_at` | timestamptz | NOT NULL |
@@ -210,8 +220,14 @@ audita `SESSION_ENDED`.
 
 **Índice**: `(status, next_attempt_at)`.
 
+**Preparación**: antes de enviar, el worker llama al preparador que el módulo dueño registró
+para la plantilla. Para las plantillas de código, `auth` genera el código en ese momento y
+guarda solo su hash en `VerificationFlow.code_hash` (research R6).
+
 **Transiciones**:
 - `pending` → `sent` cuando el envío funciona.
+- `pending` → `sent` sin enviar, si el preparador descarta el correo (el flujo ya no espera
+  código).
 - `pending` → `pending` cuando falla y quedan intentos: `attempts + 1` y `next_attempt_at` con
   espera exponencial.
 - `pending` → `failed` cuando se llega a 5 intentos.

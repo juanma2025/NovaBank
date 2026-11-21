@@ -53,7 +53,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 - [ ] T002 [P] [SH] Crear `tsconfig.base.json`:
   - `strict: true`, `noUncheckedIndexedAccess` y `customConditions: ["development"]`, con `module`/`moduleResolution` compatibles con la condición `development` (research R11);
   - referencias de proyecto para `tsc -b`.
-  - Fijar en el `package.json` raíz una versión de `typescript` compatible con `typescript-eslint`, y anotarla en el commit.
+  - Fijar en el `package.json` raíz una versión de `typescript` compatible con `typescript-eslint` y anotarla en «Technical Context» de [plan.md](plan.md).
 - [ ] T003 [P] [SH] Crear `eslint.config.js` (flat config):
   - `typescript-eslint` estricto con `no-explicit-any` como error;
   - `eslint-plugin-react-hooks` solo para `frontend/**`;
@@ -63,7 +63,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 - [ ] T004 [P] [SH] Crear `.env.example` con todas las variables de la tabla «Variables de entorno» de [plan.md](plan.md):
   - valores de desarrollo no secretos (`APP_ORIGIN=http://localhost:5173`, `STUDENT_EMAIL_DOMAINS=ucc.edu.co`, SMTP → Mailpit en `localhost:1025`);
   - un comentario por variable con el comando para generar secretos (ver [quickstart.md](quickstart.md));
-  - `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE`, comentada y marcada como «solo desarrollo y E2E».
+  - `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE`, comentadas y marcadas como «solo desarrollo y E2E».
 - [ ] T005 [P] [SH] Crear `.github/workflows/ci.yml` con los trabajos `quality` y `e2e` según research R15:
   - servicios `postgres:17` y `axllent/mailpit`;
   - `npm ci`, `npm run db:generate`, `prisma migrate deploy`, `lint`, `typecheck`, `test`, `build`;
@@ -75,7 +75,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 ### [BE] Infraestructura del backend
 
-- [ ] T007 [P] [BE] Crear `docker-compose.yml` con `postgres:17` (usuario y base `nova`, puerto 5432, volumen persistente) y `axllent/mailpit` (1025 SMTP, 8025 web), y `docker/postgres/init.sql`, que crea la base `nova_test` (research R15).
+- [ ] T007 [P] [BE] Crear `docker-compose.yml` con `postgres:17` (usuario y base `nova`, puerto 5432, volumen persistente) y `axllent/mailpit` (1025 SMTP, 8025 web), y `docker/postgres/init.sql`, que crea las bases `nova_test` y `nova_e2e` (research R15).
 - [ ] T008 [P] [BE] Crear el workspace `db/`:
   - `db/package.json` (`@nova/db`, dependencias `prisma@7`, `@prisma/client`, `@prisma/adapter-pg`, `pg`);
   - `db/prisma.config.ts`, `db/tsconfig.json` y `db/src/index.ts`, que exporta una fábrica del cliente Prisma con el adaptador pg y `DATABASE_URL` (research R13).
@@ -97,7 +97,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 - [ ] T011 [P] [E2E] Crear el workspace `e2e/`:
   - `e2e/package.json` (`@playwright/test`);
-  - `e2e/playwright.config.ts`: Chromium, más un proyecto móvil a 360 px. `webServer` arranca el backend compilado con `SERVE_FRONTEND=true` en `http://localhost:3000` (un solo origen, research R14), con `STUDENT_EMAIL_DOMAINS=nova-test.edu.co` y `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE=20`.
+  - `e2e/playwright.config.ts`: Chromium, más un proyecto móvil a 360 px. `webServer` arranca el backend compilado con `SERVE_FRONTEND=true` en `http://localhost:3000` (un solo origen, research R14), con `DATABASE_URL` a `nova_e2e` (migraciones aplicadas antes de arrancar), `STUDENT_EMAIL_DOMAINS=nova-test.edu.co`, `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE=20` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE=8`.
 
 **Checkpoint**: `npm install` funciona en la raíz y los workspaces existen.
 
@@ -130,7 +130,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
   - `normalizeEmail()` (trim y minúsculas);
   - `InstitutionalEmailSchema` (formato y longitud según data-model.md `User.email`; aplica `normalizeEmail` antes de validar).
 - [ ] T015 [P] [SH] Crear `shared/src/password.ts`:
-  - `PasswordSchema` (longitud según data-model.md `User.password_hash`, validación previa al hash);
+  - `PasswordSchema` (longitud según la sección «Validación» de `User` en data-model.md y FR-010);
   - `validatePasswordRules(password, email)` → `('too_short' | 'too_long' | 'contains_email')[]`, que también detecta la parte local del correo (FR-010, research R10).
 - [ ] T016 [SH] Crear `shared/src/auth.schemas.ts` con los esquemas de la tabla «Paquete `@nova/shared`» de [plan.md](plan.md), cada uno igual a su `components.schemas` del contrato:
   - `FullNameSchema` (data-model.md `User.full_name`) y `VerificationCodeSchema`;
@@ -150,7 +150,7 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
 
 ### [BE] Infraestructura del backend
 
-- [ ] T018 [BE] Crear `db/prisma/schema.prisma` con los enums (`verification_purpose`, `verification_status`, `session_end_reason`, `audit_event_type`, `email_template`, `outbox_status`), los 9 modelos con nombres de tabla y columna en `snake_case`, y los índices del modelo. Campos según data-model.md:
+- [ ] T018 [BE] Crear `db/prisma/schema.prisma` con los enums (`verification_purpose`, `verification_status`, `session_end_reason`, `audit_event_type`, `email_template`, `outbox_status`), los 9 modelos con nombres de tabla y columna en `snake_case`, y los índices del modelo (incluido `Session.previous_refresh_token_hash`). Campos según data-model.md:
   - `User.id`, `User.email`, `User.full_name`, `User.password_hash`, `User.password_changed_at`, `User.created_at`, `User.updated_at`;
   - `DataConsent.user_id`, `DataConsent.policy_version`, `DataConsent.accepted_at`;
   - `VerificationFlow.purpose`, `VerificationFlow.email`, `VerificationFlow.flow_token_hash`, `VerificationFlow.status`, `VerificationFlow.code_hash`, `VerificationFlow.code_expires_at`, `VerificationFlow.code_attempts`, `VerificationFlow.last_code_sent_at`, `VerificationFlow.verified_at`, `VerificationFlow.complete_by`, `VerificationFlow.consent_policy_version`, `VerificationFlow.consent_accepted_at`, `VerificationFlow.created_at`, `VerificationFlow.expires_at`;
@@ -158,24 +158,22 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - `Session.user_id`, `Session.refresh_token_hash`, `Session.previous_refresh_token_hash`, `Session.rotated_at`, `Session.created_at`, `Session.last_activity_at`, `Session.absolute_expires_at`, `Session.revoked_at`, `Session.revoke_reason`;
   - `LoginAttempt.email`, `LoginAttempt.origin_key`, `LoginAttempt.created_at`;
   - `AuditEvent.type`, `AuditEvent.user_id`, `AuditEvent.email_hash`, `AuditEvent.request_id`, `AuditEvent.metadata`, `AuditEvent.created_at`;
-  - `EmailOutbox.to_email`, `EmailOutbox.template`, `EmailOutbox.payload_encrypted`, `EmailOutbox.status`, `EmailOutbox.attempts`, `EmailOutbox.next_attempt_at`, `EmailOutbox.last_error`, `EmailOutbox.created_at`, `EmailOutbox.sent_at`;
+  - `EmailOutbox.to_email`, `EmailOutbox.template`, `EmailOutbox.verification_flow_id`, `EmailOutbox.payload`, `EmailOutbox.status`, `EmailOutbox.attempts`, `EmailOutbox.next_attempt_at`, `EmailOutbox.last_error`, `EmailOutbox.created_at`, `EmailOutbox.sent_at`;
   - `RateLimitHit.key`, `RateLimitHit.hits`, `RateLimitHit.reset_at`.
 - [ ] T019 [BE] Generar la migración inicial en `db/prisma/migrations/<timestamp>_init/migration.sql` y agregarle a mano el SQL que Prisma no genera:
-  - el trigger que rechaza `UPDATE`/`DELETE` sobre `audit_events` (data-model.md `AuditEvent`, research R13);
+  - los triggers que rechazan `UPDATE`/`DELETE` (por fila) y `TRUNCATE` (por sentencia) sobre `audit_events` (data-model.md `AuditEvent`, research R13);
   - el índice parcial `sessions(user_id) WHERE revoked_at IS NULL` (data-model.md `Session.revoked_at`);
   - los `CHECK` de rangos: data-model.md `VerificationFlow.code_attempts` y `EmailOutbox.attempts`;
   - los `CHECK` de consentimiento obligatorio si el propósito es `registration`: data-model.md `VerificationFlow.consent_policy_version` y `VerificationFlow.consent_accepted_at`.
 - [ ] T020 [P] [BE] Crear `backend/src/config/env.ts`:
   - esquema Zod de todas las variables del plan;
   - `STUDENT_EMAIL_DOMAINS` se convierte en una lista en minúsculas;
-  - `OUTBOX_ENCRYPTION_KEY` debe decodificar a 32 bytes;
-  - `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` se rechaza si `NODE_ENV=production`;
+  - `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE` se rechazan si `NODE_ENV=production`, y el aviso debe ser menor que la inactividad;
   - si la validación falla, el proceso termina con un mensaje claro.
 - [ ] T021 [P] [BE] Crear `backend/src/lib/logger.ts` con `pino`. Redacción de `password`, `code`, `*.password`, `*.code`, `*.token`, `req.headers.cookie`, `req.headers.authorization` y `res.headers["set-cookie"]` (FR-022).
 - [ ] T022 [P] [BE] Crear `backend/src/lib/errors.ts` (`AppError(code, status, details?)` con fábricas por código del contrato) y `backend/src/lib/clock.ts` (reloj inyectable para las pruebas).
 - [ ] T023 [P] [BE] Crear `backend/src/lib/crypto.ts`:
-  - `randomToken()` de 32 bytes en base64url, `sha256Hex()`, `hmacSha256Hex()` y `safeEqualHex()` con `timingSafeEqual`;
-  - `encrypt()`/`decrypt()` AES-256-GCM (iv + tag + datos), con `node:crypto` (research R6, R9).
+  - `randomToken()` de 32 bytes en base64url, `sha256Hex()`, `hmacSha256Hex()`, `safeEqualHex()` con `timingSafeEqual` y `randomCode()` de 6 dígitos con `crypto.randomInt`, todo con `node:crypto` (research R9).
 - [ ] T024 [BE] Crear `backend/src/middleware/request-id.ts` (UUID v4 por solicitud, en la cabecera `X-Request-Id`) y `backend/src/middleware/error-handler.ts`:
   - `AppError` → su estado y `ErrorResponse`;
   - `ZodError` → 400 `VALIDATION_ERROR` con `details.fields`;
@@ -194,11 +192,13 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
 - [ ] T028 [BE] Crear la bandeja de salida de correos (research R6):
   - `backend/src/lib/mail/mail-provider.ts`: interfaz `MailProvider`;
   - `backend/src/lib/mail/smtp-provider.ts`: `nodemailer`;
-  - `backend/src/lib/mail/outbox.repository.ts`: `enqueue(template, to, payload, tx)` cifrando data-model.md `EmailOutbox.payload_encrypted`;
+  - `backend/src/lib/mail/outbox.repository.ts`: `enqueue(template, to, { flowId?, payload }, tx)` sobre data-model.md `EmailOutbox.verification_flow_id` y `EmailOutbox.payload`, rechazando claves `code`, `password` o `token` en el payload;
   - `backend/src/lib/mail/outbox-worker.ts`:
+    - `registerPreparer(template, fn)`: cada módulo registra cómo preparar el contenido de su plantilla al enviar (research R6);
     - lote cada 2 s con `SELECT … FOR UPDATE SKIP LOCKED` (`$queryRaw`) sobre data-model.md `EmailOutbox.status` y `EmailOutbox.next_attempt_at`;
+    - por cada fila, una transacción: prepara, envía y confirma; si el preparador descarta el correo, se marca `sent` sin enviar; si el envío falla, se revierte;
     - espera exponencial en data-model.md `EmailOutbox.attempts` (10 s, 30 s, 1 min, 2 min, 5 min; luego `failed`);
-    - al enviar, `payload_encrypted = NULL` y `sent_at`;
+    - al enviar, `sent_at`;
     - data-model.md `EmailOutbox.last_error` sin datos personales;
     - limpieza horaria de flujos, intentos, contadores y correos antiguos;
     - `start()`/`stop()`.
@@ -212,7 +212,7 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
     - `validate(sid)` aplica la regla de vigencia de data-model.md `Session` sobre `Session.last_activity_at`, `Session.absolute_expires_at` y `Session.revoked_at`. Al vencer, marca `Session.revoke_reason` (`idle` o `absolute`) y audita `SESSION_ENDED`;
     - `touch()` actualiza `last_activity_at` como máximo cada 30 s;
     - `revokeAllForUser(userId, reason)`;
-    - el tiempo de inactividad sale de la configuración (`SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` o 900).
+    - los tiempos de inactividad y de aviso salen de la configuración (overrides o 900 y 60) y se devuelven en `SessionInfo`.
 - [ ] T031 [BE] Crear `backend/src/middleware/require-auth.ts`:
   - verifica `nova_at`, llama a `sessionService.validate` y adjunta `req.auth = { userId, sessionId }`;
   - errores: `UNAUTHENTICATED`, `ACCESS_TOKEN_EXPIRED` o `SESSION_EXPIRED` con `details.reason`.
@@ -223,7 +223,7 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - `backend/src/openapi/registry.ts`: registra los esquemas de `@nova/shared` con `@asteasolutions/zod-to-openapi` y publica `GET /api/v1/openapi.json`;
   - `backend/src/server.ts`: `listen` en `PORT` y arranque y parada ordenada del `OutboxWorker`.
 - [ ] T034 [P] [BE] Crear los helpers de prueba en `backend/tests/helpers/`:
-  - `test-db.ts`: aplica las migraciones a `nova_test` y vacía las tablas entre pruebas (excepto `audit_events`, que se recrea por esquema);
+  - `test-db.ts`: reinicia `nova_test` con `prisma migrate reset --force --skip-seed` una vez por archivo de prueba (no se puede vaciar `audit_events` por sus triggers); dentro de un archivo, cada prueba usa correos únicos;
   - `memory-mail-provider.ts`: guarda los mensajes y permite leer el último código por correo;
   - `fake-clock.ts`;
   - `agent.ts`: agente Supertest con cookies y cabecera `Origin` correcta.
@@ -237,13 +237,16 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - pasadas 12 h da `reason=absolute`;
   - `UPDATE audit_events` falla por el trigger;
   - `PgRateLimitStore` cuenta y reinicia;
-  - con `NODE_ENV=production`, una variable faltante o el override impiden arrancar.
+  - con `NODE_ENV=production`, una variable faltante o cualquiera de los overrides impiden arrancar; fuera de producción, un aviso mayor o igual a la inactividad también;
+  - `TRUNCATE audit_events` falla.
 - [ ] T037 [P] [BE] Crear `backend/tests/unit/outbox-worker.test.ts`:
-  - envío correcto con purga del contenido;
-  - reintentos con espera y paso a `failed`;
-  - dos workers a la vez no envían duplicados.
+  - envío correcto con el preparador registrado;
+  - un preparador que descarta marca `sent` sin enviar;
+  - un envío fallido revierte lo preparado; reintentos con espera y paso a `failed`;
+  - dos workers a la vez no envían duplicados;
+  - ninguna fila de `email_outbox` contiene un código.
 
-  Crear también `backend/tests/unit/crypto.test.ts` para el cifrado de ida y vuelta y el HMAC.
+  Crear también `backend/tests/unit/crypto.test.ts` para el HMAC, la comparación segura y `randomCode()`.
 
 ### [FE] Armazón del frontend
 
@@ -284,7 +287,7 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
 con su nombre visible.
 
 **Independent Test**: registrar un correo permitido, leer el código en la bandeja de prueba,
-completar nombre y contraseña, y ver «Hola, {nombre}» en `/inicio`. Recargar en el paso del
+completar nombre y contraseña, y ver «Hola, {primer nombre}» en `/inicio`. Recargar en el paso del
 código debe retomar ese paso.
 
 ### [BE] Backend de US1
@@ -308,20 +311,21 @@ código debe retomar ese paso.
   Crear también `backend/tests/unit/password-policy.test.ts`.
 - [ ] T049 [US1] [BE] Crear los repositorios:
   - `backend/src/modules/auth/repositories/verification-flow.repository.ts`: incluye `lockByTokenHash()` con `SELECT … FOR UPDATE` (`$queryRaw`) y `supersedeActive(email, purpose)`; data-model.md `VerificationFlow.flow_token_hash` y `VerificationFlow.status`;
-  - `backend/src/modules/auth/repositories/code-send.repository.ts`: `countLastHour(email, purpose)`; data-model.md `CodeSend.email`, `CodeSend.purpose` y `CodeSend.created_at`;
+  - `backend/src/modules/auth/repositories/code-send.repository.ts`: `countLastHour(email)`, que suma todos los propósitos (FR-005); data-model.md `CodeSend.email`, `CodeSend.purpose` y `CodeSend.created_at`;
   - `backend/src/modules/auth/repositories/consent.repository.ts`: data-model.md `DataConsent.user_id`, `DataConsent.policy_version` y `DataConsent.accepted_at`.
 - [ ] T050 [US1] [BE] Crear `backend/src/modules/auth/verification.service.ts` (research R4, R5, R9):
-  - `issueCode(flow)`: HMAC del código sobre data-model.md `VerificationFlow.code_hash`, con `VerificationFlow.code_expires_at` y `VerificationFlow.last_code_sent_at`, e inserta en `code_sends`;
+  - `requestCode(flow, tx)`: fija data-model.md `VerificationFlow.last_code_sent_at`, un `VerificationFlow.code_expires_at` provisional y `VerificationFlow.expires_at = code_expires_at`; pone `code_hash = NULL`; inserta en `code_sends` (también en flujos señuelo, M1); y, si el flujo no es señuelo, encola la plantilla de código con `flowId`;
+  - `prepareCodeEmail(flowId, tx)`: preparador registrado en el `OutboxWorker` para `verification_code` y `password_reset_code`. Bloquea el flujo; si ya no está en `awaiting_code` o venció, descarta. Si no, genera el código con `randomCode()`, guarda su HMAC en data-model.md `VerificationFlow.code_hash`, fija `VerificationFlow.code_expires_at = now + 15 min` y `VerificationFlow.expires_at`, y devuelve el código para el correo (research R6). El código nunca se guarda en otro lugar;
   - `getState(flowToken)`: arma `VerificationState` con el correo enmascarado y `attemptsLeft` según data-model.md `VerificationFlow.code_attempts`;
-  - `verify(flowToken, code)`: transición de la máquina de estados de data-model.md sobre `VerificationFlow.status`, `VerificationFlow.verified_at` y `VerificationFlow.complete_by`. Un código erróneo incrementa los intentos y devuelve `CODE_INVALID` con `attemptsLeft`; además `CODE_EXPIRED` y `CODE_ATTEMPTS_EXHAUSTED`. Un `code_hash` nulo (señuelo) siempre falla como `CODE_INVALID`. Audita `EMAIL_VERIFIED`.
+  - `verify(flowToken, code)`: transición de la máquina de estados de data-model.md sobre `VerificationFlow.status`, `VerificationFlow.verified_at` y `VerificationFlow.complete_by`; al verificar, `VerificationFlow.expires_at = complete_by` (H1). Un código erróneo incrementa los intentos y devuelve `CODE_INVALID` con `attemptsLeft`; además `CODE_EXPIRED` y `CODE_ATTEMPTS_EXHAUSTED`. Un `code_hash` nulo (señuelo) siempre falla como `CODE_INVALID`. Audita `EMAIL_VERIFIED`.
 - [ ] T051 [US1] [BE] Crear `backend/src/modules/auth/registration.service.ts`:
   - `start(email, acceptedPolicyVersion)`:
     - valida el dominio contra `STUDENT_EMAIL_DOMAINS`, con coincidencia exacta (FR-001);
     - exige `PRIVACY_POLICY_VERSION`;
-    - aplica el límite de envíos;
-    - reemplaza los flujos activos;
-    - crea el flujo con data-model.md `VerificationFlow.consent_policy_version`, `VerificationFlow.consent_accepted_at` y `VerificationFlow.expires_at`;
-    - si el correo tiene cuenta, crea un señuelo y encola `already_registered`; si no, encola `verification_code`, todo en la misma transacción;
+    - aplica el límite de 5 envíos por correo y por hora (`countLastHour(email)`);
+    - reemplaza los flujos activos del correo y propósito;
+    - crea el flujo con data-model.md `VerificationFlow.consent_policy_version` y `VerificationFlow.consent_accepted_at`, y llama a `requestCode`;
+    - si el correo tiene cuenta, el flujo es señuelo: `requestCode` registra el envío sin encolar código, y se encola `already_registered`; todo en la misma transacción;
     - audita `REGISTRATION_STARTED`.
   - `complete(flowToken, fullName, password)`:
     - exige `verified` y `now < complete_by`;
@@ -354,14 +358,14 @@ código debe retomar ese paso.
 - [ ] T055 [P] [US1] [FE] Crear `frontend/src/features/legal/PrivacyPolicyPage.tsx`, con el texto de la política de tratamiento de datos (Ley 1581 de 2012) en `frontend/src/lib/messages.ts` y la versión `PRIVACY_POLICY_VERSION` visible.
 - [ ] T056 [US1] [FE] Crear:
   - `frontend/src/features/auth/hooks/useVerification.ts`: consulta `['verification', purpose]` y mutaciones `start` / `verify`;
-  - `frontend/src/features/auth/steps/EmailStep.tsx`: genérico por `purpose`; en registro muestra `ConsentCheckbox`;
+  - `frontend/src/features/auth/steps/EmailStep.tsx`: genérico por `purpose`; valida el formato del correo mientras se escribe con `InstitutionalEmailSchema` (FR-024); en registro muestra `ConsentCheckbox`;
   - `frontend/src/features/auth/steps/CodeStep.tsx`: correo enmascarado y «Usar otro correo»;
   - `frontend/src/features/auth/steps/ProfileStep.tsx`: nombre y `PasswordField` con `PasswordRules`.
 
   Los estados de carga y error siguen la tabla de [plan.md](plan.md).
 - [ ] T057 [US1] [FE] Crear:
   - `frontend/src/features/auth/pages/RegisterPage.tsx`: orquesta los pasos y retoma tras recargar (FR-009a), envuelto en `PublicOnly`;
-  - `frontend/src/features/auth/pages/WelcomePage.tsx`: «Hola, {nombre}» con esqueleto de carga, dentro de `RequireAuth` (FR-019).
+  - `frontend/src/features/auth/pages/WelcomePage.tsx`: «Hola, {primer nombre}» (primera palabra de `fullName`) con esqueleto de carga, dentro de `RequireAuth` (FR-019).
 
   Conectar ambas en `frontend/src/app/router.tsx`.
 
@@ -392,7 +396,9 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
   - login correcto (cookies con sus atributos);
   - credenciales incorrectas y correo inexistente dan el mismo `INVALID_CREDENTIALS`;
   - 5 fallos desde el mismo origen dan `LOGIN_LOCKED` con `retryAfterSeconds`, mientras que otro `nova_dev` entra;
-  - 20 fallos por hora bloquean todos los orígenes;
+  - el bloqueo dura 15 min desde el quinto fallo (no desde el primero), comprobado con reloj falso, y los intentos durante el bloqueo no lo prolongan;
+  - 20 fallos en una hora bloquean todos los orígenes durante 15 min desde el vigésimo;
+  - un inicio de sesión exitoso borra los fallos de ese origen;
   - `refresh` rota los tokens;
   - el refresh token anterior antes de 10 s da 200 sin cookies, y después de 10 s revoca con `reuse_detected`;
   - la inactividad y las 12 h dan `SESSION_EXPIRED`;
@@ -400,10 +406,10 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
   - eventos `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGIN_LOCKED` y `SESSION_ENDED`.
 - [ ] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana y `deleteByEmail`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
 - [ ] T061 [US2] [BE] Crear `backend/src/modules/auth/login.service.ts`:
-  - comprueba el bloqueo por origen y el global con las reglas de data-model.md `LoginAttempt` antes de verificar (FR-015);
+  - comprueba el bloqueo por origen y el global antes de verificar, calculando su fin con las reglas de data-model.md `LoginAttempt` («el más reciente + 15 min» sobre los últimos 5 o 20 fallos, research R7) (FR-015); los intentos rechazados por bloqueo no se registran;
   - verifica con Argon2 incluso si el correo no existe, contra un hash ficticio (research R5);
   - registra el fallo y responde `INVALID_CREDENTIALS`, o `LOGIN_LOCKED` con `retryAfterSeconds` al activarse el bloqueo;
-  - si es correcto, crea la sesión;
+  - si es correcto, borra los fallos de ese origen en data-model.md `LoginAttempt.origin_key` y crea la sesión;
   - audita `LOGIN_SUCCEEDED`, `LOGIN_FAILED` y `LOGIN_LOCKED`.
 - [ ] T062 [US2] [BE] Extender `backend/src/modules/auth/session.service.ts` (research R2):
   - `refresh(refreshToken)`: rotación con data-model.md `Session.refresh_token_hash`, `Session.previous_refresh_token_hash` y `Session.rotated_at`; ventana de 10 s sin cookies nuevas; fuera de la ventana revoca con `reuse_detected`; actualiza la actividad;
@@ -419,17 +425,18 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
 
 - [ ] T064 [P] [US2] [FE] Crear:
   - `frontend/tests/LoginPage.test.tsx`: error genérico, bloqueo con los minutos restantes, redirección con `redirect`, avisos según `motivo`;
-  - `frontend/tests/useIdleTimer.test.tsx`, con temporizadores falsos: el aviso aparece en `idleTimeoutSeconds − idleWarningSeconds`, «Seguir conectado» llama a `refresh`, al terminar la cuenta regresiva se llama a `logout`, una interacción en otra pestaña (`BroadcastChannel` simulado) reinicia el contador.
+  - `frontend/tests/useIdleTimer.test.tsx`, con temporizadores falsos: el aviso aparece en `idleTimeoutSeconds − idleWarningSeconds` contados desde el último contacto exitoso con el servidor (no desde la última interacción local); «Seguir conectado» llama a `refresh`; al terminar la cuenta regresiva se llama a `logout`; con `BroadcastChannel` simulado, una interacción en otra pestaña reinicia el contador, y `keepalive` y `logout` cierran el aviso o la sesión en todas las pestañas.
 - [ ] T065 [US2] [FE] Crear `frontend/src/features/auth/pages/LoginPage.tsx`, dentro de `PublicOnly`, y `frontend/src/features/auth/hooks/useLogin.ts`:
   - al entrar, navega a `safeRedirect(redirect)` o a `/inicio`;
   - muestra el aviso según `?motivo=`;
   - con `LOGIN_LOCKED`, muestra los minutos restantes.
 - [ ] T066 [US2] [FE] Crear `frontend/src/features/auth/hooks/useIdleTimer.ts` y `frontend/src/features/auth/components/InactivityDialog.tsx` (modal accesible con foco atrapado y cuenta regresiva de 60 s). Integrarlos en `SessionProvider` (`frontend/src/app/providers.tsx`) (FR-016a, research R3):
   - escucha `pointerdown`, `keydown`, `scroll` y la navegación;
-  - sincroniza las pestañas con `BroadcastChannel('nova-session')`;
+  - programa el aviso desde el último contacto exitoso con el servidor (lo registra `api-client` en cada respuesta 2xx), no desde la última interacción local (research R3);
+  - sincroniza las pestañas con `BroadcastChannel('nova-session')`, difundiendo `activity`, `keepalive` y `logout`;
   - llama a `refresh` con un límite de una vez cada 60 s;
   - toma los tiempos de `SessionInfo`.
-- [ ] T067 [US2] [FE] Agregar «Cerrar sesión» en `frontend/src/components/AppHeader.tsx` con `frontend/src/features/auth/hooks/useLogout.ts`: llama a `POST /auth/logout`, limpia la caché de consultas y navega a `/ingresar`. En `api-client` / `SessionProvider`, `SESSION_EXPIRED` redirige a `/ingresar?motivo=inactividad` o `?motivo=expirada` según `details.reason`.
+- [ ] T067 [US2] [FE] Agregar «Cerrar sesión» en `frontend/src/components/AppHeader.tsx` con `frontend/src/features/auth/hooks/useLogout.ts`: llama a `POST /auth/logout`, limpia la caché de consultas y navega a `/ingresar`. En `api-client` / `SessionProvider`, `SESSION_EXPIRED` redirige a `/ingresar?motivo=inactividad` o `?motivo=expirada` según `details.reason`, agregando `&redirect=<ruta actual>` para volver donde estaba (caso límite de la spec). El cierre de sesión se difunde a las demás pestañas.
 
 ### [E2E] Extremo a extremo de US2
 
@@ -437,7 +444,9 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
   - login y logout;
   - abrir `/inicio` sin sesión, que redirige a `/ingresar` y vuelve a `/inicio` tras entrar;
   - 5 fallos que bloquean, mientras otro contexto del navegador entra;
-  - el aviso de inactividad con el override de 20 s, tanto con «Seguir conectado» como dejando que venza.
+  - el aviso de inactividad con los overrides (20 s de inactividad y 8 s de aviso), tanto con «Seguir conectado» como dejando que venza;
+  - con dos pestañas, «Seguir conectado» en una cierra el aviso en la otra;
+  - tras vencer, volver a ingresar regresa a la pantalla anterior.
 
 **Checkpoint**: US1 y US2 funcionan cada una por su cuenta.
 
@@ -455,6 +464,8 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
 
 - [ ] T069 [P] [US3] [BE] Crear `backend/tests/integration/password-reset.test.ts`. Debe comprobar:
   - un correo inexistente recibe la misma respuesta sin correo encolado (FR-020a);
+  - el sexto código en una hora da `CODE_SEND_LIMIT`, sumando los de registro (FR-005);
+  - un segundo inicio de recuperación invalida el flujo anterior (`superseded`);
   - flujo completo de código y contraseña nueva;
   - todas las sesiones quedan revocadas con `password_reset`;
   - los intentos de login del correo se borran (FR-020c);
@@ -462,7 +473,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
   - la contraseña anterior falla;
   - eventos `PASSWORD_RESET_REQUESTED`, `EMAIL_VERIFIED` y `PASSWORD_RESET_COMPLETED`.
 - [ ] T070 [US3] [BE] Crear `backend/src/modules/auth/password-reset.service.ts`:
-  - `start(email)`: flujo `password_reset`; señuelo sin correo si no hay cuenta; si la hay, encola `password_reset_code`; audita `PASSWORD_RESET_REQUESTED`;
+  - `start(email)`: aplica el límite de 5 envíos por correo y por hora (`countLastHour(email)`, FR-005); reemplaza los flujos de recuperación activos del correo; crea el flujo `password_reset` y llama a `requestCode`; si no hay cuenta, el flujo es señuelo y no se encola nada; audita `PASSWORD_RESET_REQUESTED`;
   - `complete(flowToken, password)`, en una transacción:
     - exige `verified` y `now < complete_by`;
     - aplica la política de contraseña;
@@ -504,12 +515,12 @@ que el código anterior falla y el nuevo funciona.
   - reenviar antes de 60 s da `RESEND_TOO_SOON` con `retryAfterSeconds` y `Retry-After`;
   - el sexto envío en una hora da `CODE_SEND_LIMIT`, también si se reinicia el flujo;
   - el código anterior queda inválido y los intentos se reinician;
-  - un flujo señuelo se comporta igual;
+  - un flujo señuelo responde igual y cuenta para el límite; el de registro reenvía `already_registered` y el de recuperación no encola nada;
   - un flujo en `verified` da `VERIFICATION_STEP_INVALID`.
 - [ ] T076 [US4] [BE] Agregar `resend(flowToken)` en `backend/src/modules/auth/verification.service.ts`:
-  - controla data-model.md `VerificationFlow.last_code_sent_at` y el límite con `CodeSend.created_at`;
-  - emite un nuevo data-model.md `VerificationFlow.code_hash` y reinicia `VerificationFlow.code_attempts`;
-  - encola la plantilla según el propósito.
+  - controla data-model.md `VerificationFlow.last_code_sent_at` y el límite por correo con `CodeSend.created_at`;
+  - reinicia data-model.md `VerificationFlow.code_attempts` y llama a `requestCode`, que invalida el `VerificationFlow.code_hash` anterior y encola el código nuevo; el worker lo genera al enviar;
+  - en un señuelo de registro reenvía `already_registered`; en uno de recuperación no encola nada.
 
   Agregar la ruta `POST /api/v1/auth/resend-verification` (202) con su limitador y registrarla en `backend/src/openapi/registry.ts`.
 
@@ -528,11 +539,11 @@ que el código anterior falla y el nuevo funciona.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T080 [BE] Ampliar `backend/tests/contract/openapi.contract.test.ts` para exigir que las 12 operaciones del contrato existan en el documento generado. Ninguna puede faltar ni sobrar.
+- [ ] T080 [BE] Ampliar `backend/tests/contract/openapi.contract.test.ts` para exigir que las 12 operaciones del contrato existan en el documento generado. Ninguna puede faltar ni sobrar; la única excepción es `GET /openapi.json`, que sirve el propio documento y no forma parte del contrato.
 - [ ] T081 [P] [BE] Crear `backend/tests/integration/logging.test.ts`: captura la salida de `pino` durante registro, login y recuperación, y comprueba que no aparecen contraseñas, códigos ni valores de cookies (SC-005).
 - [ ] T082 [P] [BE] Crear `docs/despliegue.md` (Render + Neon + Brevo según research R14: variables, `TRUST_PROXY=1`, `SERVE_FRONTEND=true`, `prisma migrate deploy`). Actualizar en `README.md` la sección «Primeros pasos» con los comandos de [quickstart.md](quickstart.md).
 - [ ] T083 [P] [FE] Revisar la accesibilidad (SC-009): navegación solo con teclado, lector de pantalla en los cuatro flujos, contraste AA en los dos temas, 360 px y `prefers-reduced-motion`. Corregir lo que falle en `frontend/src/` y registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
-- [ ] T084 [P] [FE] Revisar el rendimiento: carga diferida de cada ruta en el build y Lighthouse móvil de `/ingresar` con primera carga interactiva < 2,5 s. Registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
+- [ ] T084 [P] [FE] Revisar el rendimiento: carga diferida de cada ruta en el build, Lighthouse móvil de `/ingresar` con primera carga interactiva < 2,5 s, y menos de 2 s desde enviar el login hasta ver la bienvenida (SC-004). Registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
 - [ ] T085 [E2E] Ejecutar la validación completa de [quickstart.md](quickstart.md), secciones 4–6, con la aplicación integrada en `main`, y anotar en el PR cualquier diferencia antes de `/speckit-converge`.
 
 ---

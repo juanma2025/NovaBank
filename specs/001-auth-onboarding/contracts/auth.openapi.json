@@ -3,7 +3,7 @@
   "info": {
     "title": "Nova API — Autenticación y registro (spec 001)",
     "version": "1.0.0",
-    "description": "Contrato de diseño de la funcionalidad 001-auth-onboarding. Es la fuente de verdad entre\nbackend y frontend: el documento generado en `/api/v1/openapi.json` DEBE coincidir con él.\n\nCookies (todas HttpOnly, Secure, SameSite=Strict):\n- `nova_at`: JWT de acceso, Path=/api, 15 min.\n- `nova_rt`: refresh token, Path=/api/v1/auth, hasta el vencimiento absoluto de la sesión.\n- `nova_vf`: token del flujo de verificación, Path=/api/v1/auth, 45 min.\n- `nova_dev`: identificador de dispositivo para el bloqueo por intentos, Path=/api/v1/auth, 1 año.\n\nTodo error usa el esquema `ErrorResponse`. Los mensajes van en español.\n"
+    "description": "Contrato de diseño de la funcionalidad 001-auth-onboarding. Es la fuente de verdad entre\nbackend y frontend: el documento generado en `/api/v1/openapi.json` DEBE coincidir con él.\n\nCookies (todas HttpOnly, Secure, SameSite=Strict):\n- `nova_at`: JWT de acceso, Path=/api, 15 min.\n- `nova_rt`: refresh token, Path=/api/v1/auth, hasta el vencimiento absoluto de la sesión.\n- `nova_vf`: token del flujo de verificación, Path=/api/v1/auth, tope de 2 h; la validez real la decide el servidor (vence con el código o con el plazo para completar).\n- `nova_dev`: identificador de dispositivo para el bloqueo por intentos, Path=/api/v1/auth, 1 año.\n\nTodo error usa el esquema `ErrorResponse`. Los mensajes van en español.\n"
   },
   "servers": [
     {
@@ -581,7 +581,7 @@
     },
     "headers": {
       "SetFlowCookie": {
-        "description": "nova_vf=<token>; Path=/api/v1/auth; Max-Age=2700; HttpOnly; Secure; SameSite=Strict",
+        "description": "nova_vf=<token>; Path=/api/v1/auth; Max-Age=7200; HttpOnly; Secure; SameSite=Strict",
         "schema": {
           "type": "string"
         }
