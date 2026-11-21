@@ -27,8 +27,12 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 
 ## Technical Context
 
-**Language/Version**: TypeScript estricto (versión fijada en T002, compatible con
-`typescript-eslint`) sobre Node.js 24 LTS; React 19 en el navegador.
+**Language/Version**: TypeScript 6.0 estricto (`~6.0.3`, fijado en T002: `typescript-eslint`
+8.x aún no soporta TypeScript 7) sobre Node.js 24 LTS; React 19 en el navegador.
+
+**Complementos declarados** (constitución v2.3.0, «Complementos de tecnologías permitidas»):
+`typescript`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`,
+`eslint-plugin-react-hooks`, `globals`, `@types/node` (configuración raíz y `shared`, T001–T006).
 
 **Primary Dependencies**:
 

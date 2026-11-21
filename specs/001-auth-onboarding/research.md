@@ -277,15 +277,22 @@ en un hot path); enlace mágico (la spec pide código).
 **Decision**: el `package.json` de `shared` expone condiciones de exportación:
 
 ```json
-"exports": { ".": { "types": "./src/index.ts", "development": "./src/index.ts", "default": "./dist/index.js" } }
+"exports": { ".": { "development": "./src/index.ts", "types": "./dist/index.d.ts", "default": "./dist/index.js" } }
 ```
+
+`development` va **primero**: tanto TypeScript como Node y Vite eligen la primera condición que
+coincide, en el orden del objeto.
 
 | Entorno | Cómo resuelve `@nova/shared` |
 | :--- | :--- |
 | Vite (desarrollo) | Fuente TS, por la condición `development` que Vite ya usa |
 | Backend en desarrollo | Fuente TS, con `tsx watch --conditions=development` |
-| TypeScript | `customConditions: ["development"]` en `tsconfig.base.json` |
-| Producción | `shared` se compila con `tsc -b` y se usa `dist/` |
+| TypeScript (`typecheck`, editor) | Fuente TS, con `customConditions: ["development"]` de `tsconfig.base.json`; no hace falta compilar `shared` antes |
+| Build de producción del backend | El `tsconfig` de build del backend define `customConditions: []`, así que usa los tipos de `dist/` y no intenta compilar la fuente de `shared` |
+| Producción (Node, Vite build) | `shared` se compila primero (`npm run build` respeta el orden de los workspaces) y se usa `dist/` |
+
+Ajuste hecho al implementar T006: la versión inicial ponía `types` primero apuntando a `src/`,
+lo que obligaba al build del backend a compilar archivos de `shared` fuera de su `rootDir`.
 
 **Rationale**: cada integrante levanta solo su capa sin un proceso de vigilancia adicional ni
 dependencias como `concurrently`. Node 24 no aplica *type stripping* dentro de `node_modules`,

@@ -46,31 +46,31 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 ### [SH] Configuración raíz y paquete compartido
 
-- [ ] T001 [SH] Crear `package.json` raíz con `"private": true`, `engines.node >=24` y workspaces `shared`, `db`, `backend`, `frontend`, `e2e`.
+- [X] T001 [SH] Crear `package.json` raíz con `"private": true`, `engines.node >=24` y workspaces `shared`, `db`, `backend`, `frontend`, `e2e`.
   - Scripts compatibles con Windows (solo `npm run <x> -w <ws>`, sin comandos de bash): `dev:backend`, `dev:frontend`, `db:generate`, `db:migrate`, `lint`, `typecheck`, `test`, `test:e2e`, `build` (orden `shared` → `db` → `backend` → `frontend`).
   - Usar `--workspaces --if-present` para que los scripts funcionen aunque una capa aún no exista.
   - Si npm exige que existan las carpetas, crear en cada workspace un `package.json` mínimo (solo `name`, `private`, `version`), sin otro contenido; cada capa lo completa en su rama.
-- [ ] T002 [P] [SH] Crear `tsconfig.base.json`:
+- [X] T002 [P] [SH] Crear `tsconfig.base.json`:
   - `strict: true`, `noUncheckedIndexedAccess` y `customConditions: ["development"]`, con `module`/`moduleResolution` compatibles con la condición `development` (research R11);
   - referencias de proyecto para `tsc -b`.
   - Fijar en el `package.json` raíz una versión de `typescript` compatible con `typescript-eslint` y anotarla en «Technical Context» de [plan.md](plan.md).
-- [ ] T003 [P] [SH] Crear `eslint.config.js` (flat config):
+- [X] T003 [P] [SH] Crear `eslint.config.js` (flat config):
   - `typescript-eslint` estricto con `no-explicit-any` como error;
   - `eslint-plugin-react-hooks` solo para `frontend/**`;
   - integración con Prettier.
 
   Crear también `.prettierrc` y `.prettierignore`, y agregar las devDependencies a la raíz.
-- [ ] T004 [P] [SH] Crear `.env.example` con todas las variables de la tabla «Variables de entorno» de [plan.md](plan.md):
+- [X] T004 [P] [SH] Crear `.env.example` con todas las variables de la tabla «Variables de entorno» de [plan.md](plan.md):
   - valores de desarrollo no secretos (`APP_ORIGIN=http://localhost:5173`, `STUDENT_EMAIL_DOMAINS=ucc.edu.co`, SMTP → Mailpit en `localhost:1025`);
   - un comentario por variable con el comando para generar secretos (ver [quickstart.md](quickstart.md));
   - `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE`, comentadas y marcadas como «solo desarrollo y E2E».
-- [ ] T005 [P] [SH] Crear `.github/workflows/ci.yml` con los trabajos `quality` y `e2e` según research R15:
+- [X] T005 [P] [SH] Crear `.github/workflows/ci.yml` con los trabajos `quality` y `e2e` según research R15:
   - servicios `postgres:17` y `axllent/mailpit`;
   - un paso que crea las bases `nova_test` y `nova_e2e` con `psql`/`createdb` (el servicio de CI no ejecuta `docker/postgres/init.sql`) y aplica `prisma migrate deploy` a cada una;
   - `npm ci`, `npm run db:generate`, `lint`, `typecheck`, `test`, `build`;
   - E2E con Playwright;
   - todos los pasos con `--if-present` mientras las capas se completan.
-- [ ] T006 [SH] Crear el paquete `shared/`:
+- [X] T006 [SH] Crear el paquete `shared/`:
   - `shared/package.json` (`@nova/shared`, `exports` con las condiciones `types` / `development` / `default` según research R11, scripts `build`, `test`, `typecheck`, dependencia `zod@4`);
   - `shared/tsconfig.json`, `shared/vitest.config.ts` y `shared/src/index.ts`, vacío por ahora.
 
@@ -78,12 +78,12 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 - [ ] T007 [P] [BE] Crear `docker-compose.yml` con `postgres:17` (usuario y base `nova`, puerto 5432, volumen persistente) y `axllent/mailpit` (1025 SMTP, 8025 web), y `docker/postgres/init.sql`, que crea las bases `nova_test` y `nova_e2e` (research R15).
 - [ ] T008 [P] [BE] Crear el workspace `db/`:
-  - `db/package.json` (`@nova/db`, dependencias `prisma@7`, `@prisma/client`, `@prisma/adapter-pg`, `pg`);
+  - `db/package.json` (`@nova/db`, dependencias `prisma@7`, `@prisma/client`, `@prisma/adapter-pg`, `pg`; scripts `generate`, `migrate` (`prisma migrate dev`) y `deploy` (`prisma migrate deploy`), que la raíz invoca con `db:generate`, `db:migrate` y `db:deploy`);
   - `db/prisma.config.ts`, `db/tsconfig.json` y `db/src/index.ts`, que exporta una fábrica del cliente Prisma con el adaptador pg y `DATABASE_URL` (research R13).
   - Verificar la configuración exacta de Prisma 7 en su documentación vigente.
 - [ ] T009 [P] [BE] Crear el workspace `backend/`:
   - `backend/package.json` (dependencias del plan; script `dev` = `tsx watch --conditions=development src/server.ts`; `build` con `tsc -b`; `start` = `node dist/server.js`);
-  - `backend/tsconfig.json`;
+  - `backend/tsconfig.json` y un `tsconfig` de build con `customConditions: []`, para compilar contra `@nova/shared/dist` (research R11);
   - `backend/vitest.config.ts`, con variables de prueba en `test.env`: `DATABASE_URL` a `nova_test`, `STUDENT_EMAIL_DOMAINS=nova-test.edu.co`, secretos ficticios y `NODE_ENV=test`.
 
 ### [FE] Migración de la plantilla existente
@@ -97,7 +97,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 ### [E2E] Workspace de pruebas extremo a extremo
 
 - [ ] T011 [P] [E2E] Crear el workspace `e2e/`:
-  - `e2e/package.json` (`@playwright/test`);
+  - `e2e/package.json` (`@playwright/test`; el script se llama `e2e`, no `test`, para que `npm test` no ejecute Playwright; la raíz lo invoca con `npm run test:e2e`);
   - `e2e/playwright.config.ts`: Chromium, más un proyecto móvil a 360 px. `webServer` arranca el backend compilado con `SERVE_FRONTEND=true` en `http://localhost:3000` (un solo origen, research R14), con `DATABASE_URL` a `nova_e2e` (migraciones aplicadas antes de arrancar), `STUDENT_EMAIL_DOMAINS=nova-test.edu.co`, `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE=20` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE=8`.
 
 **Checkpoint**: `npm install` funciona en la raíz y los workspaces existen.
@@ -112,7 +112,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 ### [SH] Contrato en código (`@nova/shared`) — se integra con la rama de definición
 
-- [ ] T012 [P] [SH] Crear `shared/src/constants.ts` con:
+- [X] T012 [P] [SH] Crear `shared/src/constants.ts` con:
 
   | Constante | Valor |
   | :--- | :--- |
@@ -126,20 +126,20 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
   | `FULL_NAME_MAX_LENGTH` | 100 |
   | `EMAIL_MAX_LENGTH` | 254 |
 
-- [ ] T013 [P] [SH] Crear `shared/src/errors.ts` con `ErrorCodeSchema` (los 21 códigos de `components.schemas.ErrorCode` en [contracts/auth.openapi.json](contracts/auth.openapi.json)), `ErrorDetailsSchema` y `ErrorResponseSchema` (`ErrorResponse` del contrato, constitución v2.3.0).
-- [ ] T014 [P] [SH] Crear `shared/src/email.ts`:
+- [X] T013 [P] [SH] Crear `shared/src/errors.ts` con `ErrorCodeSchema` (los 21 códigos de `components.schemas.ErrorCode` en [contracts/auth.openapi.json](contracts/auth.openapi.json)), `ErrorDetailsSchema` y `ErrorResponseSchema` (`ErrorResponse` del contrato, constitución v2.3.0).
+- [X] T014 [P] [SH] Crear `shared/src/email.ts`:
   - `normalizeEmail()` (trim y minúsculas);
   - `InstitutionalEmailSchema` (formato y longitud según data-model.md `User.email`; aplica `normalizeEmail` antes de validar).
-- [ ] T015 [P] [SH] Crear `shared/src/password.ts`:
+- [X] T015 [P] [SH] Crear `shared/src/password.ts`:
   - `PasswordSchema` (longitud según la sección «Validación» de `User` en data-model.md y FR-010);
   - `validatePasswordRules(password, email)` → `('too_short' | 'too_long' | 'contains_email')[]`, que también detecta la parte local del correo (FR-010, research R10).
-- [ ] T016 [SH] Crear `shared/src/auth.schemas.ts` con los esquemas de la tabla «Paquete `@nova/shared`» de [plan.md](plan.md), cada uno igual a su `components.schemas` del contrato:
+- [X] T016 [SH] Crear `shared/src/auth.schemas.ts` con los esquemas de la tabla «Paquete `@nova/shared`» de [plan.md](plan.md), cada uno igual a su `components.schemas` del contrato:
   - `FullNameSchema` (data-model.md `User.full_name`) y `VerificationCodeSchema`;
   - requests: `StartRegistrationRequestSchema`, `StartPasswordResetRequestSchema`, `VerifyCodeRequestSchema`, `CompleteRegistrationRequestSchema`, `CompletePasswordResetRequestSchema`, `LoginRequestSchema`;
   - responses: `VerificationStateSchema`, `UserSchema`, `SessionInfoSchema`, `SessionResponseSchema`.
 
   Exportar los tipos con `z.infer` y reexportar todo en `shared/src/index.ts`.
-- [ ] T017 [P] [SH] Pruebas en `shared/src/email.test.ts`, `shared/src/password.test.ts` y `shared/src/auth.schemas.test.ts`:
+- [X] T017 [P] [SH] Pruebas en `shared/src/email.test.ts`, `shared/src/password.test.ts` y `shared/src/auth.schemas.test.ts`:
   - el mismo correo con mayúsculas y espacios es equivalente;
   - nombres con tildes, ñ, guion y apóstrofo son válidos, y con números no;
   - el código acepta exactamente 6 dígitos;
