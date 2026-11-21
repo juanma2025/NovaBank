@@ -158,8 +158,9 @@ Commit: `docs(001): plan`.
 **A5. Generar las tareas** con etiqueta de capa:
 
 ```text
-/speckit-tasks Etiqueta cada tarea con exactamente una de estas capas: [SH] paquete /shared,
-[BE] backend y base de datos, [FE] frontend, [E2E] pruebas Playwright. Ordena primero las [SH].
+/speckit-tasks Etiqueta cada tarea con exactamente una de estas capas: [SH] paquete /shared y
+configuración raíz compartida, [BE] backend, base de datos y Docker Compose, [FE] frontend,
+[E2E] pruebas Playwright en /e2e. Ordena primero las [SH].
 Dentro de cada historia de usuario agrupa las tareas por capa.
 ```
 
