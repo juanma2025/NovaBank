@@ -96,7 +96,8 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 | Regla de dominio 12 (rutas públicas) | La lista de la constitución no incluye las rutas nuevas de la spec, **ver V1** | ❌ |
 | Formato de error | Se necesita un campo opcional `details`, **ver V2** | ⚠️ |
 | Flujo de equipo (etiquetas) | La configuración raíz no encaja en ninguna etiqueta, **ver V4** | ⚠️ |
-| Estructura y estilo | `/frontend`, `/backend`, `/db`, `/shared`; archivos de menos de 300 líneas; nombres según la convención | ✅ |
+| Persistencia (SQL explícito) | El store de límites (`INSERT … ON CONFLICT`), la bandeja de salida (`FOR UPDATE SKIP LOCKED`) y las transiciones del flujo de verificación (`FOR UPDATE`) necesitan SQL explícito fuera del libro contable, **ver V5** | ❌ |
+| Estructura y estilo | `/frontend`, `/backend`, `/db`, `/shared`, `/e2e`; archivos de menos de 300 líneas; nombres según la convención | ✅ |
 | Errores y validación | Zod en todas las entradas; middleware central con `requestId`; mensajes en español en un catálogo | ✅ |
 | Seguridad | `helmet`, CORS al origen propio, límites de tasa en las rutas de autenticación, auditoría inmutable con trigger | ✅ |
 
@@ -108,12 +109,25 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 | **V2** | El formato de error solo define `code`, `message` y `requestId`. La interfaz necesita los intentos restantes, los segundos de espera, el motivo del cierre de sesión y las reglas de contraseña incumplidas. | Agregar un objeto opcional `details`, sin datos sensibles. |
 | **V3** | Faltan en el stack: `pg` y `@prisma/adapter-pg` (obligatorios en Prisma 7); `jsdom`, `@testing-library/react` y `@testing-library/user-event` (los exige Testing Library); `@vitejs/plugin-react` y `@tailwindcss/vite` (plugins oficiales); y herramientas: `typescript`, `typescript-eslint`, `eslint-plugin-react-hooks`, `@types/*` y la CLI `prisma`. | Cláusula general: «se permiten los complementos oficiales, adaptadores, tipos y herramientas de desarrollo necesarios para usar una tecnología ya listada». Además, nombrar explícitamente `pg`, `@prisma/adapter-pg` y `jsdom`. |
 | **V4** | La etiqueta `[SH]` cubre solo `/shared`, pero la configuración raíz (workspaces, `tsconfig.base.json`, ESLint/Prettier, CI) la necesitan las dos capas antes de empezar. | `[SH]`: «paquete `/shared` y configuración raíz compartida». |
+| **V5** | El SQL explícito solo se permite en transacciones del libro contable. Esta spec lo necesita para el store de límites de tasa, la bandeja de salida y los bloqueos de fila del flujo de verificación (R6, R8, data-model). | Permitir SQL explícito con plantillas etiquetadas para operaciones de concurrencia en cualquier módulo, justificando cada uso en el plan. |
 
-**Estado del gate**: el diseño está completo y puede revisarse, pero **la implementación queda
-bloqueada** hasta integrar la enmienda v2.3.0 a `main` en su propio PR (Gobernanza §2).
+Además se agrega la carpeta `/e2e` a la organización del repositorio.
 
-**Re-check post-diseño**: tras la Fase 1 no aparecieron violaciones nuevas. V1 a V4 siguen
-pendientes de enmienda.
+**Estado del gate**: las cinco violaciones se resuelven con la **enmienda v2.3.0**, preparada en
+la rama `docs/constitution-2.3.0`. El diseño puede revisarse, pero **la implementación queda
+bloqueada** hasta que esa enmienda esté integrada en `main` (Gobernanza §2). Después se actualiza
+esta rama desde `main` y la tabla pasa a ✅.
+
+**Re-check post-diseño**: la revisión de la constitución durante la preparación de la enmienda
+encontró V5. No hay otras violaciones.
+
+**Usos de SQL explícito en esta spec** (exigido por la v2.3.0):
+
+| Uso | Por qué Prisma no basta |
+| :--- | :--- |
+| `PgRateLimitStore.increment` (`INSERT … ON CONFLICT DO UPDATE` con reinicio condicional) | El `upsert` de Prisma no reinicia el contador según `reset_at` de forma atómica |
+| `OutboxWorker` (`SELECT … FOR UPDATE SKIP LOCKED`) | Prisma no expresa `SKIP LOCKED`, necesario para varias instancias sin envíos duplicados |
+| Transiciones de `verification_flows` (`SELECT … FOR UPDATE`) | Evitar que dos solicitudes simultáneas consuman el mismo código o superen los 5 intentos |
 
 ## Project Structure
 
