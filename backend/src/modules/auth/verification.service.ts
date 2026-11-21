@@ -10,6 +10,7 @@ import { outboxRepository } from '../../lib/mail/outbox.repository.js';
 import type { TemplateData } from '../../lib/mail/templates/index.js';
 import type { AuthContext } from './auth.context.js';
 import { codeSendRepository } from './repositories/code-send.repository.js';
+import { userRepository } from './repositories/user.repository.js';
 import { verificationFlowRepository as flows } from './repositories/verification-flow.repository.js';
 
 export const CODE_TTL_SECONDS = 15 * 60;
@@ -204,6 +205,38 @@ export function createVerificationService(ctx: AuthContext) {
     return flow;
   }
 
+  /**
+   * Pide un código nuevo (US4, FR-005): espera de 60 s, límite por correo y hora, invalida el
+   * código anterior y reinicia los intentos. Los señuelos responden igual: el de registro reenvía
+   * el aviso «ya tienes cuenta» y el de recuperación no envía nada.
+   */
+  async function resend(flowToken: string | undefined): Promise<VerificationState> {
+    if (!flowToken) throw appError('VERIFICATION_NOT_FOUND');
+    const flow = await prisma.$transaction(async (tx) => {
+      const current = await flows.lockByTokenHash(tx, sha256Hex(flowToken));
+      const now = clock.now();
+      if (!isLive(current, now)) throw appError('VERIFICATION_NOT_FOUND');
+      if (current.status === 'verified') throw appError('VERIFICATION_STEP_INVALID');
+      const availableAt = addSeconds(current.lastCodeSentAt, RESEND_COOLDOWN_SECONDS);
+      if (now < availableAt) {
+        throw appError('RESEND_TOO_SOON', { retryAfterSeconds: secondsUntil(now, availableAt) });
+      }
+      await assertSendLimit(tx, current.email);
+      const hasAccount = (await userRepository.findByEmail(tx, current.email)) !== null;
+      const decoy = current.purpose === 'registration' ? hasAccount : !hasAccount;
+      const updated = await requestCode(tx, current, { decoy });
+      if (decoy && current.purpose === 'registration') {
+        await outboxRepository.enqueue(tx, {
+          template: 'already_registered',
+          to: current.email,
+          now,
+        });
+      }
+      return updated;
+    });
+    return toState(flow);
+  }
+
   async function markCompleted(tx: Db, flowId: string): Promise<void> {
     await flows.update(tx, flowId, { status: 'completed' });
   }
@@ -216,6 +249,7 @@ export function createVerificationService(ctx: AuthContext) {
     verify,
     createFlow,
     lockForCompletion,
+    resend,
     markCompleted,
     toState,
   };

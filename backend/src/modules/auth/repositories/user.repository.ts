@@ -19,6 +19,11 @@ export const userRepository = {
     return db.user.findUnique({ where: { id } });
   },
 
+  /** Cambio por recuperación: data-model.md `User.password_hash` y `User.password_changed_at`. */
+  async updatePassword(db: Db, id: string, passwordHash: string, now: Date): Promise<void> {
+    await db.user.update({ where: { id }, data: { passwordHash, passwordChangedAt: now } });
+  },
+
   create(db: Db, { email, fullName, passwordHash, now }: NewUser): Promise<User> {
     return db.user.create({
       data: { email, fullName, passwordHash, passwordChangedAt: now, createdAt: now },

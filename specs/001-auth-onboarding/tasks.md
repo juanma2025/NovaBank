@@ -400,7 +400,7 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
 
 ### [BE] Backend de US2
 
-- [ ] T059 [P] [US2] [BE] Crear `backend/tests/integration/session.test.ts`. Debe comprobar:
+- [X] T059 [P] [US2] [BE] Crear `backend/tests/integration/session.test.ts`. Debe comprobar:
   - login correcto (cookies con sus atributos);
   - credenciales incorrectas y correo inexistente dan el mismo `INVALID_CREDENTIALS`;
   - 5 fallos desde el mismo origen dan `LOGIN_LOCKED` con `retryAfterSeconds`, mientras que otro `nova_dev` entra;
@@ -412,17 +412,17 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
   - la inactividad y las 12 h dan `SESSION_EXPIRED`;
   - `logout` es idempotente e invalida la sesión al instante;
   - eventos `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGIN_LOCKED` y `SESSION_ENDED`.
-- [ ] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana, `deleteByEmail` y `deleteOlderThan(24 h)`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`), y agregar esa limpieza en `registerAuthJobs` (`backend/src/modules/auth/auth.jobs.ts`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
-- [ ] T061 [US2] [BE] Crear `backend/src/modules/auth/login.service.ts`:
+- [X] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana, `deleteByEmail` y `deleteOlderThan(24 h)`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`), y agregar esa limpieza en `registerAuthJobs` (`backend/src/modules/auth/auth.jobs.ts`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
+- [X] T061 [US2] [BE] Crear `backend/src/modules/auth/login.service.ts`:
   - comprueba el bloqueo por origen y el global antes de verificar, calculando su fin con las reglas de data-model.md `LoginAttempt` («el más reciente + 15 min» sobre los últimos 5 o 20 fallos, research R7) (FR-015); los intentos rechazados por bloqueo no se registran;
   - verifica con Argon2 incluso si el correo no existe, contra un hash ficticio (research R5);
   - registra el fallo y responde `INVALID_CREDENTIALS`, o `LOGIN_LOCKED` con `retryAfterSeconds` al activarse el bloqueo;
   - si es correcto, borra los fallos de ese origen en data-model.md `LoginAttempt.origin_key` y crea la sesión;
   - audita `LOGIN_SUCCEEDED`, `LOGIN_FAILED` y `LOGIN_LOCKED`.
-- [ ] T062 [US2] [BE] Extender `backend/src/modules/auth/session.service.ts` (research R2):
+- [X] T062 [US2] [BE] Extender `backend/src/modules/auth/session.service.ts` (research R2):
   - `refresh(refreshToken)`: rotación con data-model.md `Session.refresh_token_hash`, `Session.previous_refresh_token_hash` y `Session.rotated_at`; ventana de 10 s sin cookies nuevas; fuera de la ventana revoca con `reuse_detected`; actualiza la actividad;
   - `logout(refreshToken)`: data-model.md `Session.revoked_at` y `Session.revoke_reason = logout`; audita `SESSION_ENDED`.
-- [ ] T063 [US2] [BE] Agregar en las rutas y el controlador de `auth`:
+- [X] T063 [US2] [BE] Agregar en las rutas y el controlador de `auth`:
   - `POST /api/v1/auth/login`, con su limitador;
   - `POST /api/v1/auth/refresh`;
   - `POST /api/v1/auth/logout`, que borra `nova_at` y `nova_rt` y responde 204.
@@ -470,7 +470,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
 
 ### [BE] Backend de US3
 
-- [ ] T069 [P] [US3] [BE] Crear `backend/tests/integration/password-reset.test.ts`. Debe comprobar:
+- [X] T069 [P] [US3] [BE] Crear `backend/tests/integration/password-reset.test.ts`. Debe comprobar:
   - un correo inexistente recibe la misma respuesta sin correo encolado (FR-020a);
   - el sexto código en una hora da `CODE_SEND_LIMIT`, sumando los de registro (FR-005);
   - un segundo inicio de recuperación invalida el flujo anterior (`superseded`);
@@ -480,7 +480,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
   - se encola `password_changed`;
   - la contraseña anterior falla;
   - eventos `PASSWORD_RESET_REQUESTED`, `EMAIL_VERIFIED` y `PASSWORD_RESET_COMPLETED`.
-- [ ] T070 [US3] [BE] Crear `backend/src/modules/auth/password-reset.service.ts`:
+- [X] T070 [US3] [BE] Crear `backend/src/modules/auth/password-reset.service.ts`:
   - `start(email)`: aplica el límite de 5 envíos por correo y por hora (`countLastHour(email)`, FR-005); reemplaza los flujos de recuperación activos del correo; crea el flujo `password_reset` y llama a `requestCode`; si no hay cuenta, el flujo es señuelo y no se encola nada; audita `PASSWORD_RESET_REQUESTED`;
   - `complete(flowToken, password)`, en una transacción:
     - exige `verified` y `now < complete_by`;
@@ -490,7 +490,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
     - `deleteByEmail` sobre data-model.md `LoginAttempt.email`;
     - encola `password_changed`;
     - marca el flujo `completed` y audita `PASSWORD_RESET_COMPLETED`.
-- [ ] T071 [US3] [BE] Agregar las rutas `POST /api/v1/auth/password-reset` (202, `nova_vf`) y `POST /api/v1/auth/password-reset/complete` (204, borra `nova_vf`), con sus limitadores, y registrarlas en `backend/src/openapi/registry.ts`.
+- [X] T071 [US3] [BE] Agregar las rutas `POST /api/v1/auth/password-reset` (202, `nova_vf`) y `POST /api/v1/auth/password-reset/complete` (204, borra `nova_vf`), con sus limitadores, y registrarlas en `backend/src/openapi/registry.ts`.
 
 ### [FE] Frontend de US3
 
@@ -519,14 +519,14 @@ que el código anterior falla y el nuevo funciona.
 
 ### [BE] Backend de US4
 
-- [ ] T075 [P] [US4] [BE] Crear `backend/tests/integration/resend.test.ts`. Debe comprobar:
+- [X] T075 [P] [US4] [BE] Crear `backend/tests/integration/resend.test.ts`. Debe comprobar:
   - reenviar antes de 60 s da `RESEND_TOO_SOON` con `retryAfterSeconds` y `Retry-After`;
   - el sexto envío en una hora da `CODE_SEND_LIMIT`, también si se reinicia el flujo;
   - el código anterior queda inválido y los intentos se reinician;
   - si el envío anterior sigue pendiente o reintentando, se descarta y solo llega el código nuevo;
   - un flujo señuelo responde igual y cuenta para el límite; el de registro reenvía `already_registered` y el de recuperación no encola nada;
   - un flujo en `verified` da `VERIFICATION_STEP_INVALID`.
-- [ ] T076 [US4] [BE] Agregar `resend(flowToken)` en `backend/src/modules/auth/verification.service.ts`:
+- [X] T076 [US4] [BE] Agregar `resend(flowToken)` en `backend/src/modules/auth/verification.service.ts`:
   - controla data-model.md `VerificationFlow.last_code_sent_at` y el límite por correo con `CodeSend.created_at`;
   - reinicia data-model.md `VerificationFlow.code_attempts` y llama a `requestCode`, que invalida el `VerificationFlow.code_hash` anterior y encola el código nuevo; el worker lo genera al enviar;
   - en un señuelo de registro reenvía `already_registered`; en uno de recuperación no encola nada.

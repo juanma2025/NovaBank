@@ -4,9 +4,12 @@ import {
   type ResponseConfig,
 } from '@asteasolutions/zod-to-openapi';
 import {
+  CompletePasswordResetRequestSchema,
   CompleteRegistrationRequestSchema,
   ErrorResponseSchema,
+  LoginRequestSchema,
   SessionResponseSchema,
+  StartPasswordResetRequestSchema,
   StartRegistrationRequestSchema,
   VerificationStateSchema,
   VerifyCodeRequestSchema,
@@ -78,6 +81,18 @@ export function buildOpenApiDocument() {
 
   registry.registerPath({
     method: 'post',
+    path: '/auth/resend-verification',
+    operationId: 'resendVerification',
+    responses: {
+      202: json(state, 'Código nuevo encolado'),
+      404: err('VERIFICATION_NOT_FOUND'),
+      409: err('VERIFICATION_STEP_INVALID'),
+      429: err('RESEND_TOO_SOON, CODE_SEND_LIMIT o RATE_LIMITED'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
     path: '/auth/register/complete',
     operationId: 'completeRegistration',
     request: body(CompleteRegistrationRequestSchema),
@@ -88,6 +103,59 @@ export function buildOpenApiDocument() {
       409: err('VERIFICATION_STEP_INVALID o EMAIL_ALREADY_REGISTERED'),
       422: err('VERIFICATION_EXPIRED o PASSWORD_WEAK'),
     },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/password-reset',
+    operationId: 'startPasswordReset',
+    request: body(StartPasswordResetRequestSchema),
+    responses: {
+      202: json(state, 'Flujo creado'),
+      400: err('VALIDATION_ERROR'),
+      429: err('CODE_SEND_LIMIT o RATE_LIMITED'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/password-reset/complete',
+    operationId: 'completePasswordReset',
+    request: body(CompletePasswordResetRequestSchema),
+    responses: {
+      204: { description: 'Contraseña cambiada' },
+      400: err('VALIDATION_ERROR'),
+      404: err('VERIFICATION_NOT_FOUND'),
+      409: err('VERIFICATION_STEP_INVALID'),
+      422: err('VERIFICATION_EXPIRED o PASSWORD_WEAK'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/login',
+    operationId: 'login',
+    request: body(LoginRequestSchema),
+    responses: {
+      200: json(session, 'Sesión iniciada'),
+      400: err('VALIDATION_ERROR'),
+      401: err('INVALID_CREDENTIALS'),
+      429: err('LOGIN_LOCKED o RATE_LIMITED'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/refresh',
+    operationId: 'refreshSession',
+    responses: { 200: json(session, 'Sesión renovada'), 401: err('Sesión inválida') },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/logout',
+    operationId: 'logout',
+    responses: { 204: { description: 'Sesión cerrada' } },
   });
 
   registry.registerPath({

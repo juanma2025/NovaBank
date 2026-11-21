@@ -23,6 +23,37 @@ export const sessionRepository = {
     return db.session.findUnique({ where: { id } });
   },
 
+  findByRefreshHash(db: Db, refreshTokenHash: string): Promise<Session | null> {
+    return db.session.findUnique({ where: { refreshTokenHash } });
+  },
+
+  findByPreviousRefreshHash(db: Db, previousRefreshTokenHash: string): Promise<Session | null> {
+    return db.session.findFirst({ where: { previousRefreshTokenHash } });
+  },
+
+  /**
+   * Rota el refresh token solo si sigue siendo el vigente (evita dos rotaciones simultáneas).
+   * Devuelve si rotó (research R2).
+   */
+  async rotate(
+    db: Db,
+    id: string,
+    currentHash: string,
+    nextHash: string,
+    now: Date,
+  ): Promise<boolean> {
+    const result = await db.session.updateMany({
+      where: { id, refreshTokenHash: currentHash, revokedAt: null },
+      data: {
+        refreshTokenHash: nextHash,
+        previousRefreshTokenHash: currentHash,
+        rotatedAt: now,
+        lastActivityAt: now,
+      },
+    });
+    return result.count > 0;
+  },
+
   async touch(db: Db, id: string, now: Date): Promise<void> {
     await db.session.update({ where: { id }, data: { lastActivityAt: now } });
   },
