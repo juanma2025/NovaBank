@@ -1,181 +1,308 @@
-<!--
-# Sync Impact Report
-- Version change: Unversioned / Initial Template -> 1.0.0
-- Bump type: MAJOR (Initial formal ratification of Nova Neobank Constitution)
-- List of modified principles:
-  - [PRINCIPLE_1_NAME] -> I. Dinero Exacto y Libro Contable Inmutable (NON-NEGOTIABLE)
-  - [PRINCIPLE_2_NAME] -> II. Cero Código Sombra y Spec-Driven Development (SDD)
-  - [PRINCIPLE_3_NAME] -> III. Seguridad Estricta y Privacidad por Diseño
-  - [PRINCIPLE_4_NAME] -> IV. Estética Apple-Grade y Experiencia Dinámica
-  - [PRINCIPLE_5_NAME] -> V. Alcance Delimitado y Simulación Segura
-- Added sections:
-  - Naturaleza y Alcance del Proyecto
-  - Stack Tecnológico y Reglas de Implementación
-  - Reglas de Dominio y Lógica de Negocio
-  - Estructura y Estilo de Código
-  - Manejo de Errores y Validaciones
-  - Seguridad y Datos Sensibles
-  - Identidad Visual y Experiencia de Usuario
-  - Historial de Enmiendas y Lista de Verificación
-- Removed sections:
-  - Template placeholder sections ([SECTION_2_NAME], [SECTION_3_NAME])
-- Follow-up TODOs:
-  - None. All placeholders have been fully populated with concrete specifications.
--->
+# Nova Constitution
 
-# Nova Neobank Constitution
-
-Versión 1.0.0 · Documento base para Spec Kit (`/speckit-constitution`) · Idioma de producto: español
+Banca virtual para estudiantes universitarios en Colombia · Documento base para Spec Kit
+(`/speckit-constitution`) · Idioma de producto: español (es-CO)
 
 ## Core Principles
 
 ### I. Dinero Exacto y Libro Contable Inmutable (NON-NEGOTIABLE)
-- **Precisión Fiat y Cripto**: Los importes en moneda fiat DEBEN almacenarse y calcularse siempre como enteros en la unidad mínima de la moneda (centavos), NUNCA como valores de punto flotante (`number`). Los montos cripto DEBEN manejarse como cadenas decimales (tipo `NUMERIC` en base de datos y utilizando librerías de precisión decimal en código), respetando la precisión de cada activo (ej. 8 decimales para BTC, 18 para ETH).
-- **Libro Contable de Doble Entrada**: Todo movimiento de valor DEBE registrarse como asientos balanceados de débito y crédito cuya suma sea cero. Los asientos contables son estrictamente inmutables: no se editan ni se eliminan; los errores se corrigen exclusivamente mediante asientos de reversión.
-- **Saldo Nunca Negativo**: Ninguna operación (envío, pago con tarjeta, swap, retiro) puede dejar un saldo disponible por debajo de cero. La verificación y el débito contable DEBEN ejecutarse dentro de la misma transacción de base de datos con bloqueo pesimista de fila (`SELECT ... FOR UPDATE`) para prevenir condiciones de carrera.
-- **Idempotencia y Atomicidad**: Todo endpoint que transfiera o modifique valor (POST de envío, swap, recarga) EXIGE la cabecera `Idempotency-Key`. Reintentar una solicitud con la misma clave devolverá la respuesta original sin duplicar transacciones. Toda operación compuesta (swap + comisión) es estrictamente atómica: se confirma en su totalidad o se descarta íntegramente.
 
-### II. Cero Código Sombra y Spec-Driven Development (SDD)
-- **Alcance Estricto (Zero Shadow Code)**: La IA y los desarrolladores DEBEN implementar única y exclusivamente lo definido en las especificaciones aprobadas (`spec.md`). Queda prohibido añadir funcionalidades, dependencias, endpoints, tablas o complejidad técnica «por si acaso».
-- **Fuente de la Verdad Absoluta**: Esta constitución prevalece sobre cualquier instrucción o especificación. Si una solicitud o especificación entra en conflicto con las reglas constitucionales, se DEBE detener la implementación de inmediato, señalar la discrepancia y esperar la enmienda formal del documento antes de escribir código.
-- **Trazabilidad y Transparencia**: Al finalizar cada tarea, se DEBE emitir un reporte detallado de los archivos creados o modificados y las reglas de la constitución verificadas.
+- **Moneda única COP en pesos enteros**: La única moneda del MVP es el peso colombiano (COP).
+  Todo importe DEBE almacenarse y calcularse como entero en pesos. Queda prohibido usar punto
+  flotante para dinero. En la interfaz los montos se formatean con
+  `Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })`.
+- **Representación del dinero por capa**:
+  - Base de datos: columnas `BIGINT`.
+  - Código: el repositorio de cada módulo convierte el `bigint` que entrega Prisma a `number` y
+    verifica `Number.isSafeInteger`; si no es seguro, lanza un error. Fuera de los repositorios
+    el dinero siempre es `number` entero.
+  - API: los montos viajan en JSON como número entero en pesos (ej. `"amount": 25000`), nunca
+    como `bigint`, cadena ni decimal. Los esquemas Zod validan `z.number().int()` y el rango
+    permitido.
+- **Libro contable de doble entrada**: Todo movimiento de valor (recarga, transferencia, pago con
+  tarjeta, aporte o retiro de una meta de ahorro) DEBE registrarse como asientos balanceados de
+  débito y crédito cuya suma sea cero. Los asientos son inmutables: no se editan ni se eliminan;
+  los errores se corrigen solo con asientos de reversión.
+- **El saldo es derivado**: El saldo de una cuenta es la suma de sus asientos. Si se mantiene un
+  saldo materializado por rendimiento, DEBE actualizarse en la misma transacción que los asientos.
+- **Saldo nunca negativo**: Ninguna operación puede dejar un saldo disponible por debajo de cero.
+  La verificación y el débito DEBEN ejecutarse en la misma transacción de base de datos con
+  bloqueo pesimista de fila (`SELECT ... FOR UPDATE`).
+- **Idempotencia y atomicidad**: Todo endpoint que mueva dinero EXIGE la cabecera
+  `Idempotency-Key`. Reintentar con la misma clave devuelve la respuesta original sin duplicar.
+  Toda operación compuesta se confirma completa o se descarta completa.
 
-### III. Seguridad Estricta y Privacidad por Diseño
-- **Gestión Criptográfica de Credenciales**: Las contraseñas DEBEN procesarse con hash Argon2id (o bcrypt con factor de coste ≥ 12 en caso de no disponibilidad). Queda terminantemente prohibido almacenar o registrar contraseñas en texto plano.
-- **Sesiones Seguras**: La autenticación DEBE emplear JWT de acceso de corta duración (≤ 15 minutos) junto a un Refresh Token rotativo, transmitidos exclusivamente en cookies `HttpOnly`, `Secure` y `SameSite=Strict`. Prohibido el uso de `localStorage` para tokens de autenticación.
-- **Principio de Mínimo Privilegio y Ocultamiento de Superficie**: Todo usuario solo puede acceder a sus propios recursos. El intento de acceso a recursos de terceros DEBE responder con HTTP 404 (no 403) para evitar enumeración y revelación de existencia. Operaciones críticas (superación de umbrales, revelación de credenciales de tarjeta, cambios de seguridad) exigen reautenticación o 2FA.
-- **Aislamiento de Secretos**: Toda clave secreta y cadena de conexión vive en variables de entorno (`.env`, ignorado en git), con un archivo de plantilla `.env.example` libre de secretos reales. Prohibido filtrar datos de tarjetas, contraseñas o tokens en los logs.
+*Justificación*: en un sistema financiero, aunque sea simulado, un peso perdido o duplicado
+invalida todo lo demás. Estas reglas son la base que permite crecer sin reescribir el núcleo.
+
+### II. Spec-Driven Development y Cero Código Sombra
+
+- **Alcance estricto**: Se implementa única y exclusivamente lo definido en especificaciones
+  aprobadas (`specs/NNN-nombre/spec.md`). Prohibido añadir funcionalidades, dependencias,
+  endpoints, tablas o complejidad «por si acaso».
+- **Fuente de la verdad**: Esta constitución prevalece sobre cualquier spec, plan, tarea o
+  instrucción. Ante un conflicto se DEBE detener la implementación, señalar la discrepancia y
+  esperar la enmienda formal antes de escribir código.
+- **Primero la spec, después el código**: Todo cambio de comportamiento se refleja primero en
+  `spec.md` (y en `plan.md`/`tasks.md` si aplica) y solo después en el código.
+- **Paridad entre agentes**: El equipo usa varios agentes de IA (Claude Code, Google Antigravity,
+  GitHub Copilot). Todos DEBEN leer esta constitución y los artefactos de `specs/`. Ningún archivo
+  de configuración propio de un agente puede contener reglas que contradigan o amplíen esta
+  constitución; esos archivos solo remiten a ella.
+- **Trazabilidad**: Al terminar cada tarea se reporta qué archivos se crearon o modificaron y qué
+  reglas de la constitución se verificaron.
+
+### III. Seguridad Estricta, Identidad Estudiantil y Privacidad por Diseño
+
+- **Verificación por correo institucional**: Solo pueden registrarse personas con un correo cuyo
+  dominio esté en la lista permitida, configurada por variable de entorno
+  (`STUDENT_EMAIL_DOMAINS`, ej. `unal.edu.co,udea.edu.co`). La cuenta se activa al confirmar un
+  código o enlace enviado a ese correo: de un solo uso, almacenado como hash, con vigencia máxima
+  de 15 minutos, intentos limitados y reenvío con límite de tasa. Una cuenta sin verificar no
+  puede mover dinero ni recibirlo.
+- **Credenciales**: Las contraseñas se procesan con Argon2id. Prohibido almacenarlas o
+  registrarlas en texto plano.
+- **Sesiones seguras**: JWT de acceso de corta duración (≤ 15 minutos) y refresh token rotativo,
+  transmitidos solo en cookies `HttpOnly`, `Secure` y `SameSite=Strict`. Prohibido guardar tokens
+  en `localStorage` o `sessionStorage`.
+- **Mínimo privilegio**: Cada usuario solo accede a sus propios recursos. El acceso a recursos
+  ajenos responde HTTP 404 (no 403) para evitar enumeración. Las operaciones críticas (revelar
+  datos completos de la tarjeta, cambiar contraseña o correo, superar umbrales configurados)
+  exigen reautenticación con contraseña.
+- **Protección de datos personales**: El registro DEBE solicitar la aceptación explícita del
+  tratamiento de datos personales conforme a la Ley 1581 de 2012 (Habeas Data) y guardar la fecha
+  y versión del texto aceptado. Solo se recolectan los datos necesarios para la funcionalidad.
+- **Aislamiento de secretos**: Toda clave y cadena de conexión vive en variables de entorno
+  (`.env`, ignorado en git), con una plantilla `.env.example` sin secretos reales. Prohibido
+  registrar en logs contraseñas, tokens, códigos de verificación o datos de tarjeta.
 
 ### IV. Estética Apple-Grade y Experiencia Dinámica
-- **Lenguaje Visual Limpio**: Interfaz inspirada en los estándares de diseño de Apple: espacios generosos, esquinas profundamente redondeadas, tipografía de sistema (`-apple-system`, `SF Pro`, con fallback a `Inter`) y efectos de vidrio esmerilado (*glassmorphism*) en barras de navegación, hojas modales y tarjetas.
-- **Color Funcional y Temas**: Base neutra en blanco, negro y grises; color reservado a iconos, estados y acentos fríos pero vibrantes (azul hielo, violeta, verde, naranja, rojo). Toda métrica positiva/negativa DEBE acompañarse de signos/flechas explícitos además del color. Soporte nativo para modo claro y oscuro respetando las preferencias del sistema mediante tokens y variables CSS.
-- **Fluidez y Accesibilidad**: Transiciones suaves (≤ 400 ms), retroalimentación instantánea, saldo ocultable mediante toque y actualización de cotizaciones en tiempo real sin recarga. Cumplimiento del estándar WCAG 2.1 AA (contraste adecuado, foco navegable por teclado, áreas táctiles ≥ 44 px y respeto de `prefers-reduced-motion`).
+
+- **Lenguaje visual limpio**: Espacios generosos, esquinas muy redondeadas, tipografía de sistema
+  (`-apple-system`, `SF Pro`, con respaldo `Inter`) y vidrio esmerilado (*glassmorphism*) en
+  barras de navegación, hojas modales y tarjetas.
+- **Color funcional y temas**: Base neutra en blanco, negro y grises; el color se reserva a
+  iconos, estados y acentos (azul hielo, violeta, verde, naranja, rojo). Toda variación
+  positiva/negativa se acompaña de signo o flecha además del color. Modo claro y oscuro según la
+  preferencia del sistema, mediante tokens en variables CSS.
+- **Fluidez y accesibilidad**: Transiciones ≤ 400 ms, retroalimentación inmediata y saldo
+  ocultable con un toque. Cumplimiento de WCAG 2.1 AA: contraste, foco visible y navegable por
+  teclado, áreas táctiles ≥ 44 px y respeto de `prefers-reduced-motion`.
+- **Patrón «Muy pronto»**: Las funcionalidades de fases futuras PUEDEN mostrarse en la interfaz
+  como tarjetas con la etiqueta «Muy pronto», no interactivas o con un único mensaje informativo.
+  No tienen rutas de backend, tablas, datos simulados ni lógica: solo comunican la hoja de ruta.
 
 ### V. Alcance Delimitado y Simulación Segura
-- **Carácter Académico y Demostrativo**: El proyecto es un producto mínimo viable demostrativo. No custodia fondos reales ni opera con dinero fiat bancario real: el saldo fiat es un libro contable interno simulado y las cotizaciones cripto se obtienen de un proveedor simulado.
-- **Custodia Simulada**: La plataforma administra los saldos a nivel de base de datos sin generar ni manipular claves privadas criptográficas reales.
-- **Transición a Producción**: Cualquier paso hacia una operativa con dinero real (licencias financieras, KYC real, custodia de claves, pasarelas) REQUIERE una enmienda formal previa a esta constitución antes de modificar una sola línea de código.
+
+- **Carácter académico**: Nova es un MVP demostrativo para la materia de Ingeniería Web. No
+  custodia fondos reales ni se conecta a redes bancarias, PSE, Nequi, franquicias de tarjetas ni
+  blockchains. Todo saldo es un libro contable interno simulado.
+- **Entrada de dinero simulada**: El dinero entra al sistema solo mediante una «recarga simulada»
+  registrada en el libro contable contra una cuenta técnica del sistema. No existe salida de
+  dinero hacia el exterior en el MVP.
+- **Transición a producción**: Cualquier paso hacia dinero real (licencias, KYC real, pasarelas
+  de pago, custodia) REQUIERE una enmienda MAJOR previa de esta constitución.
+
+### VI. Arquitectura Escalable y Evolutiva
+
+- **Monolito modular por dominio**: El backend es un único despliegue dividido en módulos de
+  dominio. Un módulo NO accede a las tablas de otro: se comunica a través del servicio público del
+  otro módulo. Esto permite extraer un módulo como servicio independiente en el futuro sin
+  reescribir su lógica.
+- **API sin estado**: Ningún estado de sesión, de negocio ni de infraestructura vive en memoria
+  del proceso; todo persiste en PostgreSQL o en cookies firmadas. Esto incluye los contadores de
+  límite de tasa, que usan un almacén compartido en PostgreSQL (store propio que implementa la
+  interfaz `Store` de `express-rate-limit`). Así la API puede escalar horizontalmente.
+- **Contratos primero**: Cada spec que exponga endpoints DEBE definir su contrato en
+  `specs/NNN-nombre/contracts/` (OpenAPI 3.1) durante `/speckit-plan`, antes de implementarse.
+  En el código, la documentación OpenAPI se genera desde los mismos esquemas Zod con
+  `@asteasolutions/zod-to-openapi` y se publica en `/api/v1/openapi.json`. Lo generado DEBE
+  coincidir con el contrato de la spec; cualquier diferencia se corrige en la spec o en el código
+  antes del merge. Los cambios incompatibles requieren una nueva versión de prefijo (`/api/v2`).
+- **Código compartido**: Los esquemas Zod de entrada y salida, los tipos de la API, los códigos de
+  error y las utilidades puras de dinero viven en el paquete `/shared` (`@nova/shared`), usado
+  por frontend y backend. Ese paquete no depende de Express, React ni Prisma y no contiene lógica
+  de negocio.
+- **Configuración por entorno**: Límites, dominios permitidos, orígenes CORS y secretos se leen
+  de variables de entorno validadas con Zod al arrancar; si falta una variable requerida, la
+  aplicación no arranca.
+- **Reproducibilidad**: Cualquier integrante DEBE poder levantar el entorno completo con
+  `docker compose up` (servicios de infraestructura) y `npm install && npm run dev`.
 
 ## Naturaleza y Alcance del Proyecto
 
-Nova es una aplicación web de neobanco y wallet de criptoactivos destinada a personas jóvenes y profesionales digitales que buscan gestionar su dinero fiat (saldo, transferencias, tarjeta virtual) y sus activos digitales desde una interfaz única, rápida, transparente y segura.
+Nova es una banca virtual para estudiantes universitarios en Colombia: les permite recibir dinero,
+enviarlo a sus compañeros, pagar con una tarjeta virtual, ahorrar para metas y controlar sus
+gastos desde una interfaz rápida, transparente y segura.
 
-### Supuestos y Límites Operativos
-1. **Entorno Simulado**: Las operaciones financieras no tienen contraparte en redes bancarias reales ni en mainnets públicas.
-2. **Proveedor de Cotizaciones**: Los precios de mercado se consumen mediante una interfaz `PriceProvider` (simulada en este MVP). Los datos DEBEN mostrar la hora de última actualización y la interfaz DEBE invalidar precios con antigüedad superior a 60 segundos.
-3. **Gobierno Previo**: Toda modificación en el modelo de custodia, identidad legal o pasarela de pagos requiere actualización constitucional.
+### Fases
+
+1. **Fase 1 — MVP (en alcance)**: registro con verificación por correo institucional, cuenta en
+   COP con libro contable, recargas simuladas, transferencias entre estudiantes verificados,
+   tarjeta virtual simulada, metas de ahorro, presupuesto por categorías y gastos compartidos.
+2. **Fase 2 — «Muy pronto» (fuera de alcance)**: wallet de criptoactivos y swaps cripto-COP. En
+   el MVP solo existe como tarjeta «Muy pronto» en la interfaz (Principio IV). Implementarla
+   requiere una enmienda que defina sus reglas (precisión decimal por activo con `NUMERIC` y
+   `decimal.js`, `PriceProvider` simulado, cotizaciones con vigencia y control de slippage).
+
+Cualquier otra funcionalidad no listada en la Fase 1 requiere enmienda antes de especificarse.
+
+### Supuestos operativos
+
+1. **Entorno simulado**: Las operaciones no tienen contraparte en redes bancarias reales.
+2. **Zona horaria**: Las fechas se almacenan en UTC. Los límites diarios y los periodos de
+   presupuesto se calculan en la zona `America/Bogota`.
+3. **Correo electrónico**: El envío se hace por SMTP mediante una interfaz `MailProvider`. En
+   desarrollo se usa Mailpit (bandeja local en Docker); nunca se envían correos reales en pruebas.
 
 ## Stack Tecnológico y Reglas de Implementación
 
-Únicamente está permitido el uso de las tecnologías detalladas a continuación. La incorporación de cualquier otra dependencia o herramienta requiere una enmienda explícita a esta constitución.
+Solo se permiten las tecnologías listadas. Cualquier otra dependencia requiere enmienda. Las
+versiones mayores indicadas son obligatorias; las versiones exactas quedan fijadas en el
+`package-lock.json` y solo se actualizan en un PR propio.
 
 - **Frontend / UI**:
-  - React 18 impulsado por Vite (build tool y servidor de desarrollo).
-  - Tailwind CSS complementado con variables CSS para el sistema de tokens de diseño (modo claro y oscuro).
-  - Enrutamiento cliente con React Router.
-  - Gestión de estado del servidor con TanStack Query; estado local mediante React Hooks.
-  - Iconografía homogénea con `lucide-react`.
+  - React 19 con Vite.
+  - Tailwind CSS 4, configurado en CSS (`@theme`) con variables CSS para los tokens de diseño
+    (modo claro y oscuro).
+  - React Router 7 en modo SPA (sin renderizado en servidor).
+  - TanStack Query 5 para el estado del servidor; React Hooks para el estado local.
+  - `lucide-react` para la iconografía.
 - **Backend / API**:
-  - Node.js 20 LTS con framework Express.
-  - Arquitectura de API REST con payload JSON y prefijo obligatorio `/api/v1`.
-  - Validación de esquemas con Zod en los puntos de entrada.
-  - Autenticación mediante JWT de corta duración y refresh tokens rotativos.
-  - Registro estructurado de eventos con `pino`.
-- **Base de Datos y Persistencia**:
-  - PostgreSQL como motor relacional único.
-  - Mapeo objeto-relacional mediante Prisma ORM para operaciones CRUD convencionales.
-  - Se permite el uso de SQL explícito (`$queryRaw`) exclusivamente para transacciones del libro contable que exijan bloqueos de fila pesimistas (`FOR UPDATE`) y control atómico estricto.
-  - Todas las modificaciones de esquema se ejecutan a través de migraciones versionadas de Prisma. Prohibida la alteración manual de tablas.
-- **Lenguaje y Tipado**:
-  - TypeScript en modo estricto (`"strict": true`) en la totalidad del frontend y backend. Prohibido el uso de `any` implícito o explícito sin justificación de tipado genérico.
-  - JavaScript plano permitido únicamente en archivos de configuración raíz (`vite.config.js`, `tailwind.config.js`, etc.).
-- **Calidad y Pruebas**:
-  - Linter y formateador: ESLint + Prettier.
-  - Pruebas unitarias y de integración de componentes: Vitest.
-  - Pruebas de integración de API: Supertest.
-  - Pruebas de extremo a extremo (E2E): Playwright (enfocado en flujos críticos).
-  - Gestor de paquetes: `npm` con archivo de bloqueo `package-lock.json` unificado.
-- **Tecnologías Prohibidas**:
+  - Node.js 24 LTS con Express 5.
+  - API REST JSON con prefijo obligatorio `/api/v1`.
+  - Zod 4 para validar entradas, salidas y variables de entorno.
+  - `@asteasolutions/zod-to-openapi` para generar la documentación OpenAPI 3.1 desde Zod.
+  - `jsonwebtoken` para JWT, `cookie-parser` para cookies y `argon2` para contraseñas.
+  - `helmet`, `cors` y `express-rate-limit` (con store propio en PostgreSQL) para seguridad de
+    red.
+  - `pino` y `pino-http` para logs estructurados.
+  - `nodemailer` para el envío de correos SMTP.
+- **Base de datos y persistencia**:
+  - PostgreSQL 17 como motor único.
+  - Prisma ORM 7 para operaciones convencionales.
+  - SQL explícito (`$queryRaw` con plantillas etiquetadas) solo para transacciones del libro
+    contable que requieran `FOR UPDATE`.
+  - Todo cambio de esquema mediante migraciones versionadas de Prisma.
+- **Lenguaje y tipado**:
+  - TypeScript estricto (`"strict": true`) en frontend y backend. Prohibido `any` sin
+    justificación documentada.
+  - JavaScript solo en archivos de configuración raíz.
+- **Calidad y pruebas**:
+  - ESLint + Prettier.
+  - Vitest y Testing Library para pruebas unitarias y de componentes.
+  - Supertest para pruebas de integración de la API.
+  - Playwright para pruebas E2E de flujos críticos.
+  - `tsx` para ejecutar TypeScript en desarrollo.
+- **Infraestructura y herramientas**:
+  - npm workspaces (`frontend`, `backend`, `db`, `shared`) con un único `package-lock.json` en
+    la raíz.
+  - Docker Compose para PostgreSQL y Mailpit en desarrollo (Docker Desktop con WSL 2 en Windows).
+  - GitHub Actions para CI: lint, `tsc`, pruebas y build en cada PR.
+  - Spec Kit con scripts PowerShell (`--script ps`), ya que el equipo trabaja en Windows.
+- **Tecnologías prohibidas**:
   - Otros frameworks UI (Angular, Vue, Svelte, etc.).
-  - Librerías de CSS-in-JS (Styled Components, Emotion).
-  - Librerías de componentes prediseñados intrusivos (Material UI, Bootstrap, Ant Design).
-  - Bases de datos NoSQL (MongoDB, DynamoDB, etc.).
+  - CSS-in-JS (Styled Components, Emotion).
+  - Librerías de componentes intrusivas (Material UI, Bootstrap, Ant Design).
+  - Bases de datos NoSQL.
   - Dependencias comerciales de pago o con licencias restrictivas.
 
 ## Reglas de Dominio y Lógica de Negocio
 
-El cumplimiento de estas reglas de negocio es obligatorio y verificable mediante pruebas automatizadas:
+Cada regla DEBE tener al menos una prueba automatizada.
 
-1. **Dinero Siempre Exacto**:
-   - Saldo fiat representado como enteros en centavos (ej. 1000 = 10.00 EUR/USD).
-   - Saldo cripto manejado como strings de precisión arbitraria en capa de aplicación y tipo `NUMERIC` en PostgreSQL.
-2. **Contabilidad de Doble Entrada**:
-   - Todo traspaso o movimiento de balance genera un asiento de débito y un asiento de crédito inmutables.
-   - Si una operación debe anularse, se genera un asiento inverso de compensación con marca de reversión.
-3. **Saldo No Negativo y Concurrencia**:
-   - No se permite descubierto de cuenta. El saldo disponible DEBE ser suficiente antes de efectuar la deducción.
-   - La consulta y la escritura ocurren dentro de la misma transacción de base de datos con bloqueo de fila.
-4. **Idempotencia Obligatoria**:
-   - Operaciones de mutación financiera (`POST /transfers`, `POST /swaps`, `POST /cards/:id/charge`) exigen cabecera `Idempotency-Key`.
-   - Se almacena el resultado vinculado a la clave; solicitudes idénticas posteriores devuelven el resultado cacheado. Si el cuerpo de la petición difiere con la misma clave, se devuelve error 409 Conflict.
-5. **Swaps Cripto-Fiat**:
-   - La operación de intercambio requiere una cotización previa (`quoteId`) con vigencia máxima de 30 segundos.
-   - Si la cotización expira o el slippage supera el margen configurado, la orden es rechazada con código 422.
-   - Las comisiones asociadas DEBEN transparentarse al usuario antes de la confirmación.
-6. **Límites Operativos**:
-   - Se aplican límites máximos por transacción y límites agregados diarios por usuario, configurables por variables de entorno.
-   - La superación de límites devuelve error HTTP 422 indicando el límite excedido.
-7. **Ciclo de Vida Transaccional**:
-   - Estados estrictos permitidos: `pendiente` → `completada` | `fallida` | `revertida`.
-   - Prohibida cualquier transición de estado fuera de dicha máquina de estados finita.
-8. **Tarjeta Virtual**:
-   - Una tarjeta en estado `congelada` rechaza cualquier intento de autorización o débito de forma inmediata.
-   - En vistas estándar solo se exponen los últimos 4 dígitos. El PAN completo y el CVV solo se entregan tras reautenticación activa del usuario y NUNCA se almacenan en logs o cachés cliente.
-9. **Políticas de Autenticación de Rutas**:
-   - Todas las rutas excepto `/auth/register`, `/auth/login` y `/health` exigen token JWT válido.
-   - Las acciones sobre recursos ajenos responden sistemáticamente con HTTP 404 para proteger la privacidad.
+1. **Dinero exacto**: Importes en pesos enteros COP; montos de entrada deben ser enteros
+   positivos.
+2. **Doble entrada**: Todo movimiento genera asientos de débito y crédito inmutables; las
+   anulaciones se hacen con un asiento inverso marcado como reversión.
+3. **Saldo no negativo y concurrencia**: Sin sobregiro. Consulta y escritura en la misma
+   transacción con bloqueo de fila.
+4. **Idempotencia**: Todo `POST` que mueva dinero exige `Idempotency-Key`. Se guarda el resultado
+   asociado a la clave y al usuario; repetir la clave con el mismo cuerpo devuelve el resultado
+   guardado y con un cuerpo distinto devuelve 409.
+5. **Estudiantes verificados**: Solo usuarios con correo institucional verificado pueden enviar,
+   recibir, recargar, usar la tarjeta o crear metas. El destinatario de una transferencia se
+   identifica por correo institucional o alias y DEBE estar verificado.
+6. **Límites operativos**: Límite por transacción y límite diario agregado por usuario,
+   configurables por variables de entorno. Superarlos devuelve 422 indicando el límite excedido.
+7. **Ciclo de vida transaccional**: Estados permitidos `pendiente` → `completada` | `fallida` |
+   `revertida`. Prohibida cualquier otra transición.
+8. **Tarjeta virtual**: Una tarjeta `congelada` rechaza toda autorización de inmediato. En vistas
+   estándar solo se muestran los últimos 4 dígitos. El número completo y el CVV se entregan solo
+   tras reautenticación y nunca se guardan en logs ni cachés del cliente. Los pagos con tarjeta
+   son simulados.
+9. **Metas de ahorro**: Cada meta es una subcuenta del libro contable del usuario. Aportar o
+   retirar es un movimiento contable entre la cuenta principal y la meta; el saldo de la meta
+   nunca es negativo y su dinero no está disponible para gastar hasta que se retira.
+10. **Presupuesto**: Los presupuestos por categoría son informativos: alertan al acercarse o
+    superar el tope, pero nunca bloquean una operación.
+11. **Gastos compartidos**: Una solicitud de división no mueve dinero por sí misma. El dinero solo
+    se mueve cuando cada participante paga su parte mediante una transferencia normal, sujeta a
+    todas las reglas anteriores.
+12. **Rutas autenticadas**: Todas las rutas exigen JWT válido excepto `/auth/register`,
+    `/auth/login`, `/auth/verify-email`, `/auth/resend-verification`, `/auth/refresh` y `/health`.
 
 ## Estructura y Estilo de Código
 
-### Organización del Repositorio
-El repositorio mantiene una estructura dividida en tres carpetas raíz, sin lógica dispersa fuera de ellas:
-- `/frontend`: Aplicación React + Vite (`src/app`, `src/features/<dominio>`, `src/components`, `src/lib`, `src/styles`).
-- `/backend`: API Node.js modular (`src/modules/<dominio>` estructurado en `routes`, `controller`, `service`, `schema`; además de `src/middleware`, `src/config`, `src/lib`).
-- `/db`: Esquema de datos Prisma, migraciones versionadas y scripts de inicialización de datos (`seed.ts`).
-- **Dominios Iniciales**: `auth`, `accounts`, `ledger`, `transfers`, `crypto`, `swaps`, `cards` y `profile`.
+### Organización del repositorio
 
-### Estilo de Programación y Buenas Prácticas
-- **Separación de Responsabilidades**: Las rutas validan y enrutan; los controladores orquestan la solicitud/respuesta; los servicios contienen la lógica de negocio pura; el acceso a datos queda confinado a repositorios o clientes Prisma.
-- **Componentes React**: Exclusivamente funciones declarativas con hooks. Prohibido el uso de clases. La lógica de negocio pesada no debe habitar en componentes visuales.
-- **Límite de Complejidad**: Funciones pequeñas con propósito único. Ningún archivo debe exceder las 300 líneas de código sin una justificación arquitectónica explícita.
-- **Convenciones de Nomenclatura**:
-  - Variables y funciones: `camelCase`.
-  - Componentes, interfaces y tipos: `PascalCase`.
-  - Constantes globales: `UPPER_SNAKE_CASE`.
-  - Archivos de componentes React: `PascalCase.tsx`.
-  - Archivos lógicos y de utilidad: `kebab-case.ts`.
-  - Entidades y columnas de base de datos: `snake_case`.
-  - Nombres de código en inglés; textos y mensajes de cara al usuario en español, centralizados en un catálogo o módulo único para futura internacionalización.
-- **Control de Versiones**:
-  - Ramas creadas a partir de especificaciones formales.
-  - Mensajes de confirmación bajo el estándar Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`).
-  - Ninguna rama se integra si no supera satisfactoriamente linting, chequeo de tipos (`tsc`) y suite de pruebas automatizadas.
-- **Requisitos de Pruebas**:
-  - Cada regla de dominio definida en esta constitución DEBE tener como mínimo una prueba automatizada.
-  - Los flujos críticos (enviar fondos, swap de activos y congelar tarjeta) DEBEN contar con pruebas de extremo a extremo automatizadas con Playwright.
+- `/frontend`: React + Vite (`src/app`, `src/features/<dominio>`, `src/components`, `src/lib`,
+  `src/styles`).
+- `/backend`: API modular (`src/modules/<dominio>` con `routes`, `controller`, `service`,
+  `schema`; además `src/middleware`, `src/config`, `src/lib`).
+- `/db`: esquema Prisma, migraciones versionadas y `seed.ts`.
+- `/shared`: paquete `@nova/shared` con esquemas Zod, tipos de la API, códigos de error y
+  utilidades puras de dinero (ver Principio VI).
+- `/specs`: especificaciones de Spec Kit, una carpeta por funcionalidad.
+- En la raíz solo viven archivos de configuración y herramientas (workspaces, Docker Compose,
+  CI, `.specify/`, carpetas de agentes, documentación); nunca lógica de aplicación.
+- **Dominios del MVP**: `auth`, `profile`, `accounts`, `ledger`, `topups`, `transfers`, `cards`,
+  `savings`, `budgets` y `splits`.
+
+### Estilo de programación
+
+- **Separación de responsabilidades**: las rutas validan y enrutan; los controladores orquestan;
+  los servicios contienen la lógica de negocio; el acceso a datos queda confinado a repositorios
+  o al cliente Prisma del propio módulo.
+- **Componentes React**: solo funciones con hooks; sin lógica de negocio pesada en componentes
+  visuales.
+- **Complejidad**: funciones pequeñas de propósito único; ningún archivo supera 300 líneas sin
+  justificación explícita.
+- **Nomenclatura**: `camelCase` para variables y funciones; `PascalCase` para componentes, tipos e
+  interfaces; `UPPER_SNAKE_CASE` para constantes globales; `PascalCase.tsx` para componentes;
+  `kebab-case.ts` para lógica; `snake_case` para tablas y columnas. Código en inglés; textos de
+  cara al usuario en español, centralizados en un único catálogo.
+- **Compatibilidad multiplataforma**: los scripts de `package.json` DEBEN funcionar en Windows
+  (sin comandos exclusivos de bash). Un `.gitattributes` normaliza los finales de línea a LF.
+
+### Flujo de trabajo en equipo
+
+- **Una rama por spec** con el nombre de su carpeta (ej. `001-auth-onboarding`), integrada a
+  `main` mediante PR.
+- **Numeración coordinada**: antes de ejecutar `/speckit-specify`, el equipo acuerda qué número y
+  nombre tomará cada funcionalidad para evitar colisiones.
+- **Revisión cruzada**: `spec.md` y `plan.md` de cada funcionalidad los revisa el otro integrante
+  antes de implementar; todo PR requiere aprobación del otro integrante.
+- **Commits** con Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
+- **Puertas de calidad**: ningún PR se integra si falla lint, `tsc`, pruebas o build en CI.
+- **Pruebas**: cada regla de dominio tiene al menos una prueba; los flujos críticos (registro y
+  verificación, transferencia, congelar tarjeta) tienen pruebas E2E con Playwright.
 
 ## Manejo de Errores y Validaciones
 
-### Experiencia de Usuario (UI)
-- Mensajes de error claros, humanos, concisos y accionables redactados en español.
-- Prohibido exponer stack traces, errores SQL o códigos internos al usuario final.
-- Toda vista debe manejar consistentemente los tres estados: Carga (*loading*), Vacío (*empty*) y Error (*error*).
-- Las operaciones destructivas o con impacto financiero exigen un diálogo de confirmación explícito antes de su despacho.
-- Formularios con validación inmediata en el cliente para mejorar la usabilidad, entendiendo que esta nunca sustituye a la validación estricta del backend.
+### Experiencia de usuario
 
-### Especificación de la API Backend
-- Toda entrada (body, query params, path params) se valida mediante esquemas Zod antes de acceder al servicio de negocio.
-- Estructura uniforme de respuestas de error:
+- Mensajes de error claros, humanos y accionables en español.
+- Prohibido mostrar stack traces, errores SQL o códigos internos al usuario.
+- Toda vista maneja los estados de carga, vacío y error.
+- Las operaciones con impacto financiero o destructivas exigen confirmación explícita, mostrando
+  el monto y el destinatario.
+- Validación inmediata en el cliente, que nunca sustituye la validación del backend.
+
+### API
+
+- Toda entrada (body, query y params) se valida con Zod antes de llegar al servicio.
+- Formato uniforme de error:
   ```json
   {
     "error": {
@@ -185,66 +312,69 @@ El repositorio mantiene una estructura dividida en tres carpetas raíz, sin lóg
     }
   }
   ```
-- Mapeo canónico de códigos HTTP:
-  - `400 Bad Request`: Datos de entrada inválidos o esquema Zod no superado.
-  - `401 Unauthorized`: No autenticado o token vencido/inválido.
-  - `403 Forbidden`: Autenticado pero sin privilegios suficientes.
-  - `404 Not Found`: Recurso inexistente o perteneciente a otro usuario.
-  - `409 Conflict`: Conflicto de estado (idempotencia repetida con payload dispar, colisión de concurrencia).
-  - `422 Unprocessable Entity`: Regla de negocio violada (fondos insuficientes, límite diario alcanzado, cotización caducada).
-  - `429 Too Many Requests`: Límite de tasa de peticiones alcanzado (*rate limit*).
-  - `500 Internal Server Error`: Excepción no controlada; respuesta opaca al cliente con registro detallado en servidor.
-- Un middleware centralizado intercepta todas las excepciones, inyecta el `requestId` y envía el detalle técnico a `pino`.
+- Códigos HTTP:
+  - `400`: entrada inválida.
+  - `401`: no autenticado o token vencido.
+  - `403`: autenticado sin privilegio (ej. cuenta sin verificar intentando mover dinero).
+  - `404`: recurso inexistente o de otro usuario.
+  - `409`: conflicto de estado o idempotencia con cuerpo distinto.
+  - `422`: regla de negocio violada (fondos insuficientes, límite alcanzado, tarjeta congelada).
+  - `429`: límite de tasa alcanzado.
+  - `500`: error no controlado; respuesta opaca al cliente y detalle en los logs.
+- Un middleware centralizado captura las excepciones, inyecta el `requestId` y registra el
+  detalle con `pino`.
 
 ## Seguridad y Protección de Datos Sensibles
 
-- **Políticas de Autenticación**: Tokens de acceso con vida útil máxima de 15 minutos. Rotación obligatoria de refresh tokens para detectar reutilizaciones no autorizadas.
-- **Configuración de Cabeceras y Red**: Uso de `helmet` para configurar CSP, HSTS y cabeceras de defensa en profundidad. CORS configurado exclusivamente para permitir el origen del frontend registrado.
-- **Defensa contra Abusos**: Límite de tasa (*rate limiting*) aplicado en endpoints de autenticación, emisión de tarjetas y transferencias de dinero.
-- **Parametrización Absoluta**: Todas las consultas a PostgreSQL se ejecutan parametrizadas a través del ORM o de templates etiquetados para prevenir inyecciones SQL.
-- **Registro de Auditoría**: Todo movimiento de fondos y evento de seguridad (inicio de sesión, cambio de clave, congelamiento de tarjeta) genera un registro inmutable de auditoría con identificación de usuario, marca temporal y `requestId`.
-- **Higiene en Frontend**: Prohibido incluir credenciales de administrador, claves privadas o secretos de infraestructura en el bundle del cliente; todo contenido dinámico debe sanitizarse para mitigar XSS.
+- **Cabeceras y red**: `helmet` para CSP, HSTS y cabeceras de defensa; CORS limitado al origen
+  del frontend configurado.
+- **Límites de tasa**: en registro, login, verificación y reenvío de código, emisión de tarjetas,
+  recargas y transferencias, con contadores en el almacén compartido de PostgreSQL.
+- **Consultas parametrizadas**: siempre mediante el ORM o plantillas etiquetadas.
+- **Auditoría**: todo movimiento de dinero y evento de seguridad (registro, verificación, inicio
+  de sesión, cambio de contraseña, congelamiento de tarjeta) genera un registro inmutable con
+  usuario, marca de tiempo y `requestId`.
+- **Higiene del frontend**: ningún secreto en el bundle del cliente; todo contenido dinámico se
+  sanitiza para mitigar XSS.
 
 ## Identidad Visual y Experiencia de Usuario
 
-- **Estilo Visual**: Lenguaje limpio y minimalista inspirado en Apple. Bordes generosos con radio de curvatura acentuado, contrastes controlados y efectos de desenfoque translúcido (*backdrop-filter: blur*).
-- **Tipografía y Legibilidad**: Fuentes tipográficas nativas del sistema (`-apple-system`, `BlinkMacSystemFont`, `SF Pro Display/Text`) con respaldo de Google Fonts (`Inter`).
-- **Paleta de Colores**: Base acromática en escala de grises. Colores semánticos aplicados como acentos:
-  - Verde: Variaciones positivas y saldos entrantes.
-  - Rojo: Variaciones negativas, gastos y alertas críticas.
-  - Azul hielo / Violeta: Acentos primarios de marca e interacciones destacadas.
-  - Naranja: Advertencias y estados en proceso.
-- **Diseño Adaptativo**: Experiencia optimizada desde teléfonos móviles compactos (360 px) hasta pantallas de escritorio amplias. En interfaces móviles, barra de navegación inferior flotante; en escritorio, menú lateral con paneles organizados en cuadrículas dinámicas.
-- **Rendimiento**: Tiempo de primera carga interactiva de la vista principal inferior a 2,5 segundos sobre redes 4G móviles estándar, optimizado mediante división de código (*code splitting*) y carga perezosa de rutas (*lazy loading*).
+- **Estilo**: minimalista inspirado en Apple, bordes con radio acentuado, contrastes controlados y
+  desenfoque translúcido (`backdrop-filter: blur`).
+- **Tipografía**: fuentes del sistema (`-apple-system`, `BlinkMacSystemFont`, `SF Pro`) con
+  respaldo `Inter`.
+- **Paleta**: base acromática con acentos semánticos: verde para ingresos y variaciones
+  positivas; rojo para gastos y alertas críticas; azul hielo y violeta para la marca e
+  interacciones; naranja para advertencias y estados en proceso.
+- **Diseño adaptativo**: desde 360 px hasta escritorio. En móvil, barra de navegación inferior
+  flotante; en escritorio, menú lateral con paneles en cuadrícula.
+- **Rendimiento**: primera carga interactiva de la vista principal en menos de 2,5 s sobre 4G,
+  con división de código y carga diferida de rutas.
 
 ## Governance
 
-1. **Supremacía Constitucional**: Esta constitución constituye la norma fundamental y máxima fuente de la verdad para el proyecto Nova Neobank. Prevalece sobre cualquier especificación técnica, tarjeta de tarea, discusión o preferencia puntual.
-2. **Procedimiento de Enmienda**: Toda modificación a los principios, reglas de dominio o tecnologías descritas en este documento exige:
-   - Modificación previa de `.specify/memory/constitution.md`.
-   - Incremento de la versión semántica del documento de acuerdo con el impacto de la reforma:
-     - **MAJOR**: Modificaciones, eliminaciones o cambios de alcance incompatibles con principios previos.
-     - **MINOR**: Incorporación de nuevas secciones, dominios, principios o reglas materiales complementarias.
-     - **PATCH**: Correcciones de formato, redacción, aclaraciones terminológicas o refinamientos menores.
-   - Revisión y actualización de las especificaciones (`spec.md`) dependientes.
-   - Registro en la tabla de historial de enmiendas.
-3. **Control y Validación Continua**: Cada revisión de código (PR) o ciclo de implementación guiado por IA debe certificar explícitamente el cumplimiento de las directrices aquí plasmadas.
+1. **Supremacía constitucional**: Esta constitución es la norma máxima del proyecto Nova y
+   prevalece sobre cualquier spec, plan, tarea, conversación o preferencia puntual.
+2. **Procedimiento de enmienda**: Toda modificación exige:
+   - Editar `.specify/memory/constitution.md` en un PR propio, aprobado por ambos integrantes y
+     integrado antes de continuar con trabajo que dependa del cambio.
+   - Incrementar la versión semántica:
+     - **MAJOR**: eliminación o redefinición incompatible de principios o del alcance.
+     - **MINOR**: nuevas secciones, dominios, principios o reglas materiales.
+     - **PATCH**: correcciones de redacción, formato o aclaraciones.
+   - Revisar y actualizar las specs dependientes.
+   - Registrar el cambio en el historial de enmiendas.
+3. **Cumplimiento continuo**: Cada PR y cada ciclo de implementación guiado por IA certifica el
+   cumplimiento de esta constitución (sección «Constitution Check» de `plan.md`).
 
 ### Historial de Enmiendas
 
-| Versión | Fecha | Autor / Tipo | Resumen del Cambio |
+| Versión | Fecha | Tipo | Resumen del cambio |
 | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-19 | Ratificación Inicial | Constitución fundacional del proyecto Nova Neobank estableciendo principios core, stack tecnológico estricto, reglas de negocio financiero simulado, seguridad y lineamientos SDD. |
-
-### Lista de Verificación de Aprobación
-- [x] El propósito, la naturaleza y los usuarios del proyecto están formalmente delimitados.
-- [x] El stack tecnológico está definido de forma exhaustiva y sin ambigüedades.
-- [x] Las reglas críticas de negocio (contabilidad, precisión, idempotencia) son auditables y comprobables.
-- [x] La estructura del repositorio y las convenciones de código están estandarizadas.
-- [x] Se cuenta con un modelo uniforme de validación y gestión de errores.
-- [x] El agente de IA cuenta con directrices operativas estrictas que impiden la generación de código sombra.
-- [x] Se han eliminado todos los marcadores provisionales y textos de instrucción de la plantilla base.
+| **1.0.0** | 2026-10-19 | Ratificación inicial | Constitución fundacional de Nova Neobank: principios, stack, reglas de negocio financiero simulado, seguridad y lineamientos SDD. |
+| **2.0.0** | 2026-11-20 | MAJOR | Enfoque en estudiantes universitarios de Colombia; moneda única COP en pesos enteros; verificación por correo institucional; cripto movida a Fase 2 con patrón «Muy pronto»; nuevos dominios (recargas, metas, presupuesto, gastos compartidos); nuevo Principio VI de arquitectura escalable; stack actualizado (React 19, Node 24 LTS) y dependencias de seguridad declaradas; flujo de trabajo en equipo multiagente en Windows. |
+| **2.1.0** | 2026-11-20 | MINOR | Representación del dinero por capa (BIGINT → `number` entero seguro → JSON entero); límites de tasa con almacén compartido en PostgreSQL; generación de OpenAPI desde Zod con `@asteasolutions/zod-to-openapi`; nuevo paquete `/shared` en los workspaces; versiones mayores fijadas (Express 5, Zod 4, Tailwind 4, React Router 7, TanStack Query 5, Prisma 7, PostgreSQL 17). |
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-10-19
+**Version**: 2.1.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20
