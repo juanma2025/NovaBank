@@ -243,8 +243,8 @@ mismo aplica a la recuperación de contraseña.
   estudiante y, aunque haya actividad, a las 12 horas de haberse iniciado. También termina al
   cerrar sesión. Cuenta como actividad cualquier interacción con Nova (navegar, escribir, pulsar
   un botón) en cualquiera de sus pestañas abiertas.
-- **FR-016a**: Al minuto 14 de inactividad, el sistema DEBE mostrar un aviso con cuenta regresiva
-  de 60 segundos y el botón «Seguir conectado». Si el estudiante lo pulsa, la sesión continúa; si
+- **FR-016a**: A más tardar al minuto 14 de inactividad (puede aparecer hasta un minuto antes),
+  el sistema DEBE mostrar un aviso con cuenta regresiva de 60 segundos y el botón «Seguir conectado». Si el estudiante lo pulsa, la sesión continúa; si
   no responde, la sesión se cierra y Nova lo lleva a iniciar sesión con un mensaje que explica
   que su sesión terminó por inactividad.
 - **FR-017**: El sistema DEBE permitir cerrar sesión desde cualquier pantalla interna; al

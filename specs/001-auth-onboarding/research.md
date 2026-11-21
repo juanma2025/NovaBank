@@ -134,12 +134,15 @@ de forma síncrona (el tiempo de respuesta revela si se envió).
 
 1. **Encolar**: el servicio de negocio inserta una fila en `email_outbox`, en la misma transacción
    que crea o actualiza el flujo. La fila guarda solo la plantilla, el destinatario, una
-   referencia lógica al flujo (`verification_flow_id`) y un `payload` sin datos secretos.
+   referencia lógica al flujo (`verification_flow_id`) y un `payload` sin datos secretos. Al
+   encolar un código nuevo, los correos de código aún pendientes del mismo flujo pasan a
+   `discarded`, para que un reintento atrasado no reemplace el código más reciente.
 2. **Preparar al enviar**: cada módulo registra en el worker un *preparador* por plantilla
    (`outbox.registerPreparer(template, fn)`). Para `verification_code` y `password_reset_code`,
    el módulo `auth` registra `verificationService.prepareCodeEmail(flowId, tx)`, que:
    - bloquea el flujo (`FOR UPDATE`);
-   - si ya no está en `awaiting_code`, descarta el correo;
+   - si ya no está en `awaiting_code`, o si la fila de la bandeja se creó antes de
+     `last_code_sent_at` (hay un código más reciente pedido), descarta el correo;
    - genera el código, guarda solo su HMAC en `code_hash`, fija `code_expires_at = now + 15 min`
      y `expires_at`, y devuelve el código para el cuerpo del correo.
 
@@ -156,15 +159,23 @@ de forma síncrona (el tiempo de respuesta revela si se envió).
    de reintentarse.
 5. **Qué ve el usuario**: la API responde 202 aunque el servicio de correo esté caído. Si el
    código no llega, el usuario lo pide de nuevo con «Reenviar código» (historia de usuario 4).
-6. **Limpieza**: el mismo worker borra cada hora los flujos vencidos hace más de 24 h, los
-   intentos de login de más de 24 h, los contadores de límite de tasa vencidos y las filas
-   `sent`/`failed` de más de 7 días.
+6. **Limpieza**: un programador de mantenimiento (`backend/src/lib/maintenance.ts`) ejecuta cada
+   hora las tareas de limpieza que **cada dueño registra para sus propias tablas**
+   (`registerCleanup(name, fn)`), respetando el Principio VI:
+   - `auth`: flujos vencidos hace más de 24 h, `code_sends` e intentos de login de más de 24 h;
+   - middleware de límites: contadores de `rate_limit_hits` vencidos;
+   - `lib/mail`: filas `sent`, `failed` y `discarded` de más de 7 días.
+
+   Los preparadores y las limpiezas se registran al arrancar, en `server.ts`, antes de iniciar el
+   worker y el programador.
 
 **Rationale**:
 - Cumple el Principio III: el código solo se guarda como hash, nunca cifrado ni en claro.
 - Una falla de SMTP no rompe el registro.
 - El tiempo de respuesta no revela si se envió un correo (R5).
 - `SKIP LOCKED` permite varias instancias de la API sin enviar duplicados (Principio VI).
+- Ni el worker ni el programador acceden a tablas de otro módulo: solo ejecutan funciones que
+  cada dueño registró (Principio VI).
 
 **Alternatives considered**:
 - *Envío síncrono en la solicitud*: una falla de SMTP devolvería 500 y el tiempo delataría cuentas.

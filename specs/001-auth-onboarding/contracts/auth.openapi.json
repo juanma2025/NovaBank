@@ -805,7 +805,8 @@
           },
           "codeExpiresAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Vencimiento del código. Hasta que el correo se envía es provisional y puede correrse unos segundos; al enviarse queda en envío + 15 min."
           },
           "resendAvailableAt": {
             "type": "string",

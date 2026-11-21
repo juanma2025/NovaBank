@@ -211,14 +211,15 @@ bloqueo activo no se insertan.
 | `template` | enum `email_template` (`verification_code`, `already_registered`, `password_reset_code`, `password_changed`) | NOT NULL |
 | `verification_flow_id` | uuid | NULL; referencia lógica (sin FK) al flujo, obligatoria para `verification_code` y `password_reset_code` |
 | `payload` | jsonb | NOT NULL, default `{}`; datos no secretos de la plantilla. Nunca contiene códigos, contraseñas ni tokens |
-| `status` | enum `outbox_status` (`pending`, `sent`, `failed`) | NOT NULL |
+| `status` | enum `outbox_status` (`pending`, `sent`, `failed`, `discarded`) | NOT NULL |
 | `attempts` | smallint | NOT NULL, default 0, máximo 5 |
 | `next_attempt_at` | timestamptz | NOT NULL |
 | `last_error` | varchar(500) | NULL; mensaje técnico sin datos personales |
 | `created_at` | timestamptz | NOT NULL |
 | `sent_at` | timestamptz | NULL |
 
-**Índice**: `(status, next_attempt_at)`.
+**Índices**: `(status, next_attempt_at)` y `(verification_flow_id) WHERE status = 'pending'`,
+para descartar los correos de código pendientes de un flujo.
 
 **Preparación**: antes de enviar, el worker llama al preparador que el módulo dueño registró
 para la plantilla. Para las plantillas de código, `auth` genera el código en ese momento y
@@ -226,8 +227,9 @@ guarda solo su hash en `VerificationFlow.code_hash` (research R6).
 
 **Transiciones**:
 - `pending` → `sent` cuando el envío funciona.
-- `pending` → `sent` sin enviar, si el preparador descarta el correo (el flujo ya no espera
-  código).
+- `pending` → `discarded`, sin enviar, si el preparador descarta el correo (el flujo ya no
+  espera código o ya se pidió uno más reciente), o si se encola un código nuevo para el mismo
+  flujo.
 - `pending` → `pending` cuando falla y quedan intentos: `attempts + 1` y `next_attempt_at` con
   espera exponencial.
 - `pending` → `failed` cuando se llega a 5 intentos.

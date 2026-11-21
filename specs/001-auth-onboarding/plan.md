@@ -178,7 +178,7 @@ db/                          # [BE] @nova/db
 
 backend/                     # [BE]
 ├── src/
-│   ├── server.ts            # arranque: HTTP + worker de la bandeja de salida
+│   ├── server.ts            # arranque: registra preparadores y limpiezas, HTTP, worker y mantenimiento
 │   ├── app.ts               # fábrica de la app Express (sin listen, para Supertest)
 │   ├── config/env.ts        # esquema Zod de las variables; falla al arrancar si falta alguna
 │   ├── lib/
@@ -186,6 +186,7 @@ backend/                     # [BE]
 │   │   ├── errors.ts        # AppError(code, status, details)
 │   │   ├── crypto.ts        # tokens aleatorios, sha256, hmac
 │   │   ├── clock.ts         # reloj inyectable para pruebas
+│   │   ├── maintenance.ts   # registro y ejecución horaria de limpiezas por dueño
 │   │   ├── audit/           # audit.service.ts, audit.repository.ts
 │   │   └── mail/            # mail-provider.ts, smtp-provider.ts, outbox.repository.ts,
 │   │                        # outbox-worker.ts, templates/ (4 plantillas en español)
@@ -199,6 +200,7 @@ backend/                     # [BE]
 │   │   ├── auth.routes.ts
 │   │   ├── auth.controller.ts
 │   │   ├── auth.cookies.ts           # opciones y nombres de cookies
+│   │   ├── auth.jobs.ts              # registerAuthJobs: preparador de códigos y limpiezas de auth
 │   │   ├── registration.service.ts
 │   │   ├── verification.service.ts   # verificar, reenviar, estado
 │   │   ├── password-reset.service.ts
@@ -262,7 +264,8 @@ pertenece a una sola capa.
 | :--- | :--- |
 | `modules/auth` | Dueño de `users`, `data_consents`, `verification_flows`, `code_sends`, `sessions` y `login_attempts`. Expone `sessionService.validate()` para el middleware y para futuros módulos. |
 | `lib/audit` | `audit.record(type, { userId?, email?, requestId, metadata })`. Solo inserta. |
-| `lib/mail` | `outbox.enqueue(template, to, { flowId?, payload }, tx)` dentro de la transacción de negocio; `outbox.registerPreparer(template, fn)` para que cada módulo prepare el contenido al enviar (el módulo `auth` genera ahí el código); `OutboxWorker` prepara, envía y limpia (R6). |
+| `lib/mail` | `outbox.enqueue(template, to, { flowId?, payload }, tx)` dentro de la transacción de negocio; `outbox.registerPreparer(template, fn)` para que cada módulo prepare el contenido al enviar (el módulo `auth` genera ahí el código); `OutboxWorker` prepara y envía (R6). |
+| `lib/maintenance` | `registerCleanup(name, fn)` y ejecución horaria; cada dueño registra la limpieza de sus propias tablas (R6, Principio VI). |
 | `middleware/rate-limit` | Límites por IP con `PgRateLimitStore` (R7, R8). |
 
 ### Endpoints

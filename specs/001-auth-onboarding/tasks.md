@@ -66,7 +66,8 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
   - `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE`, comentadas y marcadas como «solo desarrollo y E2E».
 - [ ] T005 [P] [SH] Crear `.github/workflows/ci.yml` con los trabajos `quality` y `e2e` según research R15:
   - servicios `postgres:17` y `axllent/mailpit`;
-  - `npm ci`, `npm run db:generate`, `prisma migrate deploy`, `lint`, `typecheck`, `test`, `build`;
+  - un paso que crea las bases `nova_test` y `nova_e2e` con `psql`/`createdb` (el servicio de CI no ejecuta `docker/postgres/init.sql`) y aplica `prisma migrate deploy` a cada una;
+  - `npm ci`, `npm run db:generate`, `lint`, `typecheck`, `test`, `build`;
   - E2E con Playwright;
   - todos los pasos con `--if-present` mientras las capas se completan.
 - [ ] T006 [SH] Crear el paquete `shared/`:
@@ -182,7 +183,8 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
 - [ ] T025 [P] [BE] Crear `backend/src/middleware/same-origin.ts`: en `POST`/`PUT`/`PATCH`/`DELETE` exige `Content-Type: application/json` (salvo cuerpo vacío) y `Origin` igual a `APP_ORIGIN`; si no, responde 403.
 - [ ] T026 [BE] Crear `backend/src/middleware/rate-limit/pg-store.ts`, que implementa la interfaz `Store` de `express-rate-limit`:
   - `increment` con `$executeRaw` y `INSERT … ON CONFLICT DO UPDATE` que reinicia según data-model.md `RateLimitHit.reset_at`, sobre `RateLimitHit.key` y `RateLimitHit.hits` (research R8);
-  - `decrement` y `resetKey`.
+  - `decrement` y `resetKey`;
+  - `cleanupExpired()`, registrada con `registerCleanup`, que borra los contadores vencidos.
 
   Crear también `backend/src/middleware/rate-limit/limiters.ts` con los límites por IP de research R7 y la respuesta `RATE_LIMITED` con `Retry-After`.
 - [ ] T027 [P] [BE] Crear `backend/src/lib/audit/audit.repository.ts` (solo `insert`) y `backend/src/lib/audit/audit.service.ts`:
@@ -196,11 +198,12 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - `backend/src/lib/mail/outbox-worker.ts`:
     - `registerPreparer(template, fn)`: cada módulo registra cómo preparar el contenido de su plantilla al enviar (research R6);
     - lote cada 2 s con `SELECT … FOR UPDATE SKIP LOCKED` (`$queryRaw`) sobre data-model.md `EmailOutbox.status` y `EmailOutbox.next_attempt_at`;
-    - por cada fila, una transacción: prepara, envía y confirma; si el preparador descarta el correo, se marca `sent` sin enviar; si el envío falla, se revierte;
+    - por cada fila, una transacción: prepara, envía y confirma; si el preparador descarta el correo, se marca `discarded` sin enviar; si el envío falla, se revierte;
     - espera exponencial en data-model.md `EmailOutbox.attempts` (10 s, 30 s, 1 min, 2 min, 5 min; luego `failed`);
     - al enviar, `sent_at`;
     - data-model.md `EmailOutbox.last_error` sin datos personales;
-    - limpieza horaria de flujos, intentos, contadores y correos antiguos;
+    - `discardPendingCodeEmails(flowId, tx)`: pasa a `discarded` los correos de código pendientes del flujo (data-model.md `EmailOutbox.verification_flow_id`, `EmailOutbox.status`);
+    - una limpieza propia registrada con `registerCleanup`, que borra solo filas de `email_outbox` `sent`, `failed` y `discarded` de más de 7 días;
     - `start()`/`stop()`.
 - [ ] T029 [P] [BE] Crear las 4 plantillas en español (asunto, texto y HTML simple con la marca Nova) en `backend/src/lib/mail/templates/`: `verification-code.ts`, `already-registered.ts`, `password-reset-code.ts` y `password-changed.ts` (data-model.md `EmailOutbox.template`).
 - [ ] T030 [BE] Crear la sesión base del módulo `auth` (research R1):
@@ -221,7 +224,8 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - `backend/src/app.ts`: fábrica de la app con el orden de middlewares de [plan.md](plan.md) («Orden del pipeline de Express»), `GET /api/v1/health` y 404 JSON para `/api/*`;
   - `backend/src/static.ts`: con `SERVE_FRONTEND=true`, sirve `frontend/dist` con `express.static` y responde `index.html` en las rutas que no son API;
   - `backend/src/openapi/registry.ts`: registra los esquemas de `@nova/shared` con `@asteasolutions/zod-to-openapi` y publica `GET /api/v1/openapi.json`;
-  - `backend/src/server.ts`: `listen` en `PORT` y arranque y parada ordenada del `OutboxWorker`.
+  - `backend/src/lib/maintenance.ts`: `registerCleanup(name, fn)` y ejecución horaria de las limpiezas registradas, con su propio `start()`/`stop()` (research R6);
+  - `backend/src/server.ts`: registra los preparadores y las limpiezas de cada dueño antes de arrancar (el módulo `auth` expone `registerAuthJobs(worker, maintenance)`, que se completa en T050 y T060), luego `listen` en `PORT` y arranque y parada ordenada del `OutboxWorker` y del mantenimiento.
 - [ ] T034 [P] [BE] Crear los helpers de prueba en `backend/tests/helpers/`:
   - `test-db.ts`: reinicia `nova_test` con `prisma migrate reset --force --skip-seed` una vez por archivo de prueba (no se puede vaciar `audit_events` por sus triggers); dentro de un archivo, cada prueba usa correos únicos;
   - `memory-mail-provider.ts`: guarda los mensajes y permite leer el último código por correo;
@@ -241,7 +245,9 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - `TRUNCATE audit_events` falla.
 - [ ] T037 [P] [BE] Crear `backend/tests/unit/outbox-worker.test.ts`:
   - envío correcto con el preparador registrado;
-  - un preparador que descarta marca `sent` sin enviar;
+  - un preparador que descarta marca `discarded` sin enviar;
+  - encolar un código nuevo descarta los pendientes del mismo flujo, y un reintento atrasado no reemplaza el código más reciente;
+  - cada limpieza registrada borra solo filas de su propia tabla;
   - un envío fallido revierte lo preparado; reintentos con espera y paso a `failed`;
   - dos workers a la vez no envían duplicados;
   - ninguna fila de `email_outbox` contiene un código.
@@ -260,6 +266,7 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
   - todos los textos de las pantallas de esta spec, incluidos los avisos de `?motivo=` (`inactividad`, `expirada`, `clave-cambiada`).
 - [ ] T040 [FE] Crear `frontend/src/lib/api-client.ts`:
   - `fetch` con `credentials: 'same-origin'` y JSON;
+  - expone `lastServerContactAt`, actualizado en cada respuesta 2xx, para programar el aviso de inactividad (research R3);
   - `ApiError` construido con `ErrorResponseSchema`, y errores de red como `ApiError('NETWORK')`;
   - ante `ACCESS_TOKEN_EXPIRED`, un solo reintento tras `POST /auth/refresh` dentro de `navigator.locks.request('nova-refresh')` (research R2);
   - ante `SESSION_EXPIRED`, un callback configurable.
@@ -314,8 +321,9 @@ código debe retomar ese paso.
   - `backend/src/modules/auth/repositories/code-send.repository.ts`: `countLastHour(email)`, que suma todos los propósitos (FR-005); data-model.md `CodeSend.email`, `CodeSend.purpose` y `CodeSend.created_at`;
   - `backend/src/modules/auth/repositories/consent.repository.ts`: data-model.md `DataConsent.user_id`, `DataConsent.policy_version` y `DataConsent.accepted_at`.
 - [ ] T050 [US1] [BE] Crear `backend/src/modules/auth/verification.service.ts` (research R4, R5, R9):
-  - `requestCode(flow, tx)`: fija data-model.md `VerificationFlow.last_code_sent_at`, un `VerificationFlow.code_expires_at` provisional y `VerificationFlow.expires_at = code_expires_at`; pone `code_hash = NULL`; inserta en `code_sends` (también en flujos señuelo, M1); y, si el flujo no es señuelo, encola la plantilla de código con `flowId`;
-  - `prepareCodeEmail(flowId, tx)`: preparador registrado en el `OutboxWorker` para `verification_code` y `password_reset_code`. Bloquea el flujo; si ya no está en `awaiting_code` o venció, descarta. Si no, genera el código con `randomCode()`, guarda su HMAC en data-model.md `VerificationFlow.code_hash`, fija `VerificationFlow.code_expires_at = now + 15 min` y `VerificationFlow.expires_at`, y devuelve el código para el correo (research R6). El código nunca se guarda en otro lugar;
+  - `requestCode(flow, tx)`: fija data-model.md `VerificationFlow.last_code_sent_at`, un `VerificationFlow.code_expires_at` provisional y `VerificationFlow.expires_at = code_expires_at`; pone `code_hash = NULL`; inserta en `code_sends` (también en flujos señuelo); y, si el flujo no es señuelo, llama a `discardPendingCodeEmails(flowId)` y encola la plantilla de código con `flowId`;
+  - `prepareCodeEmail(flowId, tx)`: preparador registrado en el `OutboxWorker` para `verification_code` y `password_reset_code`. Bloquea el flujo; si ya no está en `awaiting_code`, venció, o la fila de la bandeja es anterior a data-model.md `VerificationFlow.last_code_sent_at`, descarta. Si no, genera el código con `randomCode()`, guarda su HMAC en data-model.md `VerificationFlow.code_hash`, fija `VerificationFlow.code_expires_at = now + 15 min` y `VerificationFlow.expires_at`, y devuelve el código para el correo (research R6). El código nunca se guarda en otro lugar;
+  - en `backend/src/modules/auth/auth.jobs.ts`, `registerAuthJobs(worker, maintenance)` registra `prepareCodeEmail` para las dos plantillas de código y la limpieza de `auth`: flujos vencidos hace más de 24 h y `code_sends` de más de 24 h;
   - `getState(flowToken)`: arma `VerificationState` con el correo enmascarado y `attemptsLeft` según data-model.md `VerificationFlow.code_attempts`;
   - `verify(flowToken, code)`: transición de la máquina de estados de data-model.md sobre `VerificationFlow.status`, `VerificationFlow.verified_at` y `VerificationFlow.complete_by`; al verificar, `VerificationFlow.expires_at = complete_by` (H1). Un código erróneo incrementa los intentos y devuelve `CODE_INVALID` con `attemptsLeft`; además `CODE_EXPIRED` y `CODE_ATTEMPTS_EXHAUSTED`. Un `code_hash` nulo (señuelo) siempre falla como `CODE_INVALID`. Audita `EMAIL_VERIFIED`.
 - [ ] T051 [US1] [BE] Crear `backend/src/modules/auth/registration.service.ts`:
@@ -404,7 +412,7 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
   - la inactividad y las 12 h dan `SESSION_EXPIRED`;
   - `logout` es idempotente e invalida la sesión al instante;
   - eventos `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGIN_LOCKED` y `SESSION_ENDED`.
-- [ ] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana y `deleteByEmail`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
+- [ ] T060 [US2] [BE] Crear `backend/src/modules/auth/repositories/login-attempt.repository.ts` (inserción de fallos, conteos por ventana, `deleteByEmail` y `deleteOlderThan(24 h)`; data-model.md `LoginAttempt.email`, `LoginAttempt.origin_key` y `LoginAttempt.created_at`), y agregar esa limpieza en `registerAuthJobs` (`backend/src/modules/auth/auth.jobs.ts`). Agregar la cookie `nova_dev` en `backend/src/modules/auth/auth.cookies.ts` y el cálculo de la clave de origen, que usa el hash del dispositivo o, si no hay cookie, el de la IP con `TRUST_PROXY` (research R7).
 - [ ] T061 [US2] [BE] Crear `backend/src/modules/auth/login.service.ts`:
   - comprueba el bloqueo por origen y el global antes de verificar, calculando su fin con las reglas de data-model.md `LoginAttempt` («el más reciente + 15 min» sobre los últimos 5 o 20 fallos, research R7) (FR-015); los intentos rechazados por bloqueo no se registran;
   - verifica con Argon2 incluso si el correo no existe, contra un hash ficticio (research R5);
@@ -515,6 +523,7 @@ que el código anterior falla y el nuevo funciona.
   - reenviar antes de 60 s da `RESEND_TOO_SOON` con `retryAfterSeconds` y `Retry-After`;
   - el sexto envío en una hora da `CODE_SEND_LIMIT`, también si se reinicia el flujo;
   - el código anterior queda inválido y los intentos se reinician;
+  - si el envío anterior sigue pendiente o reintentando, se descarta y solo llega el código nuevo;
   - un flujo señuelo responde igual y cuenta para el límite; el de registro reenvía `already_registered` y el de recuperación no encola nada;
   - un flujo en `verified` da `VERIFICATION_STEP_INVALID`.
 - [ ] T076 [US4] [BE] Agregar `resend(flowToken)` en `backend/src/modules/auth/verification.service.ts`:
