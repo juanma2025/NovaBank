@@ -8,10 +8,17 @@ Banca virtual para estudiantes universitarios en Colombia · Documento base para
 ### I. Dinero Exacto y Libro Contable Inmutable (NON-NEGOTIABLE)
 
 - **Moneda única COP en pesos enteros**: La única moneda del MVP es el peso colombiano (COP).
-  Todo importe DEBE almacenarse y calcularse como entero en pesos (`BIGINT` en PostgreSQL,
-  `bigint` o enteros seguros validados en TypeScript). Queda prohibido usar punto flotante para
-  dinero. En la interfaz los montos se formatean con
+  Todo importe DEBE almacenarse y calcularse como entero en pesos. Queda prohibido usar punto
+  flotante para dinero. En la interfaz los montos se formatean con
   `Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })`.
+- **Representación del dinero por capa**:
+  - Base de datos: columnas `BIGINT`.
+  - Código: el repositorio de cada módulo convierte el `bigint` que entrega Prisma a `number` y
+    verifica `Number.isSafeInteger`; si no es seguro, lanza un error. Fuera de los repositorios
+    el dinero siempre es `number` entero.
+  - API: los montos viajan en JSON como número entero en pesos (ej. `"amount": 25000`), nunca
+    como `bigint`, cadena ni decimal. Los esquemas Zod validan `z.number().int()` y el rango
+    permitido.
 - **Libro contable de doble entrada**: Todo movimiento de valor (recarga, transferencia, pago con
   tarjeta, aporte o retiro de una meta de ahorro) DEBE registrarse como asientos balanceados de
   débito y crédito cuya suma sea cero. Los asientos son inmutables: no se editan ni se eliminan;
@@ -102,11 +109,20 @@ invalida todo lo demás. Estas reglas son la base que permite crecer sin reescri
   dominio. Un módulo NO accede a las tablas de otro: se comunica a través del servicio público del
   otro módulo. Esto permite extraer un módulo como servicio independiente en el futuro sin
   reescribir su lógica.
-- **API sin estado**: Ningún estado de sesión o de negocio vive en memoria del proceso; todo
-  persiste en PostgreSQL o en cookies firmadas. Así la API puede escalar horizontalmente.
+- **API sin estado**: Ningún estado de sesión, de negocio ni de infraestructura vive en memoria
+  del proceso; todo persiste en PostgreSQL o en cookies firmadas. Esto incluye los contadores de
+  límite de tasa, que usan un almacén compartido en PostgreSQL (store propio que implementa la
+  interfaz `Store` de `express-rate-limit`). Así la API puede escalar horizontalmente.
 - **Contratos primero**: Cada spec que exponga endpoints DEBE definir su contrato en
-  `specs/NNN-nombre/contracts/` (OpenAPI 3.1) antes de implementarse. Los cambios incompatibles
-  de la API requieren una nueva versión de prefijo (`/api/v2`).
+  `specs/NNN-nombre/contracts/` (OpenAPI 3.1) durante `/speckit-plan`, antes de implementarse.
+  En el código, la documentación OpenAPI se genera desde los mismos esquemas Zod con
+  `@asteasolutions/zod-to-openapi` y se publica en `/api/v1/openapi.json`. Lo generado DEBE
+  coincidir con el contrato de la spec; cualquier diferencia se corrige en la spec o en el código
+  antes del merge. Los cambios incompatibles requieren una nueva versión de prefijo (`/api/v2`).
+- **Código compartido**: Los esquemas Zod de entrada y salida, los tipos de la API, los códigos de
+  error y las utilidades puras de dinero viven en el paquete `/shared` (`@nova/shared`), usado
+  por frontend y backend. Ese paquete no depende de Express, React ni Prisma y no contiene lógica
+  de negocio.
 - **Configuración por entorno**: Límites, dominios permitidos, orígenes CORS y secretos se leen
   de variables de entorno validadas con Zod al arrancar; si falta una variable requerida, la
   aplicación no arranca.
@@ -141,25 +157,30 @@ Cualquier otra funcionalidad no listada en la Fase 1 requiere enmienda antes de 
 
 ## Stack Tecnológico y Reglas de Implementación
 
-Solo se permiten las tecnologías listadas. Cualquier otra dependencia requiere enmienda.
+Solo se permiten las tecnologías listadas. Cualquier otra dependencia requiere enmienda. Las
+versiones mayores indicadas son obligatorias; las versiones exactas quedan fijadas en el
+`package-lock.json` y solo se actualizan en un PR propio.
 
 - **Frontend / UI**:
   - React 19 con Vite.
-  - Tailwind CSS con variables CSS para los tokens de diseño (modo claro y oscuro).
-  - React Router para el enrutamiento.
-  - TanStack Query para el estado del servidor; React Hooks para el estado local.
+  - Tailwind CSS 4, configurado en CSS (`@theme`) con variables CSS para los tokens de diseño
+    (modo claro y oscuro).
+  - React Router 7 en modo SPA (sin renderizado en servidor).
+  - TanStack Query 5 para el estado del servidor; React Hooks para el estado local.
   - `lucide-react` para la iconografía.
 - **Backend / API**:
-  - Node.js 24 LTS con Express.
+  - Node.js 24 LTS con Express 5.
   - API REST JSON con prefijo obligatorio `/api/v1`.
-  - Zod para validar entradas y variables de entorno.
+  - Zod 4 para validar entradas, salidas y variables de entorno.
+  - `@asteasolutions/zod-to-openapi` para generar la documentación OpenAPI 3.1 desde Zod.
   - `jsonwebtoken` para JWT, `cookie-parser` para cookies y `argon2` para contraseñas.
-  - `helmet`, `cors` y `express-rate-limit` para seguridad de red.
+  - `helmet`, `cors` y `express-rate-limit` (con store propio en PostgreSQL) para seguridad de
+    red.
   - `pino` y `pino-http` para logs estructurados.
   - `nodemailer` para el envío de correos SMTP.
 - **Base de datos y persistencia**:
-  - PostgreSQL 16 como motor único.
-  - Prisma ORM para operaciones convencionales.
+  - PostgreSQL 17 como motor único.
+  - Prisma ORM 7 para operaciones convencionales.
   - SQL explícito (`$queryRaw` con plantillas etiquetadas) solo para transacciones del libro
     contable que requieran `FOR UPDATE`.
   - Todo cambio de esquema mediante migraciones versionadas de Prisma.
@@ -174,7 +195,8 @@ Solo se permiten las tecnologías listadas. Cualquier otra dependencia requiere 
   - Playwright para pruebas E2E de flujos críticos.
   - `tsx` para ejecutar TypeScript en desarrollo.
 - **Infraestructura y herramientas**:
-  - npm workspaces con un único `package-lock.json` en la raíz.
+  - npm workspaces (`frontend`, `backend`, `db`, `shared`) con un único `package-lock.json` en
+    la raíz.
   - Docker Compose para PostgreSQL y Mailpit en desarrollo (Docker Desktop con WSL 2 en Windows).
   - GitHub Actions para CI: lint, `tsc`, pruebas y build en cada PR.
   - Spec Kit con scripts PowerShell (`--script ps`), ya que el equipo trabaja en Windows.
@@ -229,6 +251,8 @@ Cada regla DEBE tener al menos una prueba automatizada.
 - `/backend`: API modular (`src/modules/<dominio>` con `routes`, `controller`, `service`,
   `schema`; además `src/middleware`, `src/config`, `src/lib`).
 - `/db`: esquema Prisma, migraciones versionadas y `seed.ts`.
+- `/shared`: paquete `@nova/shared` con esquemas Zod, tipos de la API, códigos de error y
+  utilidades puras de dinero (ver Principio VI).
 - `/specs`: especificaciones de Spec Kit, una carpeta por funcionalidad.
 - En la raíz solo viven archivos de configuración y herramientas (workspaces, Docker Compose,
   CI, `.specify/`, carpetas de agentes, documentación); nunca lógica de aplicación.
@@ -305,7 +329,7 @@ Cada regla DEBE tener al menos una prueba automatizada.
 - **Cabeceras y red**: `helmet` para CSP, HSTS y cabeceras de defensa; CORS limitado al origen
   del frontend configurado.
 - **Límites de tasa**: en registro, login, verificación y reenvío de código, emisión de tarjetas,
-  recargas y transferencias.
+  recargas y transferencias, con contadores en el almacén compartido de PostgreSQL.
 - **Consultas parametrizadas**: siempre mediante el ORM o plantillas etiquetadas.
 - **Auditoría**: todo movimiento de dinero y evento de seguridad (registro, verificación, inicio
   de sesión, cambio de contraseña, congelamiento de tarjeta) genera un registro inmutable con
@@ -349,7 +373,8 @@ Cada regla DEBE tener al menos una prueba automatizada.
 | :--- | :--- | :--- | :--- |
 | **1.0.0** | 2026-10-19 | Ratificación inicial | Constitución fundacional de Nova Neobank: principios, stack, reglas de negocio financiero simulado, seguridad y lineamientos SDD. |
 | **2.0.0** | 2026-11-20 | MAJOR | Enfoque en estudiantes universitarios de Colombia; moneda única COP en pesos enteros; verificación por correo institucional; cripto movida a Fase 2 con patrón «Muy pronto»; nuevos dominios (recargas, metas, presupuesto, gastos compartidos); nuevo Principio VI de arquitectura escalable; stack actualizado (React 19, Node 24 LTS) y dependencias de seguridad declaradas; flujo de trabajo en equipo multiagente en Windows. |
+| **2.1.0** | 2026-11-20 | MINOR | Representación del dinero por capa (BIGINT → `number` entero seguro → JSON entero); límites de tasa con almacén compartido en PostgreSQL; generación de OpenAPI desde Zod con `@asteasolutions/zod-to-openapi`; nuevo paquete `/shared` en los workspaces; versiones mayores fijadas (Express 5, Zod 4, Tailwind 4, React Router 7, TanStack Query 5, Prisma 7, PostgreSQL 17). |
 
 ---
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20
+**Version**: 2.1.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20

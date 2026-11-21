@@ -23,8 +23,9 @@ y luego se implementa (Spec-Driven Development con
 
 ## Stack
 
-React 19 + Vite + Tailwind · Node.js 24 + Express · PostgreSQL 16 + Prisma · TypeScript estricto ·
-Vitest, Supertest y Playwright · Docker Compose · GitHub Actions.
+React 19 + Vite + Tailwind 4 · Node.js 24 + Express 5 · PostgreSQL 17 + Prisma 7 · Zod 4 ·
+TypeScript estricto · Vitest, Supertest y Playwright · npm workspaces · Docker Compose ·
+GitHub Actions.
 
 El detalle y las librerías permitidas están en la constitución.
 
