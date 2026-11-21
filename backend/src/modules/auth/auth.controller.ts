@@ -1,7 +1,9 @@
 import {
+  CompletePasswordResetRequestSchema,
   CompleteRegistrationRequestSchema,
   LoginRequestSchema,
   type SessionResponse,
+  StartPasswordResetRequestSchema,
   StartRegistrationRequestSchema,
   VerifyCodeRequestSchema,
 } from '@nova/shared';
@@ -21,6 +23,7 @@ import {
   setSessionCookies,
 } from './auth.cookies.js';
 import type { LoginService } from './login.service.js';
+import type { PasswordResetService } from './password-reset.service.js';
 import type { RegistrationService } from './registration.service.js';
 import { userRepository } from './repositories/user.repository.js';
 import type { SessionService } from './session.service.js';
@@ -34,6 +37,7 @@ export function createAuthController(
     verification: VerificationService;
     registration: RegistrationService;
     login: LoginService;
+    passwordReset: PasswordResetService;
   },
 ) {
   const { prisma, clock } = ctx;
@@ -110,6 +114,22 @@ export function createAuthController(
         req.requestId,
       );
       clearSessionCookies(res);
+      res.status(204).end();
+    },
+
+    /** POST /auth/password-reset (operación startPasswordReset). */
+    async startPasswordReset(req: Request, res: Response): Promise<void> {
+      const { email } = StartPasswordResetRequestSchema.parse(req.body);
+      const result = await deps.passwordReset.start(email, req.requestId);
+      setFlowCookie(res, result.flowToken);
+      res.status(202).json(result.state);
+    },
+
+    /** POST /auth/password-reset/complete (operación completePasswordReset). */
+    async completePasswordReset(req: Request, res: Response): Promise<void> {
+      const { password } = CompletePasswordResetRequestSchema.parse(req.body);
+      await deps.passwordReset.complete(flowToken(req), password, req.requestId);
+      clearFlowCookie(res);
       res.status(204).end();
     },
 

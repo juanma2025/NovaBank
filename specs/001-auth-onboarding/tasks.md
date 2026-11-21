@@ -470,7 +470,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
 
 ### [BE] Backend de US3
 
-- [ ] T069 [P] [US3] [BE] Crear `backend/tests/integration/password-reset.test.ts`. Debe comprobar:
+- [X] T069 [P] [US3] [BE] Crear `backend/tests/integration/password-reset.test.ts`. Debe comprobar:
   - un correo inexistente recibe la misma respuesta sin correo encolado (FR-020a);
   - el sexto código en una hora da `CODE_SEND_LIMIT`, sumando los de registro (FR-005);
   - un segundo inicio de recuperación invalida el flujo anterior (`superseded`);
@@ -480,7 +480,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
   - se encola `password_changed`;
   - la contraseña anterior falla;
   - eventos `PASSWORD_RESET_REQUESTED`, `EMAIL_VERIFIED` y `PASSWORD_RESET_COMPLETED`.
-- [ ] T070 [US3] [BE] Crear `backend/src/modules/auth/password-reset.service.ts`:
+- [X] T070 [US3] [BE] Crear `backend/src/modules/auth/password-reset.service.ts`:
   - `start(email)`: aplica el límite de 5 envíos por correo y por hora (`countLastHour(email)`, FR-005); reemplaza los flujos de recuperación activos del correo; crea el flujo `password_reset` y llama a `requestCode`; si no hay cuenta, el flujo es señuelo y no se encola nada; audita `PASSWORD_RESET_REQUESTED`;
   - `complete(flowToken, password)`, en una transacción:
     - exige `verified` y `now < complete_by`;
@@ -490,7 +490,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
     - `deleteByEmail` sobre data-model.md `LoginAttempt.email`;
     - encola `password_changed`;
     - marca el flujo `completed` y audita `PASSWORD_RESET_COMPLETED`.
-- [ ] T071 [US3] [BE] Agregar las rutas `POST /api/v1/auth/password-reset` (202, `nova_vf`) y `POST /api/v1/auth/password-reset/complete` (204, borra `nova_vf`), con sus limitadores, y registrarlas en `backend/src/openapi/registry.ts`.
+- [X] T071 [US3] [BE] Agregar las rutas `POST /api/v1/auth/password-reset` (202, `nova_vf`) y `POST /api/v1/auth/password-reset/complete` (204, borra `nova_vf`), con sus limitadores, y registrarlas en `backend/src/openapi/registry.ts`.
 
 ### [FE] Frontend de US3
 

@@ -4,10 +4,12 @@ import {
   type ResponseConfig,
 } from '@asteasolutions/zod-to-openapi';
 import {
+  CompletePasswordResetRequestSchema,
   CompleteRegistrationRequestSchema,
   ErrorResponseSchema,
   LoginRequestSchema,
   SessionResponseSchema,
+  StartPasswordResetRequestSchema,
   StartRegistrationRequestSchema,
   VerificationStateSchema,
   VerifyCodeRequestSchema,
@@ -87,6 +89,32 @@ export function buildOpenApiDocument() {
       400: err('VALIDATION_ERROR'),
       404: err('VERIFICATION_NOT_FOUND'),
       409: err('VERIFICATION_STEP_INVALID o EMAIL_ALREADY_REGISTERED'),
+      422: err('VERIFICATION_EXPIRED o PASSWORD_WEAK'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/password-reset',
+    operationId: 'startPasswordReset',
+    request: body(StartPasswordResetRequestSchema),
+    responses: {
+      202: json(state, 'Flujo creado'),
+      400: err('VALIDATION_ERROR'),
+      429: err('CODE_SEND_LIMIT o RATE_LIMITED'),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/auth/password-reset/complete',
+    operationId: 'completePasswordReset',
+    request: body(CompletePasswordResetRequestSchema),
+    responses: {
+      204: { description: 'Contraseña cambiada' },
+      400: err('VALIDATION_ERROR'),
+      404: err('VERIFICATION_NOT_FOUND'),
+      409: err('VERIFICATION_STEP_INVALID'),
       422: err('VERIFICATION_EXPIRED o PASSWORD_WEAK'),
     },
   });

@@ -3,6 +3,7 @@ import type { AuthContext } from './auth.context.js';
 import { createAuthController } from './auth.controller.js';
 import { createAuthRouter } from './auth.routes.js';
 import { createLoginService } from './login.service.js';
+import { createPasswordResetService } from './password-reset.service.js';
 import { createRegistrationService } from './registration.service.js';
 import { createSessionService } from './session.service.js';
 import { createVerificationService } from './verification.service.js';
@@ -13,9 +14,16 @@ export function createAuthModule(ctx: AuthContext, limiters: Limiters) {
   const verification = createVerificationService(ctx);
   const registration = createRegistrationService(ctx, { sessions, verification });
   const login = createLoginService(ctx, { sessions });
-  const controller = createAuthController(ctx, { sessions, verification, registration, login });
+  const passwordReset = createPasswordResetService(ctx, { sessions, verification });
+  const controller = createAuthController(ctx, {
+    sessions,
+    verification,
+    registration,
+    login,
+    passwordReset,
+  });
   const router = createAuthRouter(controller, sessions, limiters);
-  return { router, sessions, verification, registration, login };
+  return { router, sessions, verification, registration, login, passwordReset };
 }
 
 export type AuthModule = ReturnType<typeof createAuthModule>;
