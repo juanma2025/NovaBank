@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // El código publicado no usa APIs de Node: debe funcionar igual en el navegador.
+    "types": []
+  },
+  "exclude": ["src/**/*.test.ts"]
+}

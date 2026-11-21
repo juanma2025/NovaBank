@@ -1,0 +1,110 @@
+# CI de Nova (research R15). Ningún PR se integra si falla lint, tsc, pruebas o build.
+# Los pasos usan --workspaces --if-present para funcionar mientras las capas se completan.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  PGHOST: localhost
+  PGUSER: nova
+  PGPASSWORD: nova
+  TEST_DATABASE_URL: postgresql://nova:nova@localhost:5432/nova_test
+  E2E_DATABASE_URL: postgresql://nova:nova@localhost:5432/nova_e2e
+
+jobs:
+  quality:
+    name: Lint, tipos, pruebas y build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: nova
+          POSTGRES_PASSWORD: nova
+          POSTGRES_DB: nova
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nova"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # El servicio de CI no ejecuta docker/postgres/init.sql: creamos las bases aquí.
+      - name: Crear bases de prueba
+        run: |
+          psql -d nova -c "CREATE DATABASE nova_test"
+          psql -d nova -c "CREATE DATABASE nova_e2e"
+      - name: Generar cliente Prisma
+        if: hashFiles('db/package.json') != ''
+        run: npm run db:generate
+      - name: Migrar base de pruebas
+        if: hashFiles('db/package.json') != ''
+        run: npm run db:deploy
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: Pruebas E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: quality
+    if: hashFiles('e2e/package.json') != ''
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: nova
+          POSTGRES_PASSWORD: nova
+          POSTGRES_DB: nova
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nova"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit
+        ports: ['1025:1025', '8025:8025']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Crear base E2E
+        run: psql -d nova -c "CREATE DATABASE nova_e2e"
+      - run: npm run db:generate
+      - name: Migrar base E2E
+        run: npm run db:deploy
+        env:
+          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
+      - run: npm run build
+      - name: Instalar navegadores de Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7
