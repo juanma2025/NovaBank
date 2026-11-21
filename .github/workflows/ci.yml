@@ -66,7 +66,6 @@ jobs:
     name: Pruebas E2E (Playwright)
     runs-on: ubuntu-latest
     needs: quality
-    if: hashFiles('e2e/package.json') != ''
     services:
       postgres:
         image: postgres:17
@@ -85,25 +84,39 @@ jobs:
         ports: ['1025:1025', '8025:8025']
     steps:
       - uses: actions/checkout@v4
+      # hashFiles() no está permitido en el `if` de un trabajo: se decide aquí y los pasos
+      # siguientes se saltan mientras el workspace e2e/ no exista.
+      - name: ¿Existe el workspace e2e?
+        id: e2e
+        run: |
+          if [ -f e2e/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; echo "Sin workspace e2e todavía: se omiten las pruebas E2E."; fi
       - uses: actions/setup-node@v4
+        if: steps.e2e.outputs.present == 'true'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
+      - if: steps.e2e.outputs.present == 'true'
+        run: npm ci
       - name: Crear base E2E
+        if: steps.e2e.outputs.present == 'true'
         run: psql -d nova -c "CREATE DATABASE nova_e2e"
-      - run: npm run db:generate
+      - if: steps.e2e.outputs.present == 'true'
+        run: npm run db:generate
       - name: Migrar base E2E
+        if: steps.e2e.outputs.present == 'true'
         run: npm run db:deploy
         env:
           DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
-      - run: npm run build
+      - if: steps.e2e.outputs.present == 'true'
+        run: npm run build
       - name: Instalar navegadores de Playwright
+        if: steps.e2e.outputs.present == 'true'
         run: npx playwright install --with-deps chromium
         working-directory: e2e
-      - run: npm run test:e2e
+      - if: steps.e2e.outputs.present == 'true'
+        run: npm run test:e2e
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.e2e.outputs.present == 'true'
         with:
           name: playwright-report
           path: e2e/playwright-report
