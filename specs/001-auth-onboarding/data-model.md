@@ -78,7 +78,7 @@ flujo de registro.
 | `consent_policy_version` | varchar(20) | NOT NULL si `purpose = registration`; NULL si no |
 | `consent_accepted_at` | timestamptz | NOT NULL si `purpose = registration`; NULL si no |
 | `created_at` | timestamptz | NOT NULL |
-| `expires_at` | timestamptz | NOT NULL; vida del flujo, **variable**: igual a `code_expires_at` mientras `status = awaiting_code` (se actualiza al reenviar y al enviar) e igual a `complete_by` al verificar. La cookie `nova_vf` tiene un tope fijo de 2 h (research R4) |
+| `expires_at` | timestamptz | NOT NULL; vida del flujo, **variable**: `code_expires_at + 30 min` mientras `status = awaiting_code` (margen para pedir un código nuevo tras vencer, US4; se recalcula al reenviar y al enviar) e igual a `complete_by` al verificar. La cookie `nova_vf` tiene un tope fijo de 2 h (research R4) |
 
 **Índices**:
 - `(email, purpose, status)`, para reemplazar los flujos anteriores;

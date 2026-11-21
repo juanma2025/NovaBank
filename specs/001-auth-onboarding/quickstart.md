@@ -18,7 +18,7 @@ git clone https://github.com/juanma2025/NovaBank.git
 cd NovaBank
 Copy-Item .env.example .env        # completar los secretos locales (ver comentarios del archivo)
 npm install
-docker compose up -d               # PostgreSQL 17 (5432) y Mailpit (SMTP 1025, web 8025)
+docker compose up -d               # PostgreSQL 17 (puerto 5433) y Mailpit (SMTP 1025, web 8025)
 npm run db:migrate                 # aplica las migraciones a la base nova
 ```
 
