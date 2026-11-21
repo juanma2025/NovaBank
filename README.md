@@ -31,18 +31,19 @@ El detalle y las librerías permitidas están en la constitución.
 
 ## Hoja de ruta de specs
 
-Antes de ejecutar `/speckit-specify`, reserva aquí el número y el responsable en un commit a
-`main`. Las specs se pueden escribir en paralelo, pero se implementan respetando las dependencias.
+Las specs se crean en este orden y con estos números. Cada una pasa por tres etapas
+(definición, backend y frontend) descritas en la [guía](GUIA_COMANDOS_SDD.md#4-el-proceso-de-una-spec-paso-a-paso).
+Al cerrar cada etapa, actualiza su columna: `Pendiente` → `En curso` → `Listo`.
 
-| # | Spec | Alcance | Depende de | Responsable | Estado |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 001 | `001-auth-onboarding` | Registro con correo institucional, verificación por código, aceptación de Habeas Data, login, sesión y cierre de sesión. Incluye la base del proyecto (estructura, Docker Compose, CI). | — | Por asignar | Pendiente |
-| 002 | `002-cuentas-ledger` | Cuenta en COP, libro contable de doble entrada, recarga simulada, pantalla de inicio con saldo y movimientos, tarjeta «Muy pronto» de cripto. | 001 | Por asignar | Pendiente |
-| 003 | `003-transferencias` | Envíos entre estudiantes verificados por correo o alias, idempotencia y límites. | 002 | Por asignar | Pendiente |
-| 004 | `004-tarjeta-virtual` | Emitir, congelar, ver datos con reautenticación y pagos simulados. | 002 | Por asignar | Pendiente |
-| 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Por asignar | Pendiente |
-| 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Por asignar | Pendiente |
-| 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Por asignar | Pendiente |
+| # | Spec | Alcance | Depende de | Definición | Backend | Frontend |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 001 | `001-auth-onboarding` | Registro con correo institucional, verificación por código, aceptación de Habeas Data, login, sesión y cierre de sesión. Incluye la base del proyecto (estructura, Docker Compose, CI). | — | Pendiente | Pendiente | Pendiente |
+| 002 | `002-cuentas-ledger` | Cuenta en COP, libro contable de doble entrada, recarga simulada, pantalla de inicio con saldo y movimientos, tarjeta «Muy pronto» de cripto. | 001 | Pendiente | Pendiente | Pendiente |
+| 003 | `003-transferencias` | Envíos entre estudiantes verificados por correo o alias, idempotencia y límites. | 002 | Pendiente | Pendiente | Pendiente |
+| 004 | `004-tarjeta-virtual` | Emitir, congelar, ver datos con reautenticación y pagos simulados. | 002 | Pendiente | Pendiente | Pendiente |
+| 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Pendiente | Pendiente | Pendiente |
+| 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Pendiente | Pendiente | Pendiente |
+| 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Pendiente | Pendiente | Pendiente |
 
 **Fase 2 («Muy pronto»)**: wallet de criptoactivos. No se especifica hasta que la constitución se
 enmiende para incluirla.
@@ -51,11 +52,17 @@ enmiende para incluirla.
 
 1. Instala los prerrequisitos de la [guía](GUIA_COMANDOS_SDD.md#1-prerrequisitos-una-vez-por-computador).
 2. Clona el repositorio y abre la carpeta en Claude Code o Antigravity.
-3. Reserva una spec en la tabla de arriba y sigue el ciclo de la guía.
+3. Toma la siguiente spec pendiente de la hoja de ruta y sigue el proceso de la guía.
 
 Las instrucciones para levantar la aplicación (`docker compose up`, `npm install`,
 `npm run dev`) se agregarán cuando se implemente la spec 001.
 
 ## Equipo
 
-Dos integrantes. Toda contribución entra por PR hacia `main` con aprobación del otro integrante.
+| Rol | Responsabilidad | Agente |
+| :--- | :--- | :--- |
+| Backend | `/backend`, `/db` y tareas `[BE]` | Claude Code |
+| Frontend | `/frontend` y tareas `[FE]` y `[E2E]` | Google Antigravity |
+
+Las specs, los contratos y el paquete `/shared` se definen entre los dos. Toda contribución entra
+por PR hacia `main` con aprobación del otro integrante.

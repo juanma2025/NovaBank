@@ -277,12 +277,25 @@ Cada regla DEBE tener al menos una prueba automatizada.
 
 ### Flujo de trabajo en equipo
 
-- **Una rama por spec** con el nombre de su carpeta (ej. `001-auth-onboarding`), integrada a
-  `main` mediante PR.
-- **Numeración coordinada**: antes de ejecutar `/speckit-specify`, el equipo acuerda qué número y
-  nombre tomará cada funcionalidad para evitar colisiones.
-- **Revisión cruzada**: `spec.md` y `plan.md` de cada funcionalidad los revisa el otro integrante
-  antes de implementar; todo PR requiere aprobación del otro integrante.
+- **División por capa**: un integrante es responsable del backend (`/backend`, `/db`) y el otro
+  del frontend (`/frontend`). Cada spec es una funcionalidad completa (vertical) que ambos
+  definen juntos y luego implementan cada uno en su capa.
+- **Hoja de ruta secuencial**: las specs se crean en el orden y con los números de la hoja de
+  ruta del `README.md`; no se crea una spec que no esté en ella.
+- **Tres ramas por spec**, todas integradas a `main` mediante PR:
+  - `NNN-nombre`: definición. Contiene `spec.md`, `plan.md`, `contracts/`, `tasks.md` y el
+    código del paquete `/shared` (el contrato en código). Se integra antes de empezar a
+    implementar.
+  - `NNN-nombre-be`: implementación del backend.
+  - `NNN-nombre-fe`: implementación del frontend y de las pruebas E2E.
+- **Etiquetas de capa en `tasks.md`**: cada tarea lleva exactamente una etiqueta: `[SH]`
+  (paquete `/shared`), `[BE]` (backend y base de datos), `[FE]` (frontend) o `[E2E]` (pruebas
+  de extremo a extremo). Cada integrante implementa solo las tareas de su capa.
+- **Contrato congelado**: después de integrar la rama de definición, cambiar `contracts/` o el
+  paquete `/shared` exige actualizar primero la spec y el contrato en un PR aprobado por ambos
+  integrantes.
+- **Revisión cruzada**: `spec.md`, `plan.md` y `contracts/` los aprueban ambos integrantes; todo
+  PR requiere aprobación del otro integrante.
 - **Commits** con Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
 - **Puertas de calidad**: ningún PR se integra si falla lint, `tsc`, pruebas o build en CI.
 - **Pruebas**: cada regla de dominio tiene al menos una prueba; los flujos críticos (registro y
@@ -374,7 +387,8 @@ Cada regla DEBE tener al menos una prueba automatizada.
 | **1.0.0** | 2026-10-19 | Ratificación inicial | Constitución fundacional de Nova Neobank: principios, stack, reglas de negocio financiero simulado, seguridad y lineamientos SDD. |
 | **2.0.0** | 2026-11-20 | MAJOR | Enfoque en estudiantes universitarios de Colombia; moneda única COP en pesos enteros; verificación por correo institucional; cripto movida a Fase 2 con patrón «Muy pronto»; nuevos dominios (recargas, metas, presupuesto, gastos compartidos); nuevo Principio VI de arquitectura escalable; stack actualizado (React 19, Node 24 LTS) y dependencias de seguridad declaradas; flujo de trabajo en equipo multiagente en Windows. |
 | **2.1.0** | 2026-11-20 | MINOR | Representación del dinero por capa (BIGINT → `number` entero seguro → JSON entero); límites de tasa con almacén compartido en PostgreSQL; generación de OpenAPI desde Zod con `@asteasolutions/zod-to-openapi`; nuevo paquete `/shared` en los workspaces; versiones mayores fijadas (Express 5, Zod 4, Tailwind 4, React Router 7, TanStack Query 5, Prisma 7, PostgreSQL 17). |
+| **2.2.0** | 2026-11-20 | MINOR | Flujo de equipo dividido por capa (backend / frontend): hoja de ruta secuencial, tres ramas por spec (definición, `-be`, `-fe`), etiquetas de capa obligatorias en `tasks.md` y contrato congelado tras la definición. |
 
 ---
 
-**Version**: 2.1.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20
+**Version**: 2.2.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20
