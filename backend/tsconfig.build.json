@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": false,
+    // Compila contra @nova/shared y @nova/db ya construidos (dist/), research R11.
+    "customConditions": []
+  },
+  "include": ["src"]
+}
