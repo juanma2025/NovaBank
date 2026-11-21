@@ -95,7 +95,8 @@ cuenta regresiva).
   `Path=/api/v1/auth`, `Max-Age` fijo de 2 horas.
 - La **validez real** la decide el servidor con `verification_flows.expires_at`, que es variable
   (ver [data-model.md](data-model.md)):
-  - al crear el flujo o reenviar el código, `expires_at = code_expires_at`;
+  - al crear el flujo, reenviar o enviar el código, `expires_at = code_expires_at + 30 min`,
+    para que tras vencer el código se pueda pedir uno nuevo (US4, escenario 3);
   - al verificar, `expires_at = complete_by`.
 
   Así el flujo dura lo que el proceso legítimo necesite: hasta 5 reenvíos en una hora más 30
@@ -314,8 +315,10 @@ procesos); copiar los tipos a cada capa (rompe la única fuente del contrato).
 
 **Rationale**: lo exige el Principio VI y evita que el contrato y el código se separen.
 
-**Verificar al implementar**: la versión exacta de `zod-to-openapi` compatible con Zod 4. Si no
-existe, se registra como enmienda PATCH antes de seguir.
+**Verificado al implementar**: `@asteasolutions/zod-to-openapi` 9.x soporta Zod 4. No se usa
+`registry.register()`, porque exige `.openapi()` sobre los esquemas y la librería se carga en su
+versión CommonJS con otra copia de Zod: los esquemas de `@nova/shared` se pasan directamente a
+`registerPath` y quedan en línea en el documento.
 
 ## R13. Prisma 7 y el paquete `/db`
 
@@ -364,7 +367,8 @@ El despliegue en sí es una tarea de la fase final, no bloquea el desarrollo loc
 
 **Decision**:
 - **`docker-compose.yml`**:
-  - `postgres:17` en el puerto 5432, con un script de inicio que crea las bases `nova`
+  - `postgres:17` en el puerto **5433** del host (para no chocar con un PostgreSQL instalado
+    en Windows), con un script de inicio que crea las bases `nova`
     (desarrollo), `nova_test` (integración del backend) y `nova_e2e` (Playwright), para que las
     pruebas no choquen entre sí ni con los datos de desarrollo;
   - `axllent/mailpit` con SMTP en el puerto 1025 y la interfaz web y API en el 8025.

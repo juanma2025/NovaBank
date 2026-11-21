@@ -32,7 +32,9 @@ Compose con PostgreSQL y Mailpit, y CI en GitHub Actions.
 
 **Complementos declarados** (constitución v2.3.0, «Complementos de tecnologías permitidas»):
 `typescript`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`,
-`eslint-plugin-react-hooks`, `globals`, `@types/node` (configuración raíz y `shared`, T001–T006).
+`eslint-plugin-react-hooks`, `globals`, `@types/node` (configuración raíz y `shared`, T001–T006);
+`prisma` (CLI), `tsx`, `supertest`, `vite` (lo importa `vitest.config.ts`) y los `@types/*` de
+Express, cors, cookie-parser, jsonwebtoken, nodemailer y supertest (backend, T008–T009).
 
 **Primary Dependencies**:
 
@@ -198,7 +200,7 @@ backend/                     # [BE]
 │   │   ├── request-id.ts
 │   │   ├── error-handler.ts
 │   │   ├── require-auth.ts  # JWT + sesión vigente + last_activity
-│   │   ├── same-origin.ts   # exige Content-Type JSON y Origin = APP_ORIGIN en mutaciones
+│   │   ├── require-json.ts  # en mutaciones, un cuerpo no vacío debe ser JSON
 │   │   └── rate-limit/      # pg-store.ts, limiters.ts
 │   ├── modules/auth/
 │   │   ├── auth.routes.ts
@@ -299,7 +301,7 @@ Detalle completo en [contracts/auth.openapi.json](contracts/auth.openapi.json).
 4. `cors` (solo `APP_ORIGIN`, con credenciales)
 5. `express.json` (límite de 10 kb)
 6. `cookie-parser`
-7. `same-origin`, en métodos que modifican datos
+7. `require-json`, en métodos que modifican datos
 8. Rutas `/api/v1`, con limitadores por ruta
 9. `static.ts`, solo en producción
 10. 404 en JSON para `/api/*`
