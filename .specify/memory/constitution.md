@@ -180,9 +180,12 @@ versiones mayores indicadas son obligatorias; las versiones exactas quedan fijad
   - `nodemailer` para el envío de correos SMTP.
 - **Base de datos y persistencia**:
   - PostgreSQL 17 como motor único.
-  - Prisma ORM 7 para operaciones convencionales.
-  - SQL explícito (`$queryRaw` con plantillas etiquetadas) solo para transacciones del libro
-    contable que requieran `FOR UPDATE`.
+  - Prisma ORM 7 para operaciones convencionales, con el adaptador oficial `@prisma/adapter-pg` y
+    el controlador `pg`.
+  - SQL explícito (`$queryRaw`/`$executeRaw` con plantillas etiquetadas, nunca concatenando
+    texto) solo para operaciones de concurrencia que Prisma no expresa de forma atómica: bloqueos
+    de fila (`FOR UPDATE`, `FOR UPDATE SKIP LOCKED`) e inserciones o actualizaciones atómicas
+    (`INSERT … ON CONFLICT`). Cada uso se justifica en el `plan.md` de su spec.
   - Todo cambio de esquema mediante migraciones versionadas de Prisma.
 - **Lenguaje y tipado**:
   - TypeScript estricto (`"strict": true`) en frontend y backend. Prohibido `any` sin
@@ -190,7 +193,8 @@ versiones mayores indicadas son obligatorias; las versiones exactas quedan fijad
   - JavaScript solo en archivos de configuración raíz.
 - **Calidad y pruebas**:
   - ESLint + Prettier.
-  - Vitest y Testing Library para pruebas unitarias y de componentes.
+  - Vitest y Testing Library (`@testing-library/react`, `@testing-library/user-event`) con
+    entorno `jsdom` para pruebas unitarias y de componentes.
   - Supertest para pruebas de integración de la API.
   - Playwright para pruebas E2E de flujos críticos.
   - `tsx` para ejecutar TypeScript en desarrollo.
@@ -200,6 +204,13 @@ versiones mayores indicadas son obligatorias; las versiones exactas quedan fijad
   - Docker Compose para PostgreSQL y Mailpit en desarrollo (Docker Desktop con WSL 2 en Windows).
   - GitHub Actions para CI: lint, `tsc`, pruebas y build en cada PR.
   - Spec Kit con scripts PowerShell (`--script ps`), ya que el equipo trabaja en Windows.
+- **Complementos de tecnologías permitidas**: se permiten sin enmienda los complementos
+  oficiales, adaptadores, definiciones de tipos y herramientas de desarrollo necesarios para usar
+  una tecnología ya listada, siempre que no agreguen funcionalidad propia. Ejemplos:
+  `typescript`, `@types/*`, `typescript-eslint`, `eslint-plugin-react-hooks`,
+  `@vitejs/plugin-react`, `@tailwindcss/vite` y la CLI `prisma`. Cada uno se declara en el
+  `plan.md` de la spec que lo introduce. Cualquier librería que aporte funcionalidad nueva
+  (formularios, fechas, estado, UI, etc.) sigue requiriendo enmienda.
 - **Tecnologías prohibidas**:
   - Otros frameworks UI (Angular, Vue, Svelte, etc.).
   - CSS-in-JS (Styled Components, Emotion).
@@ -239,8 +250,16 @@ Cada regla DEBE tener al menos una prueba automatizada.
 11. **Gastos compartidos**: Una solicitud de división no mueve dinero por sí misma. El dinero solo
     se mueve cuando cada participante paga su parte mediante una transferencia normal, sujeta a
     todas las reglas anteriores.
-12. **Rutas autenticadas**: Todas las rutas exigen JWT válido excepto `/auth/register`,
-    `/auth/login`, `/auth/verify-email`, `/auth/resend-verification`, `/auth/refresh` y `/health`.
+12. **Rutas autenticadas**: Todas las rutas exigen JWT válido excepto las de entrada a la cuenta
+    y las técnicas:
+    - Registro y verificación: `/auth/register`, `/auth/register/complete`,
+      `/auth/verification`, `/auth/verify-email` y `/auth/resend-verification`.
+    - Recuperación de contraseña: `/auth/password-reset` y `/auth/password-reset/complete`.
+    - Sesión: `/auth/login`, `/auth/refresh` y `/auth/logout`.
+    - Técnicas: `/health` y `/openapi.json`.
+
+    Las rutas públicas que dependen de un flujo en curso o de una sesión se protegen con su
+    propia cookie (token de flujo o refresh token), nunca con datos enviados en el cuerpo.
 
 ## Estructura y Estilo de Código
 
@@ -253,6 +272,7 @@ Cada regla DEBE tener al menos una prueba automatizada.
 - `/db`: esquema Prisma, migraciones versionadas y `seed.ts`.
 - `/shared`: paquete `@nova/shared` con esquemas Zod, tipos de la API, códigos de error y
   utilidades puras de dinero (ver Principio VI).
+- `/e2e`: pruebas de extremo a extremo con Playwright, que prueban la aplicación completa.
 - `/specs`: especificaciones de Spec Kit, una carpeta por funcionalidad.
 - En la raíz solo viven archivos de configuración y herramientas (workspaces, Docker Compose,
   CI, `.specify/`, carpetas de agentes, documentación); nunca lógica de aplicación.
@@ -283,14 +303,19 @@ Cada regla DEBE tener al menos una prueba automatizada.
 - **Hoja de ruta secuencial**: las specs se crean en el orden y con los números de la hoja de
   ruta del `README.md`; no se crea una spec que no esté en ella.
 - **Tres ramas por spec**, todas integradas a `main` mediante PR:
-  - `NNN-nombre`: definición. Contiene `spec.md`, `plan.md`, `contracts/`, `tasks.md` y el
-    código del paquete `/shared` (el contrato en código). Se integra antes de empezar a
-    implementar.
+  - `NNN-nombre`: definición. Contiene `spec.md`, `plan.md`, `contracts/`, `tasks.md` y las
+    tareas `[SH]`: el código del paquete `/shared` (el contrato en código) y los cambios de la
+    configuración raíz compartida. Se integra antes de empezar a implementar.
   - `NNN-nombre-be`: implementación del backend.
   - `NNN-nombre-fe`: implementación del frontend y de las pruebas E2E.
-- **Etiquetas de capa en `tasks.md`**: cada tarea lleva exactamente una etiqueta: `[SH]`
-  (paquete `/shared`), `[BE]` (backend y base de datos), `[FE]` (frontend) o `[E2E]` (pruebas
-  de extremo a extremo). Cada integrante implementa solo las tareas de su capa.
+- **Etiquetas de capa en `tasks.md`**: cada tarea lleva exactamente una etiqueta:
+  - `[SH]`: paquete `/shared` y configuración raíz compartida (workspaces, TypeScript base,
+    ESLint/Prettier, `.env.example`, CI);
+  - `[BE]`: backend, base de datos e infraestructura del backend (Docker Compose);
+  - `[FE]`: frontend;
+  - `[E2E]`: pruebas de extremo a extremo en `/e2e`.
+
+  Cada integrante implementa solo las tareas de su capa.
 - **Contrato congelado**: después de integrar la rama de definición, cambiar `contracts/` o el
   paquete `/shared` exige actualizar primero la spec y el contrato en un PR aprobado por ambos
   integrantes.
@@ -321,10 +346,15 @@ Cada regla DEBE tener al menos una prueba automatizada.
     "error": {
       "code": "STRING_ESTABLE",
       "message": "Texto descriptivo para el usuario",
-      "requestId": "uuid-v4-trazabilidad"
+      "requestId": "uuid-v4-trazabilidad",
+      "details": { "attemptsLeft": 2 }
     }
   }
   ```
+- `details` es opcional y solo lleva datos que la interfaz necesita para reaccionar (intentos
+  restantes, segundos de espera, motivo, reglas o campos inválidos). Nunca contiene datos
+  sensibles, mensajes técnicos ni información que revele la existencia de cuentas. Su forma por
+  código de error se define en el contrato de cada spec.
 - Códigos HTTP:
   - `400`: entrada inválida.
   - `401`: no autenticado o token vencido.
@@ -388,7 +418,8 @@ Cada regla DEBE tener al menos una prueba automatizada.
 | **2.0.0** | 2026-11-20 | MAJOR | Enfoque en estudiantes universitarios de Colombia; moneda única COP en pesos enteros; verificación por correo institucional; cripto movida a Fase 2 con patrón «Muy pronto»; nuevos dominios (recargas, metas, presupuesto, gastos compartidos); nuevo Principio VI de arquitectura escalable; stack actualizado (React 19, Node 24 LTS) y dependencias de seguridad declaradas; flujo de trabajo en equipo multiagente en Windows. |
 | **2.1.0** | 2026-11-20 | MINOR | Representación del dinero por capa (BIGINT → `number` entero seguro → JSON entero); límites de tasa con almacén compartido en PostgreSQL; generación de OpenAPI desde Zod con `@asteasolutions/zod-to-openapi`; nuevo paquete `/shared` en los workspaces; versiones mayores fijadas (Express 5, Zod 4, Tailwind 4, React Router 7, TanStack Query 5, Prisma 7, PostgreSQL 17). |
 | **2.2.0** | 2026-11-20 | MINOR | Flujo de equipo dividido por capa (backend / frontend): hoja de ruta secuencial, tres ramas por spec (definición, `-be`, `-fe`), etiquetas de capa obligatorias en `tasks.md` y contrato congelado tras la definición. |
+| **2.3.0** | 2026-11-20 | MINOR | Ajustes surgidos del plan de la spec 001: rutas públicas de registro, recuperación y sesión; campo opcional `details` en el formato de error; cláusula de complementos oficiales y dependencias explícitas (`pg`, `@prisma/adapter-pg`, `jsdom`, Testing Library); SQL explícito permitido para operaciones de concurrencia en cualquier módulo; carpeta `/e2e`; la etiqueta `[SH]` incluye la configuración raíz compartida. |
 
 ---
 
-**Version**: 2.2.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20
+**Version**: 2.3.0 | **Ratified**: 2026-10-19 | **Last Amended**: 2026-11-20
