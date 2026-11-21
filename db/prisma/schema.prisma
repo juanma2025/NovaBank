@@ -1,0 +1,214 @@
+// Esquema de Nova — spec 001 (specs/001-auth-onboarding/data-model.md).
+// Tablas y columnas en snake_case (@@map / @map); campos del cliente en camelCase.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Enums -------------------------------------------------------------------
+
+enum VerificationPurpose {
+  registration
+  password_reset
+
+  @@map("verification_purpose")
+}
+
+enum VerificationStatus {
+  awaiting_code
+  verified
+  completed
+  superseded
+  expired
+
+  @@map("verification_status")
+}
+
+enum SessionEndReason {
+  logout
+  idle
+  absolute
+  password_reset
+  reuse_detected
+
+  @@map("session_end_reason")
+}
+
+enum AuditEventType {
+  REGISTRATION_STARTED
+  EMAIL_VERIFIED
+  ACCOUNT_CREATED
+  LOGIN_SUCCEEDED
+  LOGIN_FAILED
+  LOGIN_LOCKED
+  SESSION_ENDED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+
+  @@map("audit_event_type")
+}
+
+enum EmailTemplate {
+  verification_code
+  already_registered
+  password_reset_code
+  password_changed
+
+  @@map("email_template")
+}
+
+enum OutboxStatus {
+  pending
+  sent
+  failed
+  discarded
+
+  @@map("outbox_status")
+}
+
+// --- Modelos -------------------------------------------------------------------
+
+/// data-model.md · User (spec: «Estudiante»)
+model User {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String    @unique @db.VarChar(254)
+  fullName          String    @map("full_name") @db.VarChar(100)
+  passwordHash      String    @map("password_hash")
+  passwordChangedAt DateTime  @map("password_changed_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  consent     DataConsent?
+  sessions    Session[]
+  auditEvents AuditEvent[]
+
+  @@map("users")
+}
+
+/// data-model.md · DataConsent (spec: «Consentimiento de datos»)
+model DataConsent {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  policyVersion String   @map("policy_version") @db.VarChar(20)
+  acceptedAt    DateTime @map("accepted_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("data_consents")
+}
+
+/// data-model.md · VerificationFlow (spec: «Verificación por código»)
+model VerificationFlow {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purpose              VerificationPurpose
+  email                String              @db.VarChar(254)
+  flowTokenHash        String              @unique @map("flow_token_hash") @db.Char(64)
+  status               VerificationStatus
+  codeHash             String?             @map("code_hash") @db.Char(64)
+  codeExpiresAt        DateTime            @map("code_expires_at") @db.Timestamptz(6)
+  codeAttempts         Int                 @default(0) @map("code_attempts") @db.SmallInt
+  lastCodeSentAt       DateTime            @map("last_code_sent_at") @db.Timestamptz(6)
+  verifiedAt           DateTime?           @map("verified_at") @db.Timestamptz(6)
+  completeBy           DateTime?           @map("complete_by") @db.Timestamptz(6)
+  consentPolicyVersion String?             @map("consent_policy_version") @db.VarChar(20)
+  consentAcceptedAt    DateTime?           @map("consent_accepted_at") @db.Timestamptz(6)
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt            DateTime            @map("expires_at") @db.Timestamptz(6)
+
+  @@index([email, purpose, status])
+  @@index([expiresAt])
+  @@map("verification_flows")
+}
+
+/// data-model.md · CodeSend
+model CodeSend {
+  id        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String              @db.VarChar(254)
+  purpose   VerificationPurpose
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email, createdAt])
+  @@map("code_sends")
+}
+
+/// data-model.md · Session (spec: «Sesión»)
+model Session {
+  id                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String            @map("user_id") @db.Uuid
+  refreshTokenHash         String            @unique @map("refresh_token_hash") @db.Char(64)
+  previousRefreshTokenHash String?           @map("previous_refresh_token_hash") @db.Char(64)
+  rotatedAt                DateTime?         @map("rotated_at") @db.Timestamptz(6)
+  createdAt                DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastActivityAt           DateTime          @map("last_activity_at") @db.Timestamptz(6)
+  absoluteExpiresAt        DateTime          @map("absolute_expires_at") @db.Timestamptz(6)
+  revokedAt                DateTime?         @map("revoked_at") @db.Timestamptz(6)
+  revokeReason             SessionEndReason? @map("revoke_reason")
+
+  user User @relation(fields: [userId], references: [id])
+
+  // El índice parcial (user_id) WHERE revoked_at IS NULL se agrega en SQL en la migración.
+  @@index([previousRefreshTokenHash])
+  @@map("sessions")
+}
+
+/// data-model.md · LoginAttempt
+model LoginAttempt {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @db.VarChar(254)
+  originKey String   @map("origin_key") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email, originKey, createdAt])
+  @@index([email, createdAt])
+  @@map("login_attempts")
+}
+
+/// data-model.md · AuditEvent (spec: «Evento de auditoría») — inmutable por triggers.
+model AuditEvent {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      AuditEventType
+  userId    String?        @map("user_id") @db.Uuid
+  emailHash String?        @map("email_hash") @db.Char(64)
+  requestId String         @map("request_id") @db.Uuid
+  metadata  Json           @default("{}")
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_events")
+}
+
+/// data-model.md · EmailOutbox
+model EmailOutbox {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  toEmail            String        @map("to_email") @db.VarChar(254)
+  template           EmailTemplate
+  verificationFlowId String?       @map("verification_flow_id") @db.Uuid
+  payload            Json          @default("{}")
+  status             OutboxStatus
+  attempts           Int           @default(0) @db.SmallInt
+  nextAttemptAt      DateTime      @map("next_attempt_at") @db.Timestamptz(6)
+  lastError          String?       @map("last_error") @db.VarChar(500)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  sentAt             DateTime?     @map("sent_at") @db.Timestamptz(6)
+
+  // El índice parcial (verification_flow_id) WHERE status = 'pending' se agrega en SQL.
+  @@index([status, nextAttemptAt])
+  @@map("email_outbox")
+}
+
+/// data-model.md · RateLimitHit (store compartido de express-rate-limit)
+model RateLimitHit {
+  key     String   @id @db.VarChar(200)
+  hits    Int
+  resetAt DateTime @map("reset_at") @db.Timestamptz(6)
+
+  @@map("rate_limit_hits")
+}
