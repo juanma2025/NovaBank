@@ -142,20 +142,30 @@ export default function LoginPage() {
           onBlur={() => setEmailTouched(true)}
         />
 
-        <PasswordField
-          label={LOGIN_MESSAGES.passwordLabel}
-          name="password"
-          autoComplete="current-password"
-          placeholder={LOGIN_MESSAGES.passwordPlaceholder}
-          value={password}
-          disabled={loginMutation.isPending}
-          error={displayedPasswordError}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            setServerPasswordError(undefined);
-          }}
-          onBlur={() => setPasswordTouched(true)}
-        />
+        <div className="space-y-1">
+          <PasswordField
+            label={LOGIN_MESSAGES.passwordLabel}
+            name="password"
+            autoComplete="current-password"
+            placeholder={LOGIN_MESSAGES.passwordPlaceholder}
+            value={password}
+            disabled={loginMutation.isPending}
+            error={displayedPasswordError}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setServerPasswordError(undefined);
+            }}
+            onBlur={() => setPasswordTouched(true)}
+          />
+          <div className="flex justify-end">
+            <Link
+              to="/recuperar"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-1 text-sm font-medium text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
+            >
+              {LOGIN_MESSAGES.forgotPassword}
+            </Link>
+          </div>
+        </div>
 
         <Button
           type="submit"

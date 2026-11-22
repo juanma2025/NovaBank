@@ -494,8 +494,8 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
 
 ### [FE] Frontend de US3
 
-- [ ] T072 [P] [US3] [FE] Crear `frontend/tests/PasswordResetPage.test.tsx`: retoma el paso, pasa por los tres pasos y al terminar navega a `/ingresar?motivo=clave-cambiada`.
-- [ ] T073 [US3] [FE] Crear:
+- [X] T072 [P] [US3] [FE] Crear `frontend/tests/PasswordResetPage.test.tsx`: retoma el paso, pasa por los tres pasos y al terminar navega a `/ingresar?motivo=clave-cambiada`.
+- [X] T073 [US3] [FE] Crear:
   - `frontend/src/features/auth/steps/NewPasswordStep.tsx`;
   - `frontend/src/features/auth/pages/PasswordResetPage.tsx`: reutiliza `EmailStep` y `CodeStep` con `purpose="password_reset"`, dentro de `PublicOnly`.
 
