@@ -1,5 +1,5 @@
 import { CODE_LENGTH, type VerificationPurpose, type VerificationState } from '@nova/shared';
-import { type FormEvent, type ReactNode, type Ref, useState } from 'react';
+import { type FormEvent, type Ref, useState } from 'react';
 
 import { Alert } from '../../../components/Alert.tsx';
 import { Button } from '../../../components/Button.tsx';
@@ -11,6 +11,7 @@ import {
   VERIFICATION_MESSAGES,
 } from '../../../lib/messages.ts';
 import { CodeInput } from '../components/CodeInput.tsx';
+import { ResendButton } from '../components/ResendButton.tsx';
 
 export interface CodeStepProps {
   purpose: VerificationPurpose;
@@ -20,10 +21,6 @@ export interface CodeStepProps {
   onVerify: (code: string) => Promise<VerificationState>;
   onUseAnotherEmail: () => void;
   onFlowLost: (message: string) => void;
-  renderResend?: (options: {
-    highlight: boolean;
-    onResent: (nextState: VerificationState) => void;
-  }) => ReactNode;
   onStateUpdated?: (nextState: VerificationState) => void;
 }
 
@@ -35,7 +32,6 @@ export function CodeStep({
   onVerify,
   onUseAnotherEmail,
   onFlowLost,
-  renderResend,
   onStateUpdated,
 }: CodeStepProps) {
   const isRegistration = purpose === 'registration';
@@ -126,6 +122,7 @@ export function CodeStep({
 
       <Button
         type="submit"
+        variant={highlightResend ? 'secondary' : 'primary'}
         fullWidth
         loading={isVerifying}
         loadingLabel={VERIFICATION_MESSAGES.verifying}
@@ -134,16 +131,19 @@ export function CodeStep({
       </Button>
 
       <div className="flex flex-col items-center gap-2 pt-1">
-        {renderResend?.({
-          highlight: highlightResend,
-          onResent: (nextState) => {
-            setCode('');
-            setCodeError(undefined);
-            setBannerError(undefined);
-            setHighlightResend(false);
-            onStateUpdated?.(nextState);
-          },
-        })}
+            <ResendButton
+              resendAvailableAt={state.resendAvailableAt}
+              prominent={highlightResend}
+              disabled={isVerifying}
+              onFlowLost={onFlowLost}
+              onResent={(nextState) => {
+                setCode('');
+                setCodeError(undefined);
+                setBannerError(undefined);
+                setHighlightResend(false);
+                onStateUpdated?.(nextState);
+          }}
+        />
 
         <Button variant="ghost" type="button" disabled={isVerifying} onClick={onUseAnotherEmail}>
           {VERIFICATION_MESSAGES.useAnotherEmail}

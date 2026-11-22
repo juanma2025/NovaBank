@@ -535,8 +535,8 @@ que el código anterior falla y el nuevo funciona.
 
 ### [FE] Frontend de US4
 
-- [ ] T077 [P] [US4] [FE] Crear `frontend/tests/ResendButton.test.tsx`: cuenta regresiva desde `resendAvailableAt`, deshabilitado mientras corre y manejo de `RESEND_TOO_SOON` y `CODE_SEND_LIMIT`.
-- [ ] T078 [US4] [FE] Crear `frontend/src/features/auth/components/ResendButton.tsx` e integrarlo en `CodeStep.tsx`. Con `CODE_EXPIRED` o `CODE_ATTEMPTS_EXHAUSTED`, destacar «Pedir código nuevo».
+- [X] T077 [P] [US4] [FE] Crear `frontend/tests/ResendButton.test.tsx`: cuenta regresiva desde `resendAvailableAt`, deshabilitado mientras corre y manejo de `RESEND_TOO_SOON` y `CODE_SEND_LIMIT`.
+- [X] T078 [US4] [FE] Crear `frontend/src/features/auth/components/ResendButton.tsx` e integrarlo en `CodeStep.tsx`. Con `CODE_EXPIRED` o `CODE_ATTEMPTS_EXHAUSTED`, destacar «Pedir código nuevo».
 
 ### [E2E] Extremo a extremo de US4
 
