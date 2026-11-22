@@ -23,11 +23,11 @@ function createPendingPage(title: string) {
   }));
 }
 
-const LoginPage = createPendingPage('Iniciar sesión');
-const RegisterPage = createPendingPage('Registro');
+const LoginPage = lazy(() => import('../features/auth/pages/LoginPage.tsx'));
+const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage.tsx'));
 const PasswordResetPage = createPendingPage('Recuperar contraseña');
-const PrivacyPolicyPage = createPendingPage('Política de privacidad');
-const WelcomePage = createPendingPage('Inicio');
+const PrivacyPolicyPage = lazy(() => import('../features/legal/PrivacyPolicyPage.tsx'));
+const WelcomePage = lazy(() => import('../features/auth/pages/WelcomePage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {

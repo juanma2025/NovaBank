@@ -351,7 +351,7 @@ código debe retomar ese paso.
 
 ### [FE] Frontend de US1
 
-- [ ] T053 [P] [US1] [FE] Crear `frontend/tests/RegisterPage.test.tsx`. Debe comprobar:
+- [X] T053 [P] [US1] [FE] Crear `frontend/tests/RegisterPage.test.tsx`. Debe comprobar:
   - retoma el paso según `GET /auth/verification` (404 → paso 1, `code` → código, `complete` → perfil);
   - `DOMAIN_NOT_ALLOWED` aparece en el campo;
   - sin aceptar la política no se puede continuar;
@@ -359,19 +359,19 @@ código debe retomar ese paso.
   - las reglas de contraseña se actualizan mientras se escribe;
   - el éxito navega a `/inicio`;
   - el foco se mueve al título de cada paso.
-- [ ] T054 [P] [US1] [FE] Crear en `frontend/src/features/auth/components/`:
+- [X] T054 [P] [US1] [FE] Crear en `frontend/src/features/auth/components/`:
   - `CodeInput.tsx`: 6 casillas con `inputMode="numeric"` y `autoComplete="one-time-code"`, acepta pegar el código, se envía al completarse, errores con `aria-live`;
   - `PasswordRules.tsx`: lista en vivo de `validatePasswordRules`, más la regla `common` cuando la reporta el servidor;
   - `ConsentCheckbox.tsx`: enlace a `/privacidad`.
-- [ ] T055 [P] [US1] [FE] Crear `frontend/src/features/legal/PrivacyPolicyPage.tsx`, con el texto de la política de tratamiento de datos (Ley 1581 de 2012) en `frontend/src/lib/messages.ts` y la versión `PRIVACY_POLICY_VERSION` visible.
-- [ ] T056 [US1] [FE] Crear:
+- [X] T055 [P] [US1] [FE] Crear `frontend/src/features/legal/PrivacyPolicyPage.tsx`, con el texto de la política de tratamiento de datos (Ley 1581 de 2012) en `frontend/src/lib/messages.ts` y la versión `PRIVACY_POLICY_VERSION` visible.
+- [X] T056 [US1] [FE] Crear:
   - `frontend/src/features/auth/hooks/useVerification.ts`: consulta `['verification', purpose]` y mutaciones `start` / `verify`;
   - `frontend/src/features/auth/steps/EmailStep.tsx`: genérico por `purpose`; valida el formato del correo mientras se escribe con `InstitutionalEmailSchema` (FR-024); en registro muestra `ConsentCheckbox`;
   - `frontend/src/features/auth/steps/CodeStep.tsx`: correo enmascarado y «Usar otro correo»;
   - `frontend/src/features/auth/steps/ProfileStep.tsx`: nombre y `PasswordField` con `PasswordRules`.
 
   Los estados de carga y error siguen la tabla de [plan.md](plan.md).
-- [ ] T057 [US1] [FE] Crear:
+- [X] T057 [US1] [FE] Crear:
   - `frontend/src/features/auth/pages/RegisterPage.tsx`: orquesta los pasos y retoma tras recargar (FR-009a), envuelto en `PublicOnly`;
   - `frontend/src/features/auth/pages/WelcomePage.tsx`: «Hola, {primer nombre}» (primera palabra de `fullName`) con esqueleto de carga, dentro de `RequireAuth` (FR-019).
 
@@ -431,20 +431,20 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
 
 ### [FE] Frontend de US2
 
-- [ ] T064 [P] [US2] [FE] Crear:
+- [X] T064 [P] [US2] [FE] Crear:
   - `frontend/tests/LoginPage.test.tsx`: error genérico, bloqueo con los minutos restantes, redirección con `redirect`, avisos según `motivo`;
   - `frontend/tests/useIdleTimer.test.tsx`, con temporizadores falsos: el aviso aparece en `idleTimeoutSeconds − idleWarningSeconds` contados desde el último contacto exitoso con el servidor (no desde la última interacción local); «Seguir conectado» llama a `refresh`; al terminar la cuenta regresiva se llama a `logout`; con `BroadcastChannel` simulado, una interacción en otra pestaña reinicia el contador, y `keepalive` y `logout` cierran el aviso o la sesión en todas las pestañas.
-- [ ] T065 [US2] [FE] Crear `frontend/src/features/auth/pages/LoginPage.tsx`, dentro de `PublicOnly`, y `frontend/src/features/auth/hooks/useLogin.ts`:
+- [X] T065 [US2] [FE] Crear `frontend/src/features/auth/pages/LoginPage.tsx`, dentro de `PublicOnly`, y `frontend/src/features/auth/hooks/useLogin.ts`:
   - al entrar, navega a `safeRedirect(redirect)` o a `/inicio`;
   - muestra el aviso según `?motivo=`;
   - con `LOGIN_LOCKED`, muestra los minutos restantes.
-- [ ] T066 [US2] [FE] Crear `frontend/src/features/auth/hooks/useIdleTimer.ts` y `frontend/src/features/auth/components/InactivityDialog.tsx` (modal accesible con foco atrapado y cuenta regresiva de 60 s). Integrarlos en `SessionProvider` (`frontend/src/app/providers.tsx`) (FR-016a, research R3):
+- [X] T066 [US2] [FE] Crear `frontend/src/features/auth/hooks/useIdleTimer.ts` y `frontend/src/features/auth/components/InactivityDialog.tsx` (modal accesible con foco atrapado y cuenta regresiva de 60 s). Integrarlos en `SessionProvider` (`frontend/src/app/providers.tsx`) (FR-016a, research R3):
   - escucha `pointerdown`, `keydown`, `scroll` y la navegación;
   - programa el aviso desde el último contacto exitoso con el servidor (lo registra `api-client` en cada respuesta 2xx), no desde la última interacción local (research R3);
   - sincroniza las pestañas con `BroadcastChannel('nova-session')`, difundiendo `activity`, `keepalive` y `logout`;
   - llama a `refresh` con un límite de una vez cada 60 s;
   - toma los tiempos de `SessionInfo`.
-- [ ] T067 [US2] [FE] Agregar «Cerrar sesión» en `frontend/src/components/AppHeader.tsx` con `frontend/src/features/auth/hooks/useLogout.ts`: llama a `POST /auth/logout`, limpia la caché de consultas y navega a `/ingresar`. En `api-client` / `SessionProvider`, `SESSION_EXPIRED` redirige a `/ingresar?motivo=inactividad` o `?motivo=expirada` según `details.reason`, agregando `&redirect=<ruta actual>` para volver donde estaba (caso límite de la spec). El cierre de sesión se difunde a las demás pestañas.
+- [X] T067 [US2] [FE] Agregar «Cerrar sesión» en `frontend/src/components/AppHeader.tsx` con `frontend/src/features/auth/hooks/useLogout.ts`: llama a `POST /auth/logout`, limpia la caché de consultas y navega a `/ingresar`. En `api-client` / `SessionProvider`, `SESSION_EXPIRED` redirige a `/ingresar?motivo=inactividad` o `?motivo=expirada` según `details.reason`, agregando `&redirect=<ruta actual>` para volver donde estaba (caso límite de la spec). El cierre de sesión se difunde a las demás pestañas.
 
 ### [E2E] Extremo a extremo de US2
 

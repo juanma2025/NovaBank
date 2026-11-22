@@ -1,6 +1,6 @@
 import type { SessionEndReason } from '@nova/shared';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { Alert } from '../components/Alert.tsx';
@@ -8,6 +8,8 @@ import { NovaMark } from '../components/AppHeader.tsx';
 import { Button } from '../components/Button.tsx';
 import { GlassCard } from '../components/GlassCard.tsx';
 import { Spinner } from '../components/Spinner.tsx';
+import { InactivityDialog } from '../features/auth/components/InactivityDialog.tsx';
+import { useIdleTimer } from '../features/auth/hooks/useIdleTimer.ts';
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/hooks/useSession.ts';
 import { resetLastServerContactAt, setOnSessionExpired } from '../lib/api-client.ts';
 import { APP_MESSAGES } from '../lib/messages.ts';
@@ -36,7 +38,10 @@ export function AppProviders({ children, queryClient: externalClient }: AppProvi
   return <QueryClientProvider client={internalClient}>{children}</QueryClientProvider>;
 }
 
-function buildExpiredLoginUrl(reason: SessionEndReason | undefined, currentPath: string): string {
+function buildExpiredLoginUrl(
+  reason: SessionEndReason | 'expirada' | undefined,
+  currentPath: string,
+): string {
   const params = new URLSearchParams();
   params.set('motivo', reason === 'idle' ? 'inactividad' : 'expirada');
   if (currentPath && !currentPath.startsWith('/ingresar')) {
@@ -50,28 +55,61 @@ export interface SessionProviderProps {
 }
 
 /**
- * Conecta el callback `SESSION_EXPIRED` del cliente HTTP con la caché de TanStack Query y la
- * navegación a `/ingresar`. En US2 (T066) integra además `useIdleTimer` e `InactivityDialog`.
+ * Conecta `SESSION_EXPIRED` del cliente HTTP, el temporizador de inactividad (`useIdleTimer`)
+ * y el aviso modal (`InactivityDialog`) con la caché de TanStack Query y la navegación.
  */
 export function SessionProvider({ children }: SessionProviderProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: session } = useSession();
+
+  const handleSessionTermination = useCallback(
+    (reason: 'idle' | 'expirada' | 'logout') => {
+      resetLastServerContactAt();
+      queryClient.clear();
+      queryClient.setQueryData(SESSION_QUERY_KEY, null);
+      if (reason === 'logout') {
+        void navigate('/ingresar', { replace: true });
+        return;
+      }
+      const currentPath = `${location.pathname}${location.search}`;
+      void navigate(buildExpiredLoginUrl(reason, currentPath), { replace: true });
+    },
+    [location.pathname, location.search, navigate, queryClient],
+  );
 
   useEffect(() => {
     setOnSessionExpired((reason) => {
-      resetLastServerContactAt();
-      queryClient.setQueryData(SESSION_QUERY_KEY, null);
-      const currentPath = `${location.pathname}${location.search}`;
-      void navigate(buildExpiredLoginUrl(reason, currentPath), { replace: true });
+      handleSessionTermination(reason === 'idle' ? 'idle' : 'expirada');
     });
 
     return () => {
       setOnSessionExpired(null);
     };
-  }, [location.pathname, location.search, navigate, queryClient]);
+  }, [handleSessionTermination]);
 
-  return <>{children}</>;
+  const idle = useIdleTimer({
+    session: session ?? null,
+    onSessionEnded: handleSessionTermination,
+  });
+
+  return (
+    <>
+      {children}
+      <InactivityDialog
+        open={idle.warningOpen}
+        secondsLeft={idle.secondsLeft}
+        isRefreshing={idle.isRefreshing}
+        onStayConnected={() => {
+          void idle.stayConnected();
+        }}
+        onLogoutNow={() => {
+          void idle.logoutNow();
+        }}
+      />
+    </>
+  );
 }
 
 /**

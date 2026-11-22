@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 import { Spinner } from './Spinner.tsx';
 
@@ -10,6 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loadingLabel?: string;
   fullWidth?: boolean;
   children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
@@ -29,12 +30,14 @@ export function Button({
   type = 'button',
   className = '',
   children,
+  ref,
   ...props
 }: ButtonProps) {
   const isDisabled = Boolean(disabled || loading);
 
   return (
     <button
+      ref={ref}
       type={type}
       disabled={isDisabled}
       aria-busy={loading || undefined}

@@ -6,7 +6,7 @@ export interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
 
 export function GlassCard({ children, className = '', ...props }: GlassCardProps) {
   return (
-    <div className={`nova-glass rounded-[var(--radius-xl)] p-6 sm:p-8 ${className}`} {...props}>
+    <div className={`nova-glass rounded-[var(--radius-xl)] p-5 sm:p-8 ${className}`} {...props}>
       {children}
     </div>
   );
