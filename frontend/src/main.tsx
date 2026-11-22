@@ -1,5 +1,11 @@
+import './styles/index.css';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
+
+import { AppProviders, AppStartupGate, SessionProvider } from './app/providers.tsx';
+import { AppRoutes } from './app/router.tsx';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -8,6 +14,14 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <main>Nova</main>
+    <AppProviders>
+      <BrowserRouter>
+        <SessionProvider>
+          <AppStartupGate>
+            <AppRoutes />
+          </AppStartupGate>
+        </SessionProvider>
+      </BrowserRouter>
+    </AppProviders>
   </StrictMode>,
 );

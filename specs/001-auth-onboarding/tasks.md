@@ -256,33 +256,33 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
 
 ### [FE] Armazón del frontend
 
-- [ ] T038 [P] [FE] Crear `frontend/src/styles/tokens.css` y `frontend/src/styles/index.css`:
+- [X] T038 [P] [FE] Crear `frontend/src/styles/tokens.css` y `frontend/src/styles/index.css`:
   - Tailwind 4 con `@theme`;
   - tokens de color para el modo claro y oscuro (`prefers-color-scheme`), radios, sombras y desenfoque de vidrio;
   - fuente del sistema con respaldo `Inter`;
   - transiciones ≤ 400 ms y `prefers-reduced-motion` (constitución, Principio IV).
-- [ ] T039 [P] [FE] Crear `frontend/src/lib/messages.ts`:
+- [X] T039 [P] [FE] Crear `frontend/src/lib/messages.ts`:
   - catálogo único en español con un mensaje accionable para cada `ErrorCode` de `@nova/shared`;
   - todos los textos de las pantallas de esta spec, incluidos los avisos de `?motivo=` (`inactividad`, `expirada`, `clave-cambiada`).
-- [ ] T040 [FE] Crear `frontend/src/lib/api-client.ts`:
+- [X] T040 [FE] Crear `frontend/src/lib/api-client.ts`:
   - `fetch` con `credentials: 'same-origin'` y JSON;
   - expone `lastServerContactAt`, actualizado en cada respuesta 2xx, para programar el aviso de inactividad (research R3);
   - `ApiError` construido con `ErrorResponseSchema`, y errores de red como `ApiError('NETWORK')`;
   - ante `ACCESS_TOKEN_EXPIRED`, un solo reintento tras `POST /auth/refresh` dentro de `navigator.locks.request('nova-refresh')` (research R2);
   - ante `SESSION_EXPIRED`, un callback configurable.
-- [ ] T041 [P] [FE] Crear `frontend/src/lib/safe-redirect.ts` (solo rutas que empiezan con `/` y no con `//` ni `/\`) y `frontend/tests/safe-redirect.test.ts`.
-- [ ] T042 [P] [FE] Crear en `frontend/src/components/` los componentes base:
+- [X] T041 [P] [FE] Crear `frontend/src/lib/safe-redirect.ts` (solo rutas que empiezan con `/` y no con `//` ni `/\`) y `frontend/tests/safe-redirect.test.ts`.
+- [X] T042 [P] [FE] Crear en `frontend/src/components/` los componentes base:
   - `Button.tsx` (estado de carga), `TextField.tsx`, `PasswordField.tsx` (mostrar/ocultar), `Alert.tsx` (`aria-live`), `GlassCard.tsx` y `Spinner.tsx`;
   - objetivo táctil ≥ 44 px, foco visible y errores con `aria-describedby`.
-- [ ] T043 [FE] Crear `frontend/src/components/AuthLayout.tsx` (tarjeta de vidrio centrada, responsive desde 360 px), `frontend/src/components/AppHeader.tsx` (logo y espacio para acciones) y `frontend/src/components/NotFoundPage.tsx`.
-- [ ] T044 [FE] Crear `frontend/src/features/auth/api.ts` (una función tipada por cada operación de [contracts/auth.openapi.json](contracts/auth.openapi.json), con tipos de `@nova/shared`) y `frontend/src/features/auth/hooks/useSession.ts` (consulta `['session']` a `GET /auth/session`; un 401 equivale a «sin sesión»).
-- [ ] T045 [FE] Crear el enrutamiento y los proveedores:
+- [X] T043 [FE] Crear `frontend/src/components/AuthLayout.tsx` (tarjeta de vidrio centrada, responsive desde 360 px), `frontend/src/components/AppHeader.tsx` (logo y espacio para acciones) y `frontend/src/components/NotFoundPage.tsx`.
+- [X] T044 [FE] Crear `frontend/src/features/auth/api.ts` (una función tipada por cada operación de [contracts/auth.openapi.json](contracts/auth.openapi.json), con tipos de `@nova/shared`) y `frontend/src/features/auth/hooks/useSession.ts` (consulta `['session']` a `GET /auth/session`; un 401 equivale a «sin sesión»).
+- [X] T045 [FE] Crear el enrutamiento y los proveedores:
   - `frontend/src/app/providers.tsx`: `QueryClient` y `SessionProvider`, que conecta el callback de `SESSION_EXPIRED`;
   - `frontend/src/app/RequireAuth.tsx`: redirige a `/ingresar?redirect=<ruta>`;
   - `frontend/src/app/PublicOnly.tsx`: con sesión, envía a `/inicio`;
   - `frontend/src/app/router.tsx`: rutas con carga diferida según la tabla «Rutas» de [plan.md](plan.md), incluidas `/` y `*`;
   - `frontend/src/main.tsx`: pantalla de arranque mientras se resuelve `['session']`, y error de red con «Reintentar».
-- [ ] T046 [P] [FE] Crear `frontend/vitest.config.ts` (entorno `jsdom`, condición `development`), `frontend/tests/setup.ts`, `frontend/tests/api-client.test.ts` (parseo de errores, un solo reintento tras refrescar, error de red) y `frontend/tests/RequireAuth.test.tsx` (redirección con `redirect`).
+- [X] T046 [P] [FE] Crear `frontend/vitest.config.ts` (entorno `jsdom`, condición `development`), `frontend/tests/setup.ts`, `frontend/tests/api-client.test.ts` (parseo de errores, un solo reintento tras refrescar, error de red) y `frontend/tests/RequireAuth.test.tsx` (redirección con `redirect`).
 
 **Checkpoint**: la base está lista; las historias de usuario pueden empezar.
 
