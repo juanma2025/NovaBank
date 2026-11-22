@@ -88,7 +88,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 ### [FE] Migración de la plantilla existente
 
-- [ ] T010 [P] [FE] Migrar `Nova_Front/` (plantilla por defecto de Vite subida a `main`) al workspace `frontend/`:
+- [X] T010 [P] [FE] Migrar `Nova_Front/` (plantilla por defecto de Vite subida a `main`) al workspace `frontend/`:
   - **Package**: crear `frontend/package.json` (`@nova/frontend`, dependencias del plan: React 19, React Router 7, TanStack Query 5, `lucide-react`, `@nova/shared`; devDependencies `@vitejs/plugin-react`, `@tailwindcss/vite`, `tailwindcss@4`, Vitest, Testing Library, `jsdom`).
   - **Archivos a mover**: `index.html`, `src/main.tsx`, `vite.config.ts` y los `tsconfig*.json`, ajustados para extender `tsconfig.base.json`.
   - **Vite**: proxy `/api` → `http://localhost:3000` y plugin `@tailwindcss/vite`.
