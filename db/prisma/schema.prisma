@@ -1,3 +1,7 @@
+// Supera 300 líneas por diseño (constitución, «Complejidad»): es declarativo, un modelo por tabla,
+// y Prisma toma de este único archivo el historial de migraciones. Justificado en
+// specs/007-gastos-compartidos/plan.md (Complexity Tracking).
+
 // Esquema de Nova — spec 001 (specs/001-auth-onboarding/data-model.md).
 // Tablas y columnas en snake_case (@@map / @map); campos del cliente en camelCase.
 
@@ -60,6 +64,10 @@ enum AuditEventType {
   CARD_CANCELED
   CARD_REVEALED
   CARD_PAYMENT_APPROVED
+  GOAL_CREATED
+  GOAL_CLOSED
+  SAVINGS_DEPOSIT
+  SAVINGS_WITHDRAWAL
 
   @@map("audit_event_type")
 }
@@ -69,6 +77,10 @@ enum EmailTemplate {
   already_registered
   password_reset_code
   password_changed
+  budget_alert
+  split_invitation
+  split_reminder
+  split_paid
 
   @@map("email_template")
 }
@@ -94,14 +106,20 @@ model User {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  consent         DataConsent?
-  sessions        Session[]
-  auditEvents     AuditEvent[]
-  account         Account?
-  idempotencyKeys IdempotencyKey[]
-  profile         Profile?
-  cards           Card[]
-  cardDeclines    CardPaymentDecline[]
+  consent            DataConsent?
+  sessions           Session[]
+  auditEvents        AuditEvent[]
+  account            Account?
+  idempotencyKeys    IdempotencyKey[]
+  profile            Profile?
+  cards              Card[]
+  cardDeclines       CardPaymentDecline[]
+  savingsGoals       SavingsGoal[]
+  budgetLimits       BudgetLimit[]
+  transferCategories TransferCategory[]
+  budgetAlerts       BudgetAlert[]
+  createdSplits      Split[]
+  splitShares        SplitShare[]
 
   @@map("users")
 }
@@ -235,6 +253,7 @@ enum AccountKind {
   student
   system_topups
   system_merchants
+  savings_goal
 
   @@map("account_kind")
 }
@@ -249,6 +268,8 @@ enum LedgerTransactionType {
   topup
   transfer
   card_payment
+  savings_deposit
+  savings_withdrawal
 
   @@map("ledger_transaction_type")
 }
@@ -278,6 +299,8 @@ model Account {
   transactions             LedgerTransaction[]
   /// Transferencias recibidas (spec 003).
   counterpartyTransactions LedgerTransaction[] @relation("Counterparty")
+  /// Spec 005: meta dueña de esta subcuenta (kind = savings_goal).
+  savingsGoal              SavingsGoal?
 
   @@map("accounts")
 }
@@ -299,12 +322,15 @@ model LedgerTransaction {
   createdAt             DateTime                @map("created_at") @db.Timestamptz(6)
   completedAt           DateTime?               @map("completed_at") @db.Timestamptz(6)
 
-  account      Account             @relation(fields: [accountId], references: [id])
-  counterparty Account?            @relation("Counterparty", fields: [counterpartyAccountId], references: [id], onDelete: Restrict)
-  reversed     LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
-  reversals    LedgerTransaction[] @relation("Reversal")
-  entries      LedgerEntry[]
-  cardPayment  CardPayment?
+  account        Account             @relation(fields: [accountId], references: [id])
+  counterparty   Account?            @relation("Counterparty", fields: [counterpartyAccountId], references: [id], onDelete: Restrict)
+  reversed       LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
+  reversals      LedgerTransaction[] @relation("Reversal")
+  entries        LedgerEntry[]
+  cardPayment    CardPayment?
+  closedGoal     SavingsGoal?
+  budgetCategory TransferCategory?
+  splitShare     SplitShare?
 
   @@index([accountId, type, createdAt])
   @@map("ledger_transactions")
@@ -432,4 +458,157 @@ model CardPaymentDecline {
 
   @@index([userId, createdAt])
   @@map("card_payment_declines")
+}
+
+/// Spec 005 · estado de la meta de ahorro.
+enum SavingsGoalStatus {
+  active
+  closed
+
+  @@map("savings_goal_status")
+}
+
+/// Spec 005 · meta de ahorro. Dueño: módulo savings. Su saldo vive en la subcuenta `account_id`.
+model SavingsGoal {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String            @map("user_id") @db.Uuid
+  accountId            String            @unique @map("account_id") @db.Uuid
+  name                 String            @db.VarChar(40)
+  targetAmount         BigInt            @map("target_amount")
+  targetDate           DateTime?         @map("target_date") @db.Date
+  status               SavingsGoalStatus
+  /// Devolución al cerrar, si hubo saldo (research R7).
+  closingTransactionId String?           @unique @map("closing_transaction_id") @db.Uuid
+  createdAt            DateTime          @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime          @map("updated_at") @db.Timestamptz(6)
+  closedAt             DateTime?         @map("closed_at") @db.Timestamptz(6)
+
+  user               User               @relation(fields: [userId], references: [id])
+  account            Account            @relation(fields: [accountId], references: [id])
+  closingTransaction LedgerTransaction? @relation(fields: [closingTransactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, createdAt])
+  @@map("savings_goals")
+}
+
+/// Spec 006 · categorías del presupuesto (las 5 de comercios, transferencias y otros).
+enum BudgetCategory {
+  food
+  books
+  transport
+  stationery
+  entertainment
+  transfers
+  other
+
+  @@map("budget_category")
+}
+
+/// Spec 006 · tope mensual por categoría, versionado por mes (research R4). Dueño: budgets.
+model BudgetLimit {
+  userId         String         @map("user_id") @db.Uuid
+  category       BudgetCategory
+  /// AAAA-MM desde el que rige; el tope de un mes es la fila con el mayor mes ≤ ese mes.
+  effectiveMonth String         @map("effective_month") @db.Char(7)
+  /// NULL = sin tope desde ese mes.
+  monthlyLimit   BigInt?        @map("monthly_limit")
+  updatedAt      DateTime       @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([userId, category, effectiveMonth])
+  @@map("budget_limits")
+}
+
+/// Spec 006 · categoría elegida para una transferencia enviada. Dueño: budgets.
+model TransferCategory {
+  transactionId String         @id @map("transaction_id") @db.Uuid
+  userId        String         @map("user_id") @db.Uuid
+  category      BudgetCategory
+  updatedAt     DateTime       @map("updated_at") @db.Timestamptz(6)
+
+  user        User              @relation(fields: [userId], references: [id])
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+
+  @@index([userId])
+  @@map("transfer_categories")
+}
+
+/// Spec 006 · alerta de presupuesto, una por umbral, categoría y mes (research R5). Dueño: budgets.
+model BudgetAlert {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String         @map("user_id") @db.Uuid
+  month        String         @db.Char(7)
+  category     BudgetCategory
+  threshold    Int            @db.SmallInt
+  spent        BigInt
+  monthlyLimit BigInt         @map("monthly_limit")
+  createdAt    DateTime       @map("created_at") @db.Timestamptz(6)
+  seenAt       DateTime?      @map("seen_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month, category, threshold])
+  @@index([userId, month, createdAt])
+  @@map("budget_alerts")
+}
+
+/// Spec 007 · estado de una división.
+enum SplitStatus {
+  open
+  completed
+  canceled
+
+  @@map("split_status")
+}
+
+/// Spec 007 · estado de una parte (solo sale de pending, research R5).
+enum SplitShareStatus {
+  pending
+  paid
+  paid_outside
+  declined
+  canceled
+
+  @@map("split_share_status")
+}
+
+/// Spec 007 · gasto dividido entre compañeros. No mueve dinero (regla de dominio 11). Dueño: splits.
+model Split {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorUserId String      @map("creator_user_id") @db.Uuid
+  title         String      @db.VarChar(60)
+  totalAmount   BigInt      @map("total_amount")
+  creatorShare  BigInt      @map("creator_share")
+  status        SplitStatus
+  createdAt     DateTime    @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime    @map("updated_at") @db.Timestamptz(6)
+  closedAt      DateTime?   @map("closed_at") @db.Timestamptz(6)
+
+  creator User         @relation(fields: [creatorUserId], references: [id])
+  shares  SplitShare[]
+
+  @@index([creatorUserId, createdAt])
+  @@map("splits")
+}
+
+/// Spec 007 · parte de un participante; se paga con una transferencia normal (research R2).
+model SplitShare {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  splitId               String           @map("split_id") @db.Uuid
+  userId                String           @map("user_id") @db.Uuid
+  amount                BigInt
+  status                SplitShareStatus
+  transferTransactionId String?          @unique @map("transfer_transaction_id") @db.Uuid
+  resolvedAt            DateTime?        @map("resolved_at") @db.Timestamptz(6)
+  lastRemindedAt        DateTime?        @map("last_reminded_at") @db.Timestamptz(6)
+  createdAt             DateTime         @map("created_at") @db.Timestamptz(6)
+
+  split    Split              @relation(fields: [splitId], references: [id])
+  user     User               @relation(fields: [userId], references: [id])
+  transfer LedgerTransaction? @relation(fields: [transferTransactionId], references: [id], onDelete: Restrict)
+
+  @@unique([splitId, userId])
+  @@index([userId, status])
+  @@map("split_shares")
 }

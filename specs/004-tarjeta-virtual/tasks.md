@@ -228,6 +228,11 @@ descongela, y queda auditado.
 - [ ] T034 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/tarjetas`, `/tarjetas/:id` y `/tienda` (SC-006). Registrar el resultado en `specs/004-tarjeta-virtual/checklists/accessibility.md`.
 - [ ] T035 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
+### Ajustes del análisis de consistencia (U1)
+
+- [X] T036 [BE] En `backend/src/modules/cards/payments.service.ts`, rechazar con `CARD_NOT_ACTIVE` una tarjeta cuyo mes de vencimiento ya terminó en hora de Bogotá (FR-013, research R6), dentro de la transacción y después de la idempotencia. Prueba en `backend/tests/integration/store-payments.test.ts`: el último día del mes de vencimiento paga; al mes siguiente se rechaza sin mover dinero.
+- [ ] T037 [FE] En `frontend/src/features/cards/components/VirtualCard.tsx`, mostrar «Vencida» (texto, no solo color) cuando `expMonth`/`expYear` ya pasaron en hora de Bogotá, con su prueba en `frontend/tests/CardsPage.test.tsx`.
+
 ---
 
 ## Dependencies & Execution Order

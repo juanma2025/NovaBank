@@ -2,10 +2,12 @@ import { timingSafeEqual } from 'node:crypto';
 
 import type { Card as CardRow, Prisma } from '@nova/db';
 import {
+  bogotaMonth,
   findMerchant,
   maskCardNumber,
   type CardPaymentResult,
   type CardPaymentsPage,
+  type MerchantCategory,
   type MerchantId,
   type PaymentLimits,
 } from '@nova/shared';
@@ -15,6 +17,7 @@ import { startOfBogotaDay } from '../../lib/bogota-day.js';
 import type { CardCrypto } from '../../lib/card-crypto.js';
 import { secondsUntil } from '../../lib/clock.js';
 import { decodeCursor, encodeCursor } from '../../lib/cursor.js';
+import type { EventBus } from '../../lib/events.js';
 import type { Db } from '../../lib/db.js';
 import { appError } from '../../lib/errors.js';
 import type { IdempotencyService } from '../../lib/idempotency/idempotency.service.js';
@@ -47,6 +50,11 @@ export interface PayOutcome {
   replayed: boolean;
 }
 
+/** El mes de vencimiento ya terminó en hora de Bogotá (spec 004, FR-013, research R6). */
+function isExpired(card: { expMonth: number; expYear: number }, now: Date): boolean {
+  return bogotaMonth(now) > `${card.expYear}-${String(card.expMonth).padStart(2, '0')}`;
+}
+
 const sameText = (a: string, b: string): boolean =>
   a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
@@ -61,6 +69,7 @@ export function createPaymentsService(
     ledger: LedgerService;
     idempotency: IdempotencyService;
     crypto: CardCrypto;
+    events: EventBus;
   },
 ) {
   const { config, prisma, clock, audit } = ctx;
@@ -137,8 +146,8 @@ export function createPaymentsService(
       throw newLock ? lockedError(newLock) : appError('CARD_DECLINED');
     }
 
-    return prisma.$transaction(
-      async (tx) => {
+    const outcome = await prisma.$transaction(
+      async (tx): Promise<PayOutcome> => {
         const own = await accounts.ensureForUser(tx, input.userId);
         const account = await accounts.lockForUpdate(tx, own.id);
         // La fila de la tarjeta bloqueada: congelar o cancelar espera o ya se aplicó (R6).
@@ -160,8 +169,11 @@ export function createPaymentsService(
           };
         }
 
-        // Regla de dominio 8: una tarjeta congelada o cancelada rechaza toda autorización.
-        if (locked.status !== 'active') throw appError('CARD_NOT_ACTIVE');
+        // Regla de dominio 8 y FR-013: una tarjeta congelada, cancelada o vencida rechaza toda
+        // autorización. Vence al terminar su mes de vencimiento en hora de Bogotá.
+        if (locked.status !== 'active' || isExpired(locked, clock.now())) {
+          throw appError('CARD_NOT_ACTIVE');
+        }
         const left = await remainingToday(tx, account.id);
         if (input.amount > left) throw appError('PAYMENT_DAILY_LIMIT', { remainingToday: left });
         if (input.amount > account.balance) {
@@ -212,6 +224,9 @@ export function createPaymentsService(
       },
       { timeout: 15_000, maxWait: 10_000 },
     );
+    // Después de confirmar: el presupuesto (spec 006) nunca afecta el pago (research R2).
+    if (!outcome.replayed) await deps.events.emit('spending.recorded', { userId: input.userId });
+    return outcome;
   }
 
   /** GET /cards/{cardId}/payments (FR-020). */
@@ -240,12 +255,22 @@ export function createPaymentsService(
     };
   }
 
+  /** Spec 006 (research R3): pagos aprobados por categoría del comercio en [desde, hasta). */
+  async function spendingByCategory(
+    db: Db,
+    userId: string,
+    range: { from: Date; to: Date },
+  ): Promise<Partial<Record<MerchantCategory, number>>> {
+    const rows = await repo.sumByCategory(db, userId, range);
+    return Object.fromEntries(rows.map((r) => [r.category, toSafeNumber(r.total)]));
+  }
+
   /** Limpieza de rechazos de más de 24 h (data-model.md, CardPaymentDecline). */
   function deleteOldDeclines(now: Date): Promise<number> {
     return repo.deleteDeclinesBefore(prisma, new Date(now.getTime() - 24 * 60 * 60 * 1000));
   }
 
-  return { limits, pay, listCardPayments, deleteOldDeclines };
+  return { limits, pay, listCardPayments, spendingByCategory, deleteOldDeclines };
 }
 
 export type PaymentsService = ReturnType<typeof createPaymentsService>;

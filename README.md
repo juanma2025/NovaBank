@@ -41,9 +41,10 @@ Al cerrar cada etapa, actualiza su columna: `Pendiente` → `En curso` → `List
 | 002 | `002-cuentas-ledger` | Cuenta en COP, libro contable de doble entrada, recarga simulada, pantalla de inicio con saldo y movimientos, tarjeta «Muy pronto» de cripto. | 001 | Listo | Listo | Pendiente |
 | 003 | `003-transferencias` | Envíos entre estudiantes verificados por correo o alias, idempotencia y límites. | 002 | Listo | Listo | Pendiente |
 | 004 | `004-tarjeta-virtual` | Emitir, congelar, ver datos con reautenticación y pagos simulados. | 002 | Listo | Listo | Pendiente |
-| 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Pendiente | Pendiente | Pendiente |
-| 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Pendiente | Pendiente | Pendiente |
-| 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Pendiente | Pendiente | Pendiente |
+| 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Listo | Listo | Pendiente |
+| 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Listo | Listo | Pendiente |
+| 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Listo | Listo | Pendiente |
+| 008 | `008-landing-publica` | Página de inicio pública para visitantes sin sesión y selector de tema claro u oscuro. Solo frontend. | 001 | Listo | — | En curso |
 
 **Fase 2 («Muy pronto»)**: wallet de criptoactivos. No se especifica hasta que la constitución se
 enmiende para incluirla.
@@ -71,6 +72,16 @@ enmiende para incluirla.
 
 5. Verifica antes de abrir un PR: `npm run lint`, `npm run typecheck`, `npm run format:check`,
    `npm test` y `npm run build`.
+6. Pruebas de extremo a extremo (Playwright, en `e2e/`):
+
+   ```powershell
+   npx playwright install chromium   # una vez por computador
+   npm run build                     # las pruebas usan el backend y el frontend compilados
+   npm run test:e2e                  # arranca su propio servidor en http://localhost:3100
+   ```
+
+   El servidor de E2E usa la base `nova_e2e` y no lee tu `.env`. Si existe `frontend/dist`, también
+   sirve el frontend en el mismo origen. `npm run e2e:ui -w e2e` abre el modo visual de Playwright.
 
 Los correos de desarrollo llegan a Mailpit (http://localhost:8025), nunca a buzones reales. La
 validación completa por historia está en el

@@ -32,7 +32,54 @@ function codeEmail(title: string, intro: string, data: TemplateData): RenderedEm
   };
 }
 
-/** Las 4 plantillas en español (data-model.md `EmailOutbox.template`; tasks.md T029). */
+/** Alerta de presupuesto (spec 006, research R6): los montos llegan ya formateados. */
+function budgetAlertEmail(data: TemplateData): RenderedEmail {
+  const category = requireString(data, 'categoryName');
+  const exceeded = requireString(data, 'kind') === 'exceeded';
+  const title = exceeded
+    ? `Superaste tu presupuesto de ${category}`
+    : `Te estás acercando a tu presupuesto de ${category}`;
+  const paragraphs = [
+    `Llevas ${requireString(data, 'spent')} de ${requireString(data, 'limit')} en ${category} este mes (${requireString(data, 'percent')} %).`,
+    'El presupuesto es solo informativo: tus pagos y transferencias no se bloquean.',
+    'Puedes revisar o cambiar tus topes en Nova, en «Presupuesto».',
+  ];
+  return { subject: title, text: paragraphs.join('\n\n'), html: renderHtml(title, paragraphs) };
+}
+
+/** Gastos compartidos (spec 007, research R6): nombres parciales y montos ya formateados. */
+function splitEmail(
+  template: 'split_invitation' | 'split_reminder' | 'split_paid',
+  data: TemplateData,
+): RenderedEmail {
+  const title = requireString(data, 'title');
+  const amount = requireString(data, 'amount');
+  let subject: string;
+  let paragraphs: string[];
+  if (template === 'split_paid') {
+    const participant = requireString(data, 'participantName');
+    subject = `${participant} pagó su parte de «${title}»`;
+    paragraphs = [
+      `${participant} te transfirió ${amount} por su parte de «${title}».`,
+      'Puedes ver el estado de cada parte en Nova, en «Gastos compartidos».',
+    ];
+  } else {
+    const creator = requireString(data, 'creatorName');
+    const reminder = template === 'split_reminder';
+    subject = reminder
+      ? `Recordatorio: tu parte de «${title}»`
+      : `${creator} dividió «${title}» contigo`;
+    paragraphs = [
+      reminder
+        ? `${creator} te recuerda que tienes pendiente tu parte de «${title}»: ${amount}.`
+        : `${creator} te incluyó en «${title}». Tu parte es de ${amount}.`,
+      'Entra a Nova, en «Gastos compartidos», para pagarla con una transferencia o rechazarla si no te corresponde.',
+    ];
+  }
+  return { subject, text: paragraphs.join('\n\n'), html: renderHtml(subject, paragraphs) };
+}
+
+/** Las plantillas en español (data-model.md `EmailOutbox.template`; spec 001 T029, spec 006). */
 export function renderTemplate(template: EmailTemplate, data: TemplateData): RenderedEmail {
   switch (template) {
     case 'verification_code':
@@ -66,5 +113,11 @@ export function renderTemplate(template: EmailTemplate, data: TemplateData): Ren
         html: renderHtml('Tu contraseña cambió', paragraphs),
       };
     }
+    case 'budget_alert':
+      return budgetAlertEmail(data);
+    case 'split_invitation':
+    case 'split_reminder':
+    case 'split_paid':
+      return splitEmail(template, data);
   }
 }

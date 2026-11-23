@@ -10,6 +10,7 @@ import {
 
 import { startOfBogotaDay } from '../../lib/bogota-day.js';
 import type { Db } from '../../lib/db.js';
+import type { EventBus } from '../../lib/events.js';
 import { appError } from '../../lib/errors.js';
 import type { IdempotencyService } from '../../lib/idempotency/idempotency.service.js';
 import type { ModuleContext } from '../../lib/module-context.js';
@@ -30,6 +31,16 @@ export interface CreateTransferInput {
   note?: string | null | undefined;
   password?: string | undefined;
   requestId: string;
+}
+
+/** Opciones para otros módulos que orquestan una transferencia (spec 007, research R2). */
+export interface CreateTransferOptions {
+  /**
+   * Se ejecuta DENTRO de la transacción de la transferencia, después de registrarla y antes de
+   * confirmar. Si lanza, se revierte todo (incluida la transferencia). No se ejecuta en una
+   * repetición idempotente.
+   */
+  inTransaction?: (tx: Db, result: TransferResult) => Promise<void>;
 }
 
 export interface CreateTransferOutcome {
@@ -57,6 +68,7 @@ export function createTransfersService(
     directory: AuthDirectory;
     reauth: ReauthService;
     profile: ProfileService;
+    events: EventBus;
   },
 ) {
   const { config, prisma, clock, audit } = ctx;
@@ -110,7 +122,10 @@ export function createTransfersService(
   }
 
   /** POST /transfers: flujo de research R7. */
-  async function create(input: CreateTransferInput): Promise<CreateTransferOutcome> {
+  async function create(
+    input: CreateTransferInput,
+    options: CreateTransferOptions = {},
+  ): Promise<CreateTransferOutcome> {
     const { minAmount, maxAmount, reauthThreshold } = config.transfers;
     const note = cleanNote(input.note);
 
@@ -125,8 +140,8 @@ export function createTransfersService(
       await reauth.verify(input.userId, input.password, input.requestId);
     }
 
-    return prisma.$transaction(
-      async (tx) => {
+    const outcome = await prisma.$transaction(
+      async (tx): Promise<CreateTransferOutcome> => {
         const own = await accounts.ensureForUser(tx, input.userId);
         if (input.recipientId === own.id) throw appError('TRANSFER_TO_SELF');
         const recipient = await accounts.findStudentAccountById(tx, input.recipientId);
@@ -192,11 +207,15 @@ export function createTransfersService(
         });
 
         const body: TransferResult = { movement, balance: sender.balance - input.amount };
+        await options.inTransaction?.(tx, body);
         await idempotency.complete(tx, begun.id, 201, body as unknown as Prisma.InputJsonValue);
         return { status: 201, body, replayed: false };
       },
       { timeout: 15_000, maxWait: 10_000 },
     );
+    // Después de confirmar: el presupuesto (spec 006) nunca afecta la transferencia (research R2).
+    if (!outcome.replayed) await deps.events.emit('spending.recorded', { userId: input.userId });
+    return outcome;
   }
 
   return { findRecipient, limits, create };

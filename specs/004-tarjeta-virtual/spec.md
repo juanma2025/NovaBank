@@ -147,7 +147,9 @@ otra con un número diferente; la cancelada rechaza los pagos.
   nombre.
 - **Cancelar**: es definitivo; pide confirmación. Una tarjeta cancelada sigue apareciendo en la lista
   (para entender sus movimientos), marcada como cancelada.
-- **Vencimiento**: las tarjetas vencen 4 años después de emitidas; en el MVP no se renuevan.
+- **Vencimiento**: las tarjetas vencen 4 años después de emitidas; en el MVP no se renuevan. Una
+  tarjeta vencida sigue en la lista, se muestra como vencida, rechaza los pagos con el mismo aviso
+  de una tarjeta no activa y cuenta para el máximo de 3 hasta que se cancele.
 - **Montos**: enteros entre $1.000 y $500.000; se aceptan «15000», «15.000» y «$15.000».
 
 ## Requirements *(mandatory)*
@@ -185,7 +187,8 @@ otra con un número diferente; la cancelada rechaza los pagos.
   y categoría (ej. Cafetería, Librería, Transporte, Papelería, Entretenimiento).
 - **FR-012**: Para pagar, el estudiante DEBE escribir número, vencimiento y CVV; el pago se autoriza
   solo si coinciden con una tarjeta suya.
-- **FR-013**: Una tarjeta congelada o cancelada DEBE rechazar toda autorización de inmediato.
+- **FR-013**: Una tarjeta congelada, cancelada o vencida DEBE rechazar toda autorización de
+  inmediato. Una tarjeta vence al terminar su mes de vencimiento (hora de Colombia).
 - **FR-014**: Si los datos no coinciden, el rechazo DEBE ser genérico, sin indicar qué dato falló.
   Tras 5 rechazos por datos equivocados en 15 minutos, la tienda deja de aceptar pagos del
   estudiante durante 15 minutos.

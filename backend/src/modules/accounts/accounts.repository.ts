@@ -42,12 +42,32 @@ export const accountsRepository = {
     return db.account.findFirst({ where: { id, kind: 'student' } });
   },
 
-  /** Ajusta el saldo materializado, solo en cuentas de estudiantes (research R3). */
-  async incrementStudentBalance(db: Db, id: string, delta: bigint): Promise<void> {
+  /**
+   * Ajusta el saldo materializado: cuentas de estudiantes (spec 002, research R3) y subcuentas de
+   * metas (spec 005, research R2). Las cuentas del sistema no tienen saldo materializado.
+   */
+  async incrementMaterializedBalance(db: Db, id: string, delta: bigint): Promise<void> {
     await db.account.updateMany({
-      where: { id, kind: 'student' },
+      where: { id, kind: { in: ['student', 'savings_goal'] } },
       data: { balance: { increment: delta } },
     });
+  },
+
+  /** Spec 005: subcuenta de una meta, sin user_id (research R2). */
+  createSavingsGoal(db: Db, now: Date): Promise<Account> {
+    return db.account.create({
+      data: {
+        kind: 'savings_goal',
+        currency: 'COP',
+        balance: 0n,
+        status: 'active',
+        createdAt: now,
+      },
+    });
+  },
+
+  findManyByIds(db: Db, ids: string[]): Promise<Account[]> {
+    return db.account.findMany({ where: { id: { in: ids } } });
   },
 
   findSystemTopups(db: Db): Promise<Account | null> {

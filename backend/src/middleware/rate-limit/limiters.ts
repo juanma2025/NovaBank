@@ -22,6 +22,10 @@ const LIMITS = {
   cardIssue: { windowMs: 60 * MINUTE, limit: 10 },
   cardReveal: { windowMs: 15 * MINUTE, limit: 30 },
   storePayments: { windowMs: 15 * MINUTE, limit: 30 },
+  // Spec 005 (plan.md): aportes, retiros y cierres de metas.
+  savingsMovements: { windowMs: 15 * MINUTE, limit: 60 },
+  // Spec 007 (research R9): cada división envía correos a otras personas.
+  splitCreate: { windowMs: 60 * MINUTE, limit: 20 },
 } as const;
 
 export type LimiterName = keyof typeof LIMITS;
@@ -62,5 +66,7 @@ export function createLimiters(
     cardIssue: build('cardIssue'),
     cardReveal: build('cardReveal'),
     storePayments: build('storePayments'),
+    savingsMovements: build('savingsMovements'),
+    splitCreate: build('splitCreate'),
   };
 }
