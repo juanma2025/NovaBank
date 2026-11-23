@@ -379,7 +379,7 @@ código debe retomar ese paso.
 
 ### [E2E] Extremo a extremo de US1
 
-- [ ] T058 [US1] [E2E] Crear `e2e/helpers/mailpit.ts` (lee el último mensaje para un correo desde `http://localhost:8025/api/v1/messages` y extrae el código) y `e2e/auth.registration.spec.ts` con:
+- [X] T058 [US1] [E2E] Crear `e2e/helpers/mailpit.ts` (lee el último mensaje para un correo desde `http://localhost:8025/api/v1/messages` y extrae el código) y `e2e/auth.registration.spec.ts` con:
   - registro completo con `@nova-test.edu.co`;
   - recargar en el paso del código y retomarlo;
   - dominio no permitido sin correo enviado;
@@ -448,7 +448,7 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
 
 ### [E2E] Extremo a extremo de US2
 
-- [ ] T068 [US2] [E2E] Crear `e2e/auth.session.spec.ts` con:
+- [X] T068 [US2] [E2E] Crear `e2e/auth.session.spec.ts` con:
   - login y logout;
   - abrir `/inicio` sin sesión, que redirige a `/ingresar` y vuelve a `/inicio` tras entrar;
   - 5 fallos que bloquean, mientras otro contexto del navegador entra;
@@ -503,7 +503,7 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
 
 ### [E2E] Extremo a extremo de US3
 
-- [ ] T074 [US3] [E2E] Crear `e2e/auth.password-reset.spec.ts`: dos contextos; la recuperación en B cierra la sesión de A; la contraseña anterior falla y la nueva funciona.
+- [X] T074 [US3] [E2E] Crear `e2e/auth.password-reset.spec.ts`: dos contextos; la recuperación en B cierra la sesión de A; la contraseña anterior falla y la nueva funciona.
 
 **Checkpoint**: US1, US2 y US3 funcionan cada una por su cuenta.
 
@@ -540,7 +540,7 @@ que el código anterior falla y el nuevo funciona.
 
 ### [E2E] Extremo a extremo de US4
 
-- [ ] T079 [US4] [E2E] Crear `e2e/auth.resend.spec.ts`: esperar la cuenta regresiva, reenviar, y comprobar que el código anterior falla y el nuevo funciona.
+- [X] T079 [US4] [E2E] Crear `e2e/auth.resend.spec.ts`: esperar la cuenta regresiva, reenviar, y comprobar que el código anterior falla y el nuevo funciona.
 
 **Checkpoint**: las cuatro historias funcionan.
 
@@ -553,7 +553,7 @@ que el código anterior falla y el nuevo funciona.
 - [X] T082 [P] [BE] Crear `docs/despliegue.md` (Render + Neon + Brevo según research R14: variables, `TRUST_PROXY=1`, `SERVE_FRONTEND=true`, `prisma migrate deploy`). Actualizar en `README.md` la sección «Primeros pasos» con los comandos de [quickstart.md](quickstart.md).
 - [X] T083 [P] [FE] Revisar la accesibilidad (SC-009): navegación solo con teclado, lector de pantalla en los cuatro flujos, contraste AA en los dos temas, 360 px y `prefers-reduced-motion`. Corregir lo que falle en `frontend/src/` y registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
 - [X] T084 [P] [FE] Revisar el rendimiento: carga diferida de cada ruta en el build, Lighthouse móvil de `/ingresar` con primera carga interactiva < 2,5 s, y menos de 2 s desde enviar el login hasta ver la bienvenida (SC-004). Registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
-- [ ] T085 [E2E] Ejecutar la validación completa de [quickstart.md](quickstart.md), secciones 4–6, con la aplicación integrada en `main`, y anotar en el PR cualquier diferencia antes de `/speckit-converge`.
+- [X] T085 [E2E] Ejecutar la validación completa de [quickstart.md](quickstart.md), secciones 4–6, con la aplicación integrada en `main`, y anotar en el PR cualquier diferencia antes de `/speckit-converge`.
 
 ---
 

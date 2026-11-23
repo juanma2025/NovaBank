@@ -7,9 +7,9 @@ import { expect, test } from '@playwright/test';
 
 import {
   assertNoHorizontalOverflow,
-  registerVerifiedStudent,
+  ensureVerifiedStudent,
+  getMyBalance,
   seedTopup,
-  uniqueStudentEmail,
 } from './helpers/auth.js';
 import { HAS_FRONTEND } from './playwright.config.js';
 
@@ -27,14 +27,15 @@ test.describe('alias y perfil (spec 003 · US2)', () => {
     try {
       const alias = `nova_${randomUUID().slice(0, 8)}`;
 
-      await registerVerifiedStudent(pageA, {
-        email: uniqueStudentEmail('alias-a'),
-        fullName: 'Daniel Torres',
+      await ensureVerifiedStudent(pageA, {
+        email: 'emisor-e2e@nova-test.edu.co',
+        fullName: 'Carlos Gómez',
       });
-      await registerVerifiedStudent(pageB, {
-        email: uniqueStudentEmail('alias-b'),
-        fullName: 'Valeria Rojas',
+      await ensureVerifiedStudent(pageB, {
+        email: 'destino-e2e@nova-test.edu.co',
+        fullName: 'Laura Díaz',
       });
+      const balanceBBefore = await getMyBalance(pageB);
 
       // B configura su alias en /perfil
       await pageB.goto('/perfil');
@@ -45,12 +46,14 @@ test.describe('alias y perfil (spec 003 · US2)', () => {
       await pageB.getByRole('button', { name: /guardar alias/i }).click();
       await expect(pageB.getByText(`@${alias}`).first()).toBeVisible();
 
-      // A recarga y transfiere $10.000 usando el alias de B
-      await seedTopup(pageA, 30_000);
+      // A garantiza saldo y transfiere $10.000 usando el alias de B
+      if ((await getMyBalance(pageA)) < 20_000) {
+        await seedTopup(pageA, 30_000);
+      }
       await pageA.goto('/enviar');
       await pageA.getByLabel(/correo institucional o alias/i).fill(`@${alias}`);
       await pageA.getByRole('button', { name: /buscar destinatario/i }).click();
-      await expect(pageA.getByText('Valeria R.')).toBeVisible();
+      await expect(pageA.getByText('Laura D.')).toBeVisible();
 
       await pageA.getByLabel(/monto a enviar/i).fill('10000');
       await pageA.getByRole('button', { name: /^continuar$/i }).click();
@@ -60,9 +63,8 @@ test.describe('alias y perfil (spec 003 · US2)', () => {
         .click();
       await expect(pageA.getByRole('heading', { name: /transferencia enviada/i })).toBeVisible();
 
-      // B verifica el ingreso en /inicio y luego quita su alias con confirmación
-      await pageB.goto('/inicio');
-      await expect(pageB.getByText(/^\$\s*10\.000$/).first()).toBeVisible();
+      // B verifica el ingreso y luego quita su alias con confirmación
+      expect(await getMyBalance(pageB)).toBe(balanceBBefore + 10_000);
 
       await pageB.goto('/perfil');
       await pageB.getByRole('button', { name: /^quitar alias$/i }).click();

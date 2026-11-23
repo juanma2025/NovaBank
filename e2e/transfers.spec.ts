@@ -7,6 +7,8 @@ import { expect, test } from '@playwright/test';
 
 import {
   assertNoHorizontalOverflow,
+  ensureVerifiedStudent,
+  getMyBalance,
   registerVerifiedStudent,
   seedTopup,
   uniqueStudentEmail,
@@ -25,14 +27,29 @@ test.describe('transferencias entre estudiantes (spec 003 · US1)', () => {
     const pageB = await ctxB.newPage();
 
     try {
-      const emailA = uniqueStudentEmail('emisor');
-      const emailB = uniqueStudentEmail('destino');
+      const emailA = 'emisor-e2e@nova-test.edu.co';
+      const emailB = 'destino-e2e@nova-test.edu.co';
 
-      await registerVerifiedStudent(pageA, { email: emailA, fullName: 'Carlos Gómez' });
-      await registerVerifiedStudent(pageB, { email: emailB, fullName: 'Laura Díaz' });
+      await ensureVerifiedStudent(pageA, { email: emailA, fullName: 'Carlos Gómez' });
+      await ensureVerifiedStudent(pageB, { email: emailB, fullName: 'Laura Díaz' });
 
-      // A recarga $300.000 para cubrir envío normal ($15.000) + envío con reauth ($210.000).
-      await seedTopup(pageA, 300_000);
+      // Si el emisor fijo ya consumió su cupo diario en corridas previas hoy, usa un emisor fresco.
+      const limitsRes = await pageA.request.get('/api/v1/transfers/limits');
+      expect(limitsRes.status()).toBe(200);
+      const limits = (await limitsRes.json()) as { remainingToday: number };
+      if (limits.remainingToday < 230_000) {
+        await registerVerifiedStudent(pageA, {
+          email: uniqueStudentEmail('emisor'),
+          fullName: 'Carlos Gómez',
+        });
+      }
+
+      // A garantiza saldo suficiente para envío normal ($15.000) + envío con reauth ($210.000).
+      if ((await getMyBalance(pageA)) < 250_000) {
+        await seedTopup(pageA, 300_000);
+      }
+      const balanceABefore = await getMyBalance(pageA);
+      const balanceBBefore = await getMyBalance(pageB);
 
       await pageA.goto('/enviar');
       await expect(pageA.getByRole('heading', { level: 1, name: /enviar dinero/i })).toBeVisible();
@@ -70,17 +87,18 @@ test.describe('transferencias entre estudiantes (spec 003 · US1)', () => {
       await pageA.unroute('**/api/v1/transfers');
 
       // Verificar saldos y movimientos en ambos contextos.
+      expect(await getMyBalance(pageA)).toBe(balanceABefore - 15_000);
+      expect(await getMyBalance(pageB)).toBe(balanceBBefore + 15_000);
+
       await pageA.goto('/inicio');
-      await expect(pageA.getByText(/^\$\s*285\.000$/).first()).toBeVisible();
-      await expect(pageA.getByText('Transferencia a Laura D.')).toBeVisible();
-      await expect(pageA.getByText('Almuerzo campus')).toBeVisible();
-      await expect(pageA.getByText(/-\$\s*15\.000/)).toBeVisible();
+      await expect(pageA.getByText('Transferencia a Laura D.').first()).toBeVisible();
+      await expect(pageA.getByText('Almuerzo campus').first()).toBeVisible();
+      await expect(pageA.getByText(/-\$\s*15\.000/).first()).toBeVisible();
 
       await pageB.goto('/inicio');
-      await expect(pageB.getByText(/^\$\s*15\.000$/).first()).toBeVisible();
-      await expect(pageB.getByText('Transferencia de Carlos G.')).toBeVisible();
-      await expect(pageB.getByText('Almuerzo campus')).toBeVisible();
-      await expect(pageB.getByText(/\+\$\s*15\.000/)).toBeVisible();
+      await expect(pageB.getByText('Transferencia de Carlos G.').first()).toBeVisible();
+      await expect(pageB.getByText('Almuerzo campus').first()).toBeVisible();
+      await expect(pageB.getByText(/\+\$\s*15\.000/).first()).toBeVisible();
 
       // Envío alto ($210.000 > $200.000) exige contraseña de reautenticación.
       await pageA.goto('/enviar');
@@ -105,8 +123,7 @@ test.describe('transferencias entre estudiantes (spec 003 · US1)', () => {
       await dialog2.getByRole('button', { name: /reintentar envío/i }).click();
       await expect(pageA.getByRole('heading', { name: /transferencia enviada/i })).toBeVisible();
 
-      await pageB.reload();
-      await expect(pageB.getByText(/^\$\s*225\.000$/).first()).toBeVisible();
+      expect(await getMyBalance(pageB)).toBe(balanceBBefore + 225_000);
     } finally {
       await ctxA.close();
       await ctxB.close();

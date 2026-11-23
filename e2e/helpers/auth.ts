@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
 import { IDEMPOTENCY_HEADER, PRIVACY_POLICY_VERSION } from '@nova/shared';
-import { type APIRequestContext, expect, type Page } from '@playwright/test';
+import { type APIRequestContext, type Cookie, expect, type Page } from '@playwright/test';
 
 const MAILPIT_URL = process.env.MAILPIT_URL ?? 'http://localhost:8025';
 const DEFAULT_PASSWORD = 'ClaveSegura#2026';
+const sessionCookieCache = new Map<string, Cookie[]>();
 
 interface MailpitSearchResponse {
   messages?: { ID: string }[];
@@ -97,14 +98,34 @@ export async function tryLoginStudent(
 }
 
 /**
- * Reutiliza una cuenta verificada si ya existe en `nova_e2e` o la registra una sola vez.
- * Mantiene la suite E2E completa (escritorio + móvil 360 px) muy por debajo del límite de registro.
+ * Reutiliza una cuenta verificada (y su sesión si sigue vigente en el mismo worker)
+ * o la registra una sola vez. Mantiene la suite completa (escritorio + móvil 360 px)
+ * muy por debajo de los límites de tasa de registro y login.
  */
 export async function ensureVerifiedStudent(page: Page, creds: StudentCredentials): Promise<void> {
-  const loggedIn = await tryLoginStudent(page, creds.email, creds.password ?? DEFAULT_PASSWORD);
-  if (!loggedIn) {
-    await registerVerifiedStudent(page, creds);
+  const cached = sessionCookieCache.get(creds.email);
+  if (cached && cached.length > 0) {
+    await page.context().addCookies(cached);
+    const check = await page.request.get('/api/v1/auth/session');
+    if (check.status() === 200) return;
+    sessionCookieCache.delete(creds.email);
   }
+
+  const loginRes = await page.request.post('/api/v1/auth/login', {
+    data: { email: creds.email, password: creds.password ?? DEFAULT_PASSWORD },
+  });
+  if (loginRes.status() === 200) {
+    sessionCookieCache.set(creds.email, await page.context().cookies());
+    return;
+  }
+
+  expect(
+    loginRes.status(),
+    `POST /auth/login inesperado (${loginRes.status()}) para ${creds.email}`,
+  ).toBe(401);
+
+  await registerVerifiedStudent(page, creds);
+  sessionCookieCache.set(creds.email, await page.context().cookies());
 }
 
 /** Consulta el saldo actual de la cuenta autenticada en `page`. */

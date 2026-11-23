@@ -5,11 +5,7 @@
  */
 import { expect, test } from '@playwright/test';
 
-import {
-  assertNoHorizontalOverflow,
-  registerVerifiedStudent,
-  uniqueStudentEmail,
-} from './helpers/auth.js';
+import { assertNoHorizontalOverflow, ensureVerifiedStudent, getMyBalance } from './helpers/auth.js';
 import { HAS_FRONTEND } from './playwright.config.js';
 
 test.describe('recarga simulada (spec 002 · US2)', () => {
@@ -18,10 +14,11 @@ test.describe('recarga simulada (spec 002 · US2)', () => {
   }) => {
     test.skip(!HAS_FRONTEND, 'El frontend todavía no está compilado en esta rama');
 
-    await registerVerifiedStudent(page, {
-      email: uniqueStudentEmail('recarga'),
+    await ensureVerifiedStudent(page, {
+      email: 'recarga-e2e@nova-test.edu.co',
       fullName: 'Mateo Rivera',
     });
+    const balanceBefore = await getMyBalance(page);
 
     await page.goto('/recargar');
     await expect(page.getByRole('heading', { level: 1, name: /recargar cuenta/i })).toBeVisible();
@@ -68,17 +65,16 @@ test.describe('recarga simulada (spec 002 · US2)', () => {
     await expect(page.getByText(/\$\s*50\.000/).first()).toBeVisible();
     expect(topupRequestsCount).toBe(1);
 
-    // Al volver al inicio, el saldo es exactamente $50.000 y aparece el movimiento.
+    // Al volver al inicio, el saldo aumentó exactamente $50.000 y aparece el movimiento.
     await page
       .getByRole('link', { name: /volver al inicio/i })
       .last()
       .click();
     await expect(page).toHaveURL(/\/inicio$/);
-    await expect(page.getByText(/^\$\s*50\.000$/).first()).toBeVisible();
+    expect(await getMyBalance(page)).toBe(balanceBefore + 50_000);
 
     const movementsList = page.getByRole('list', { name: /lista de movimientos/i });
-    await expect(movementsList.getByRole('listitem')).toHaveCount(1);
-    await expect(movementsList.getByText(/recarga simulada/i)).toBeVisible();
-    await expect(movementsList.getByText(/\+\$\s*50\.000/)).toBeVisible();
+    await expect(movementsList.getByText(/recarga simulada/i).first()).toBeVisible();
+    await expect(movementsList.getByText(/\+\$\s*50\.000/).first()).toBeVisible();
   });
 });
