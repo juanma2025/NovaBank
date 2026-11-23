@@ -1,5 +1,6 @@
 import { type ErrorCode, type ErrorDetails, formatCOP } from '@nova/shared';
 
+export * from './landing-messages.ts';
 export * from './messages-auth.ts';
 export * from './messages-banking.ts';
 
