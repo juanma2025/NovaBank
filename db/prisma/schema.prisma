@@ -51,6 +51,15 @@ enum AuditEventType {
   SESSION_ENDED
   PASSWORD_RESET_REQUESTED
   PASSWORD_RESET_COMPLETED
+  TOPUP_COMPLETED
+  TRANSFER_COMPLETED
+  ALIAS_CHANGED
+  CARD_ISSUED
+  CARD_FROZEN
+  CARD_UNFROZEN
+  CARD_CANCELED
+  CARD_REVEALED
+  CARD_PAYMENT_APPROVED
 
   @@map("audit_event_type")
 }
@@ -77,17 +86,22 @@ enum OutboxStatus {
 
 /// data-model.md · User (spec: «Estudiante»)
 model User {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email             String    @unique @db.VarChar(254)
-  fullName          String    @map("full_name") @db.VarChar(100)
-  passwordHash      String    @map("password_hash")
-  passwordChangedAt DateTime  @map("password_changed_at") @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String   @unique @db.VarChar(254)
+  fullName          String   @map("full_name") @db.VarChar(100)
+  passwordHash      String   @map("password_hash")
+  passwordChangedAt DateTime @map("password_changed_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  consent     DataConsent?
-  sessions    Session[]
-  auditEvents AuditEvent[]
+  consent         DataConsent?
+  sessions        Session[]
+  auditEvents     AuditEvent[]
+  account         Account?
+  idempotencyKeys IdempotencyKey[]
+  profile         Profile?
+  cards           Card[]
+  cardDeclines    CardPaymentDecline[]
 
   @@map("users")
 }
@@ -211,4 +225,211 @@ model RateLimitHit {
   resetAt DateTime @map("reset_at") @db.Timestamptz(6)
 
   @@map("rate_limit_hits")
+}
+
+// =============================================================================
+// Spec 002 — cuentas, libro contable e idempotencia (specs/002-cuentas-ledger/data-model.md)
+// =============================================================================
+
+enum AccountKind {
+  student
+  system_topups
+  system_merchants
+
+  @@map("account_kind")
+}
+
+enum AccountStatus {
+  active
+
+  @@map("account_status")
+}
+
+enum LedgerTransactionType {
+  topup
+  transfer
+  card_payment
+
+  @@map("ledger_transaction_type")
+}
+
+enum LedgerTransactionStatus {
+  pending
+  completed
+  failed
+  reversed
+
+  @@map("ledger_transaction_status")
+}
+
+/// data-model.md · Account (spec: «Cuenta» y «Cuenta del sistema»). Dueño: módulo accounts.
+model Account {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind      AccountKind
+  userId    String?       @unique @map("user_id") @db.Uuid
+  currency  String        @default("COP") @db.Char(3)
+  /// Materializado solo para kind = student (research R3).
+  balance   BigInt        @default(0)
+  status    AccountStatus @default(active)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user                     User?               @relation(fields: [userId], references: [id])
+  entries                  LedgerEntry[]
+  transactions             LedgerTransaction[]
+  /// Transferencias recibidas (spec 003).
+  counterpartyTransactions LedgerTransaction[] @relation("Counterparty")
+
+  @@map("accounts")
+}
+
+/// data-model.md · LedgerTransaction (spec: «Operación»). Dueño: módulo ledger.
+model LedgerTransaction {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                  LedgerTransactionType
+  status                LedgerTransactionStatus
+  accountId             String                  @map("account_id") @db.Uuid
+  amount                BigInt
+  description           String                  @db.VarChar(140)
+  /// Spec 003: cuenta del destinatario; obligatoria si type = transfer (CHECK en la migración).
+  counterpartyAccountId String?                 @map("counterparty_account_id") @db.Uuid
+  /// Spec 003: nota opcional de la transferencia.
+  note                  String?                 @db.VarChar(140)
+  reversalOf            String?                 @map("reversal_of") @db.Uuid
+  requestId             String                  @map("request_id") @db.Uuid
+  createdAt             DateTime                @map("created_at") @db.Timestamptz(6)
+  completedAt           DateTime?               @map("completed_at") @db.Timestamptz(6)
+
+  account      Account             @relation(fields: [accountId], references: [id])
+  counterparty Account?            @relation("Counterparty", fields: [counterpartyAccountId], references: [id], onDelete: Restrict)
+  reversed     LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
+  reversals    LedgerTransaction[] @relation("Reversal")
+  entries      LedgerEntry[]
+  cardPayment  CardPayment?
+
+  @@index([accountId, type, createdAt])
+  @@map("ledger_transactions")
+}
+
+/// data-model.md · LedgerEntry (spec: «Asiento contable»). Inmutable por triggers.
+model LedgerEntry {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId String   @map("transaction_id") @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  /// Positivo acredita, negativo debita.
+  amount        BigInt
+  /// Spec 003: descripción desde la cuenta del asiento («Transferencia a Ana P. G.»).
+  description   String?  @db.VarChar(140)
+  createdAt     DateTime @map("created_at") @db.Timestamptz(6)
+
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+  account     Account           @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([transactionId])
+  @@map("ledger_entries")
+}
+
+/// data-model.md · IdempotencyKey. Dueño: lib/idempotency.
+model IdempotencyKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  scope          String   @db.VarChar(40)
+  key            String   @db.VarChar(100)
+  requestHash    String   @map("request_hash") @db.Char(64)
+  responseStatus Int?     @map("response_status") @db.SmallInt
+  responseBody   Json?    @map("response_body")
+  createdAt      DateTime @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+/// Spec 003 · alias del estudiante. Dueño: módulo profile (research R2).
+model Profile {
+  userId    String   @id @map("user_id") @db.Uuid
+  /// Normalizado (minúsculas, sin @); el CHECK de formato está en la migración.
+  alias     String?  @unique @db.VarChar(20)
+  updatedAt DateTime @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+/// Spec 004 · estado de la tarjeta virtual (research R8).
+enum CardStatus {
+  active
+  frozen
+  canceled
+
+  @@map("card_status")
+}
+
+/// Spec 004 · categoría del comercio de la tienda demo (para la spec 006).
+enum MerchantCategory {
+  food
+  books
+  transport
+  stationery
+  entertainment
+
+  @@map("merchant_category")
+}
+
+/// Spec 004 · tarjeta virtual. Dueño: módulo cards. El CVV no se guarda (research R2).
+model Card {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  nickname     String     @db.VarChar(30)
+  last4        String     @db.Char(4)
+  /// iv(12) ‖ tag(16) ‖ AES-256-GCM(número) (research R3).
+  panEncrypted Bytes      @map("pan_encrypted")
+  /// HMAC-SHA256 del número, para buscar la tarjeta al pagar.
+  panHash      String     @unique @map("pan_hash") @db.Char(64)
+  expMonth     Int        @map("exp_month") @db.SmallInt
+  expYear      Int        @map("exp_year") @db.SmallInt
+  status       CardStatus
+  createdAt    DateTime   @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @map("updated_at") @db.Timestamptz(6)
+  canceledAt   DateTime?  @map("canceled_at") @db.Timestamptz(6)
+
+  user     User          @relation(fields: [userId], references: [id])
+  payments CardPayment[]
+
+  @@index([userId, createdAt])
+  @@map("cards")
+}
+
+/// Spec 004 · pago aprobado en la tienda demo; inmutable (trigger en la migración).
+model CardPayment {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cardId        String           @map("card_id") @db.Uuid
+  transactionId String           @unique @map("transaction_id") @db.Uuid
+  merchantId    String           @map("merchant_id") @db.VarChar(40)
+  merchantName  String           @map("merchant_name") @db.VarChar(60)
+  category      MerchantCategory
+  amount        BigInt
+  createdAt     DateTime         @map("created_at") @db.Timestamptz(6)
+
+  card        Card              @relation(fields: [cardId], references: [id])
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+
+  @@index([cardId, createdAt(sort: Desc), id(sort: Desc)])
+  @@map("card_payments")
+}
+
+/// Spec 004 · pago rechazado por datos equivocados (bloqueo de 5 en 15 min, research R5).
+model CardPaymentDecline {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("card_payment_declines")
 }

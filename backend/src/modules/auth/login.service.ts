@@ -1,6 +1,7 @@
 import type { SessionResponse } from '@nova/shared';
 
-import { addSeconds, secondsUntil } from '../../lib/clock.js';
+import { lockedUntil } from '../../lib/attempt-lock.js';
+import { secondsUntil } from '../../lib/clock.js';
 import { sha256Hex } from '../../lib/crypto.js';
 import { appError } from '../../lib/errors.js';
 import type { AuthContext } from './auth.context.js';
@@ -12,7 +13,6 @@ import type { IssuedSession, SessionService } from './session.service.js';
 /** Reglas de bloqueo de data-model.md `LoginAttempt` (FR-015, research R7). */
 const ORIGIN_RULE = { failures: 5, windowMs: 15 * 60 * 1000 };
 const GLOBAL_RULE = { failures: 20, windowMs: 60 * 60 * 1000 };
-const LOCK_SECONDS = 15 * 60;
 
 export interface LoginInput {
   email: string;
@@ -30,18 +30,6 @@ export interface LoginResult {
 /** Clave de origen: hash del dispositivo o, sin cookie, hash de la IP (research R7). */
 export function originKeyFor(device: { id?: string; ip: string }): string {
   return sha256Hex(device.id ? `dev:${device.id}` : `ip:${device.ip}`);
-}
-
-/**
- * Fin del bloqueo según los fallos más recientes: si son `failures` y el más antiguo ocurrió
- * dentro de la ventana respecto al más reciente, dura hasta el más reciente + 15 min.
- */
-function lockedUntil(latest: Date[], rule: { failures: number; windowMs: number }): Date | null {
-  const newest = latest[0];
-  const oldest = latest[rule.failures - 1];
-  if (!newest || !oldest) return null;
-  if (newest.getTime() - oldest.getTime() > rule.windowMs) return null;
-  return addSeconds(newest, LOCK_SECONDS);
 }
 
 export function createLoginService(ctx: AuthContext, deps: { sessions: SessionService }) {

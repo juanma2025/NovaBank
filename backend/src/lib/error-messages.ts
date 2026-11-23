@@ -27,4 +27,26 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   RATE_LIMITED: 'Hiciste demasiadas solicitudes. Intenta más tarde.',
   NOT_FOUND: 'No encontramos lo que buscas.',
   INTERNAL_ERROR: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+  // Spec 002
+  TOPUP_AMOUNT_OUT_OF_RANGE: 'El monto está fuera del rango permitido para recargar.',
+  TOPUP_DAILY_LIMIT: 'Superas el tope diario de recargas.',
+  IDEMPOTENCY_KEY_REUSED: 'Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.',
+  // Spec 003
+  ALIAS_TAKEN: 'Ese alias no está disponible. Prueba con otro.',
+  RECIPIENT_NOT_FOUND: 'No encontramos un estudiante de Nova con ese correo o alias.',
+  TRANSFER_TO_SELF: 'No puedes enviarte dinero a ti mismo.',
+  TRANSFER_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  TRANSFER_DAILY_LIMIT: 'Superas el tope diario de envíos.',
+  INSUFFICIENT_FUNDS: 'No tienes saldo suficiente para este envío.',
+  REAUTH_REQUIRED: 'Para este monto debes confirmar con tu contraseña.',
+  REAUTH_FAILED: 'La contraseña no es correcta.',
+  REAUTH_LOCKED: 'Demasiados intentos con la contraseña. Espera unos minutos.',
+  // Spec 004
+  CARD_LIMIT_REACHED: 'Alcanzaste el máximo de 3 tarjetas. Cancela una para emitir otra.',
+  CARD_CANCELED: 'Esta tarjeta está cancelada.',
+  CARD_NOT_ACTIVE: 'La tarjeta no está activa. Descongélala para pagar.',
+  CARD_DECLINED: 'Pago rechazado. Revisa los datos de la tarjeta.',
+  CARD_PAYMENTS_LOCKED: 'Demasiados pagos rechazados. Espera unos minutos.',
+  PAYMENT_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  PAYMENT_DAILY_LIMIT: 'Superas el tope diario de pagos con tarjeta.',
 };

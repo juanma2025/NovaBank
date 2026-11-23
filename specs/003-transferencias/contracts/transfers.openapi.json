@@ -1,0 +1,658 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nova API — Transferencias y alias (spec 003)",
+    "version": "1.0.0",
+    "description": "Contrato de diseño de la funcionalidad 003-transferencias. Todas las rutas exigen sesión (cookie `nova_at`). Montos en pesos colombianos enteros. Todo error usa `ErrorResponse`."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "accessCookie": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "profile"
+    },
+    {
+      "name": "transfers"
+    }
+  ],
+  "paths": {
+    "/profile/me": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "getMyProfile",
+        "summary": "Perfil con el alias",
+        "responses": {
+          "200": {
+            "description": "Perfil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      }
+    },
+    "/profile/me/alias": {
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "setMyAlias",
+        "summary": "Asignar o cambiar el alias",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAliasRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "409": {
+            "description": "`ALIAS_TAKEN`: otro estudiante ya usa ese alias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "removeMyAlias",
+        "summary": "Quitar el alias",
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      }
+    },
+    "/transfers/recipient": {
+      "get": {
+        "tags": [
+          "transfers"
+        ],
+        "operationId": "findRecipient",
+        "summary": "Vista previa del destinatario por correo o alias",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "description": "Correo institucional o alias (con o sin @)",
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 254
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destinatario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipientPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`RECIPIENT_NOT_FOUND`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`TRANSFER_TO_SELF`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfers/limits": {
+      "get": {
+        "tags": [
+          "transfers"
+        ],
+        "operationId": "getTransferLimits",
+        "summary": "Límites y lo que queda hoy",
+        "responses": {
+          "200": {
+            "description": "Límites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferLimits"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      }
+    },
+    "/transfers": {
+      "post": {
+        "tags": [
+          "transfers"
+        ],
+        "operationId": "createTransfer",
+        "summary": "Enviar dinero a otro estudiante",
+        "description": "Exige `Idempotency-Key`. Si `amount` supera `reauthThreshold`, exige `password`. La contraseña no forma parte del hash de idempotencia ni se guarda.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransferRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transferencia aplicada (o respuesta original si se repitió la clave)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`RECIPIENT_NOT_FOUND`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`IDEMPOTENCY_KEY_REUSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`TRANSFER_TO_SELF`, `TRANSFER_AMOUNT_OUT_OF_RANGE` (minAmount, maxAmount), `TRANSFER_DAILY_LIMIT` (remainingToday), `INSUFFICIENT_FUNDS` (availableBalance), `REAUTH_REQUIRED` (reauthThreshold) o `REAUTH_FAILED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`REAUTH_LOCKED` (retryAfterSeconds) o `RATE_LIMITED`",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "accessCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "nova_at"
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "`VALIDATION_ERROR`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "SessionInvalid": {
+        "description": "`UNAUTHENTICATED`, `ACCESS_TOKEN_EXPIRED` o `SESSION_EXPIRED`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "MoneyAmount": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "examples": [
+          15000
+        ]
+      },
+      "Alias": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 21,
+        "description": "Se acepta con o sin @ y en mayúsculas; se guarda normalizado",
+        "examples": [
+          "@ana.perez"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "required": [
+          "fullName",
+          "email",
+          "alias"
+        ],
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Normalizado, sin @"
+          }
+        }
+      },
+      "SetAliasRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "alias"
+        ],
+        "properties": {
+          "alias": {
+            "$ref": "#/components/schemas/Alias"
+          }
+        }
+      },
+      "RecipientPreview": {
+        "type": "object",
+        "required": [
+          "recipientId",
+          "displayName",
+          "maskedEmail"
+        ],
+        "properties": {
+          "recipientId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cuenta del destinatario; se envía en POST /transfers"
+          },
+          "displayName": {
+            "type": "string",
+            "examples": [
+              "Ana P. G."
+            ]
+          },
+          "maskedEmail": {
+            "type": "string",
+            "examples": [
+              "an***@ucc.edu.co"
+            ]
+          }
+        }
+      },
+      "TransferLimits": {
+        "type": "object",
+        "required": [
+          "minAmount",
+          "maxAmount",
+          "dailyLimit",
+          "reauthThreshold",
+          "remainingToday"
+        ],
+        "properties": {
+          "minAmount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "maxAmount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "dailyLimit": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "reauthThreshold": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "remainingToday": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CreateTransferRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "recipientId",
+          "amount"
+        ],
+        "properties": {
+          "recipientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 140
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Obligatoria si amount > reauthThreshold"
+          }
+        }
+      },
+      "Movement": {
+        "type": "object",
+        "required": [
+          "id",
+          "transactionId",
+          "type",
+          "description",
+          "note",
+          "amount",
+          "status",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "topup",
+              "transfer",
+              "card_payment"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 140,
+            "examples": [
+              "Recarga simulada",
+              "Transferencia a Ana P. G.",
+              "Compra en Cafetería Central · •••• 1234"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 140,
+            "description": "Nota de la transferencia; null si no hay"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Con signo, desde la cuenta del estudiante: + entra, − sale"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "reversed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TransferResult": {
+        "type": "object",
+        "required": [
+          "movement",
+          "balance"
+        ],
+        "properties": {
+          "movement": {
+            "$ref": "#/components/schemas/Movement"
+          },
+          "balance": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_ERROR",
+          "UNAUTHENTICATED",
+          "ACCESS_TOKEN_EXPIRED",
+          "SESSION_EXPIRED",
+          "RATE_LIMITED",
+          "NOT_FOUND",
+          "INTERNAL_ERROR",
+          "IDEMPOTENCY_KEY_REUSED",
+          "ALIAS_TAKEN",
+          "RECIPIENT_NOT_FOUND",
+          "TRANSFER_TO_SELF",
+          "TRANSFER_AMOUNT_OUT_OF_RANGE",
+          "TRANSFER_DAILY_LIMIT",
+          "INSUFFICIENT_FUNDS",
+          "REAUTH_REQUIRED",
+          "REAUTH_FAILED",
+          "REAUTH_LOCKED"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ],
+            "properties": {
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "retryAfterSeconds": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "minAmount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxAmount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "remainingToday": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "availableBalance": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reauthThreshold": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "idle",
+                      "absolute",
+                      "revoked"
+                    ]
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

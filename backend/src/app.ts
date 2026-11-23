@@ -12,8 +12,10 @@ import type { Logger } from './lib/logger.js';
 import { apiNotFound, createErrorHandler } from './middleware/error-handler.js';
 import { createLimiters } from './middleware/rate-limit/limiters.js';
 import { requestId } from './middleware/request-id.js';
+import { createRequireAuth } from './middleware/require-auth.js';
 import { requireJson } from './middleware/require-json.js';
 import { type AuthModule, createAuthModule } from './modules/auth/auth.module.js';
+import { type BankingModules, createBankingModules } from './modules/banking.module.js';
 import { buildOpenApiDocument } from './openapi/registry.js';
 import { serveFrontend } from './static.js';
 
@@ -29,6 +31,7 @@ export interface AppDeps {
 export interface NovaApp {
   app: Express;
   auth: AuthModule;
+  banking: BankingModules;
 }
 
 /** Fábrica de la aplicación (sin listen, para Supertest). Orden del pipeline según plan.md. */
@@ -55,6 +58,19 @@ export function createApp(deps: AppDeps): NovaApp {
   const audit = createAuditService(clock);
   const limiters = createLimiters(prisma, clock, { enabled: deps.rateLimits ?? true });
   const auth = createAuthModule({ config, prisma, clock, audit, logger }, limiters);
+  const banking = createBankingModules(
+    { config, prisma, clock, audit, logger },
+    {
+      requireAuth: createRequireAuth(auth.sessions),
+      topupsLimiter: limiters.topups,
+      recipientLookupLimiter: limiters.recipientLookup,
+      transfersLimiter: limiters.transfers,
+      cardIssueLimiter: limiters.cardIssue,
+      cardRevealLimiter: limiters.cardReveal,
+      storePaymentsLimiter: limiters.storePayments,
+    },
+    { directory: auth.directory, reauth: auth.reauth },
+  );
   const openApiDocument = buildOpenApiDocument();
 
   const api = Router();
@@ -65,6 +81,12 @@ export function createApp(deps: AppDeps): NovaApp {
     res.json(openApiDocument);
   });
   api.use('/auth', auth.router);
+  api.use('/accounts', banking.accountsRouter);
+  api.use('/topups', banking.topupsRouter);
+  api.use('/profile', banking.profileRouter);
+  api.use('/transfers', banking.transfersRouter);
+  api.use('/cards', banking.cardsRouter);
+  api.use('/store', banking.storeRouter);
   api.use(apiNotFound);
   app.use('/api/v1', api);
   app.use('/api', apiNotFound);
@@ -72,5 +94,5 @@ export function createApp(deps: AppDeps): NovaApp {
   if (config.SERVE_FRONTEND) serveFrontend(app);
 
   app.use(createErrorHandler(logger));
-  return { app, auth };
+  return { app, auth, banking };
 }

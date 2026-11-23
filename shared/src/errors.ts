@@ -23,6 +23,28 @@ export const ERROR_CODES = [
   'RATE_LIMITED',
   'NOT_FOUND',
   'INTERNAL_ERROR',
+  // Spec 002
+  'TOPUP_AMOUNT_OUT_OF_RANGE',
+  'TOPUP_DAILY_LIMIT',
+  'IDEMPOTENCY_KEY_REUSED',
+  // Spec 003
+  'ALIAS_TAKEN',
+  'RECIPIENT_NOT_FOUND',
+  'TRANSFER_TO_SELF',
+  'TRANSFER_AMOUNT_OUT_OF_RANGE',
+  'TRANSFER_DAILY_LIMIT',
+  'INSUFFICIENT_FUNDS',
+  'REAUTH_REQUIRED',
+  'REAUTH_FAILED',
+  'REAUTH_LOCKED',
+  // Spec 004
+  'CARD_LIMIT_REACHED',
+  'CARD_CANCELED',
+  'CARD_NOT_ACTIVE',
+  'CARD_DECLINED',
+  'CARD_PAYMENTS_LOCKED',
+  'PAYMENT_AMOUNT_OUT_OF_RANGE',
+  'PAYMENT_DAILY_LIMIT',
 ] as const;
 
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
@@ -51,6 +73,13 @@ export const ErrorDetailsSchema = z.object({
   reason: SessionEndReasonSchema.optional(),
   reasons: z.array(PasswordRuleViolationSchema).optional(),
   fields: z.record(z.string(), z.string()).optional(),
+  // Spec 002: límites de recarga (también de transferencia en la 003).
+  minAmount: z.int().min(1).optional(),
+  maxAmount: z.int().min(1).optional(),
+  remainingToday: z.int().min(0).optional(),
+  // Spec 003: saldo disponible y umbral de reautenticación.
+  availableBalance: z.int().min(0).optional(),
+  reauthThreshold: z.int().min(1).optional(),
 });
 export type ErrorDetails = z.infer<typeof ErrorDetailsSchema>;
 

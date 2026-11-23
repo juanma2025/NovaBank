@@ -2,34 +2,8 @@ import type { ErrorCode, ErrorDetails, PasswordRuleViolation } from '@nova/share
 
 export type AuthNoticeReason = 'inactividad' | 'expirada' | 'clave-cambiada';
 
-/** Códigos de error propios de la spec 001 (subconjunto validado contra `ErrorCode` de `@nova/shared`). */
-export type AuthErrorCode = Extract<
-  ErrorCode,
-  | 'VALIDATION_ERROR'
-  | 'DOMAIN_NOT_ALLOWED'
-  | 'POLICY_VERSION_OUTDATED'
-  | 'VERIFICATION_NOT_FOUND'
-  | 'VERIFICATION_STEP_INVALID'
-  | 'VERIFICATION_EXPIRED'
-  | 'CODE_INVALID'
-  | 'CODE_EXPIRED'
-  | 'CODE_ATTEMPTS_EXHAUSTED'
-  | 'RESEND_TOO_SOON'
-  | 'CODE_SEND_LIMIT'
-  | 'PASSWORD_WEAK'
-  | 'EMAIL_ALREADY_REGISTERED'
-  | 'INVALID_CREDENTIALS'
-  | 'LOGIN_LOCKED'
-  | 'UNAUTHENTICATED'
-  | 'ACCESS_TOKEN_EXPIRED'
-  | 'SESSION_EXPIRED'
-  | 'RATE_LIMITED'
-  | 'NOT_FOUND'
-  | 'INTERNAL_ERROR'
->;
-
 /** Catálogo único de errores de la API en español (es-CO). */
-export const ERROR_MESSAGES: Record<AuthErrorCode, string> & Partial<Record<ErrorCode, string>> = {
+export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   VALIDATION_ERROR: 'Revisa los datos ingresados e intenta de nuevo.',
   DOMAIN_NOT_ALLOWED: 'Solo se aceptan correos institucionales de las universidades participantes.',
   POLICY_VERSION_OUTDATED:
@@ -52,6 +26,28 @@ export const ERROR_MESSAGES: Record<AuthErrorCode, string> & Partial<Record<Erro
   RATE_LIMITED: 'Hiciste demasiadas solicitudes. Espera un momento e intenta de nuevo.',
   NOT_FOUND: 'No encontramos lo que buscas.',
   INTERNAL_ERROR: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+  // Spec 002
+  TOPUP_AMOUNT_OUT_OF_RANGE: 'El monto está fuera del rango permitido para recargar.',
+  TOPUP_DAILY_LIMIT: 'Superas el tope diario de recargas.',
+  IDEMPOTENCY_KEY_REUSED: 'Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.',
+  // Spec 003
+  ALIAS_TAKEN: 'Ese alias no está disponible. Prueba con otro.',
+  RECIPIENT_NOT_FOUND: 'No encontramos un estudiante de Nova con ese correo o alias.',
+  TRANSFER_TO_SELF: 'No puedes enviarte dinero a ti mismo.',
+  TRANSFER_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  TRANSFER_DAILY_LIMIT: 'Superas el tope diario de envíos.',
+  INSUFFICIENT_FUNDS: 'No tienes saldo suficiente para este envío.',
+  REAUTH_REQUIRED: 'Para este monto debes confirmar con tu contraseña.',
+  REAUTH_FAILED: 'La contraseña no es correcta.',
+  REAUTH_LOCKED: 'Demasiados intentos con la contraseña. Espera unos minutos.',
+  // Spec 004
+  CARD_LIMIT_REACHED: 'Alcanzaste el máximo de 3 tarjetas. Cancela una para emitir otra.',
+  CARD_CANCELED: 'Esta tarjeta está cancelada.',
+  CARD_NOT_ACTIVE: 'La tarjeta no está activa. Descongélala para pagar.',
+  CARD_DECLINED: 'Pago rechazado. Revisa los datos de la tarjeta.',
+  CARD_PAYMENTS_LOCKED: 'Demasiados pagos rechazados. Espera unos minutos.',
+  PAYMENT_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  PAYMENT_DAILY_LIMIT: 'Superas el tope diario de pagos con tarjeta.',
 };
 
 export const NETWORK_ERROR_MESSAGE =
