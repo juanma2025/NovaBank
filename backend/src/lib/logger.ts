@@ -2,7 +2,7 @@ import { pino, type Logger } from 'pino';
 
 /**
  * Rutas que nunca deben aparecer en los logs (FR-022, Principio III): contraseñas, códigos,
- * tokens y cookies.
+ * tokens, cookies y datos de tarjeta (spec 004, regla de dominio 8).
  */
 export const REDACT_PATHS = [
   'password',
@@ -14,6 +14,12 @@ export const REDACT_PATHS = [
   'accessToken',
   'refreshToken',
   'flowToken',
+  'cardNumber',
+  '*.cardNumber',
+  'cvv',
+  '*.cvv',
+  'number',
+  '*.number',
   'req.headers.cookie',
   'req.headers.authorization',
   'res.headers["set-cookie"]',

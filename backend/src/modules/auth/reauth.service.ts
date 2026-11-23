@@ -1,8 +1,8 @@
+import { lockedUntil } from '../../lib/attempt-lock.js';
 import { secondsUntil } from '../../lib/clock.js';
 import { sha256Hex } from '../../lib/crypto.js';
 import { appError } from '../../lib/errors.js';
 import type { AuthContext } from './auth.context.js';
-import { lockedUntil } from './login.service.js';
 import { verifyPassword } from './password-policy.js';
 import { loginAttemptRepository as attempts } from './repositories/login-attempt.repository.js';
 import { userRepository } from './repositories/user.repository.js';

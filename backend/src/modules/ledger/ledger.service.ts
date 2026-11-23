@@ -2,7 +2,7 @@ import type { LedgerTransactionType } from '@nova/db';
 import type { Movement, MovementsPage } from '@nova/shared';
 
 import type { Db } from '../../lib/db.js';
-import { appError } from '../../lib/errors.js';
+import { decodeCursor, encodeCursor } from '../../lib/cursor.js';
 import { toSafeNumber } from '../../lib/money.js';
 import type { ModuleContext } from '../../lib/module-context.js';
 import type { AccountsService } from '../accounts/accounts.service.js';
@@ -38,27 +38,6 @@ function toMovement(entry: EntryWithTransaction): Movement {
     status: entry.transaction.status,
     createdAt: entry.createdAt.toISOString(),
   };
-}
-
-function encodeCursor(entry: { createdAt: Date; id: string }): string {
-  return Buffer.from(JSON.stringify([entry.createdAt.toISOString(), entry.id])).toString(
-    'base64url',
-  );
-}
-
-function decodeCursor(cursor: string): { createdAt: Date; id: string } {
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-    if (Array.isArray(parsed) && typeof parsed[0] === 'string' && typeof parsed[1] === 'string') {
-      const createdAt = new Date(parsed[0]);
-      if (!Number.isNaN(createdAt.getTime()) && /^[0-9a-f-]{36}$/i.test(parsed[1])) {
-        return { createdAt, id: parsed[1] };
-      }
-    }
-  } catch {
-    // cae al error de validación
-  }
-  throw appError('VALIDATION_ERROR', { fields: { cursor: 'invalid' } });
 }
 
 /**

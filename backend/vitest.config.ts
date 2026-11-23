@@ -43,6 +43,11 @@ export default defineConfig({
       TRANSFER_REAUTH_THRESHOLD: '20000',
       TRANSFER_MAX_AMOUNT: '50000',
       TRANSFER_DAILY_LIMIT: '60000',
+      // Spec 004: clave de prueba (nunca se usa fuera de pruebas) y límites de pago con tarjeta.
+      CARD_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      CARD_PAYMENT_MIN_AMOUNT: '1000',
+      CARD_PAYMENT_MAX_AMOUNT: '50000',
+      CARD_PAYMENT_DAILY_LIMIT: '60000',
     },
   },
 });

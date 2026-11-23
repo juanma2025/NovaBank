@@ -63,6 +63,15 @@ export class TestAgent {
     return this.store(await req);
   }
 
+  async patch(path: string, body?: object): Promise<request.Response> {
+    let req = request(this.app)
+      .patch(path)
+      .set('Origin', ORIGIN)
+      .set('Cookie', this.cookieHeader());
+    if (body !== undefined) req = req.send(body);
+    return this.store(await req);
+  }
+
   async delete(path: string): Promise<request.Response> {
     const res = await request(this.app)
       .delete(path)

@@ -18,6 +18,10 @@ const LIMITS = {
   // Spec 003 (plan.md): búsquedas de destinatario (anti-rastreo) y envíos.
   recipientLookup: { windowMs: 15 * MINUTE, limit: 60 },
   transfers: { windowMs: 15 * MINUTE, limit: 30 },
+  // Spec 004 (plan.md): emisión de tarjetas, ver datos (costo de Argon2) y pagos en la tienda.
+  cardIssue: { windowMs: 60 * MINUTE, limit: 10 },
+  cardReveal: { windowMs: 15 * MINUTE, limit: 30 },
+  storePayments: { windowMs: 15 * MINUTE, limit: 30 },
 } as const;
 
 export type LimiterName = keyof typeof LIMITS;
@@ -55,5 +59,8 @@ export function createLimiters(
     topups: build('topups'),
     recipientLookup: build('recipientLookup'),
     transfers: build('transfers'),
+    cardIssue: build('cardIssue'),
+    cardReveal: build('cardReveal'),
+    storePayments: build('storePayments'),
   };
 }

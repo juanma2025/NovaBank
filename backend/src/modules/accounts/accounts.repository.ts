@@ -53,4 +53,9 @@ export const accountsRepository = {
   findSystemTopups(db: Db): Promise<Account | null> {
     return db.account.findFirst({ where: { kind: 'system_topups' } });
   },
+
+  /** Spec 004: cuenta técnica de los comercios simulados (research R5). */
+  findSystemMerchants(db: Db): Promise<Account | null> {
+    return db.account.findFirst({ where: { kind: 'system_merchants' } });
+  },
 };
