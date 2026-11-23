@@ -230,7 +230,7 @@ descongela, y queda auditado.
 
 ### Ajustes del análisis de consistencia (U1)
 
-- [ ] T036 [BE] En `backend/src/modules/cards/payments.service.ts`, rechazar con `CARD_NOT_ACTIVE` una tarjeta cuyo mes de vencimiento ya terminó en hora de Bogotá (FR-013, research R6), dentro de la transacción y después de la idempotencia. Prueba en `backend/tests/integration/store-payments.test.ts`: el último día del mes de vencimiento paga; al mes siguiente se rechaza sin mover dinero.
+- [X] T036 [BE] En `backend/src/modules/cards/payments.service.ts`, rechazar con `CARD_NOT_ACTIVE` una tarjeta cuyo mes de vencimiento ya terminó en hora de Bogotá (FR-013, research R6), dentro de la transacción y después de la idempotencia. Prueba en `backend/tests/integration/store-payments.test.ts`: el último día del mes de vencimiento paga; al mes siguiente se rechaza sin mover dinero.
 - [ ] T037 [FE] En `frontend/src/features/cards/components/VirtualCard.tsx`, mostrar «Vencida» (texto, no solo color) cuando `expMonth`/`expYear` ya pasaron en hora de Bogotá, con su prueba en `frontend/tests/CardsPage.test.tsx`.
 
 ---

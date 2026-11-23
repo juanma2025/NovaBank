@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 
 import type { Card as CardRow, Prisma } from '@nova/db';
 import {
+  bogotaMonth,
   findMerchant,
   maskCardNumber,
   type CardPaymentResult,
@@ -47,6 +48,11 @@ export interface PayOutcome {
   status: number;
   body: CardPaymentResult;
   replayed: boolean;
+}
+
+/** El mes de vencimiento ya terminó en hora de Bogotá (spec 004, FR-013, research R6). */
+function isExpired(card: { expMonth: number; expYear: number }, now: Date): boolean {
+  return bogotaMonth(now) > `${card.expYear}-${String(card.expMonth).padStart(2, '0')}`;
 }
 
 const sameText = (a: string, b: string): boolean =>
@@ -163,8 +169,11 @@ export function createPaymentsService(
           };
         }
 
-        // Regla de dominio 8: una tarjeta congelada o cancelada rechaza toda autorización.
-        if (locked.status !== 'active') throw appError('CARD_NOT_ACTIVE');
+        // Regla de dominio 8 y FR-013: una tarjeta congelada, cancelada o vencida rechaza toda
+        // autorización. Vence al terminar su mes de vencimiento en hora de Bogotá.
+        if (locked.status !== 'active' || isExpired(locked, clock.now())) {
+          throw appError('CARD_NOT_ACTIVE');
+        }
         const left = await remainingToday(tx, account.id);
         if (input.amount > left) throw appError('PAYMENT_DAILY_LIMIT', { remainingToday: left });
         if (input.amount > account.balance) {

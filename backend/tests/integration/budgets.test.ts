@@ -411,3 +411,35 @@ describe('US3 · historial con topes versionados (FR-005, FR-007)', () => {
     expect(await alertsOf(s.user)).toEqual([]);
   });
 });
+
+describe('SC-006 · el presupuesto no demora los gastos (tasks.md T027)', () => {
+  it('con topes en las 7 categorías, el 95 % de pagos y transferencias responde en menos de 1 s', async () => {
+    const s = await spender('rendimiento');
+    const other = await createUserWithSession(t, 'rendimiento-b');
+    for (const category of [
+      'food',
+      'books',
+      'transport',
+      'stationery',
+      'entertainment',
+      'transfers',
+      'other',
+    ]) {
+      expect((await setLimit(s.user, category, 5000)).status).toBe(200);
+    }
+    const durations: number[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      let start = performance.now();
+      await payAt(s, 1000);
+      durations.push(performance.now() - start);
+      start = performance.now();
+      await transfer(s.user, other, 1000);
+      durations.push(performance.now() - start);
+    }
+    // Se crearon alertas (los topes se cruzaron) y aun así se mide el tiempo de respuesta.
+    expect((await alertsOf(s.user)).length).toBeGreaterThan(0);
+    const sorted = [...durations].sort((a, b) => a - b);
+    const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1] ?? Infinity;
+    expect(p95).toBeLessThan(1000);
+  });
+});
