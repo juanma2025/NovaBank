@@ -3,6 +3,7 @@ import { type ErrorCode, type ErrorDetails, formatCOP } from '@nova/shared';
 export * from './landing-messages.ts';
 export * from './messages-auth.ts';
 export * from './messages-banking.ts';
+export * from './messages-transfers.ts';
 
 /** Catálogo único de errores de la API en español (es-CO). */
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
@@ -116,6 +117,28 @@ export function formatApiErrorMessage(
       return 'Ya alcanzaste tu tope diario de recargas. Vuelve mañana para continuar.';
     }
     return `Superas el tope diario. Puedes recargar hasta ${formatCOP(details.remainingToday)} hoy.`;
+  }
+  if (
+    code === 'TRANSFER_AMOUNT_OUT_OF_RANGE' &&
+    details?.minAmount !== undefined &&
+    details?.maxAmount !== undefined
+  ) {
+    return `El monto debe estar entre ${formatCOP(details.minAmount)} y ${formatCOP(details.maxAmount)}.`;
+  }
+  if (code === 'TRANSFER_DAILY_LIMIT' && details?.remainingToday !== undefined) {
+    if (details.remainingToday <= 0) {
+      return 'Ya alcanzaste tu tope diario de envíos. Vuelve mañana para continuar.';
+    }
+    return `Superas el tope diario. Puedes enviar hasta ${formatCOP(details.remainingToday)} hoy.`;
+  }
+  if (code === 'INSUFFICIENT_FUNDS' && details?.availableBalance !== undefined) {
+    return `No tienes saldo suficiente. Disponible: ${formatCOP(details.availableBalance)}.`;
+  }
+  if (code === 'REAUTH_REQUIRED' && details?.reauthThreshold !== undefined) {
+    return `Los envíos mayores a ${formatCOP(details.reauthThreshold)} requieren confirmar con tu contraseña.`;
+  }
+  if (code === 'REAUTH_LOCKED' && details?.retryAfterSeconds !== undefined) {
+    return `Demasiados intentos con la contraseña. Intenta de nuevo en ${formatMinutesRemaining(details.retryAfterSeconds)}.`;
   }
   return ERROR_MESSAGES[code] ?? fallbackMessage ?? ERROR_MESSAGES.INTERNAL_ERROR;
 }

@@ -17,6 +17,8 @@ const PrivacyPolicyPage = lazy(() => import('../features/legal/PrivacyPolicyPage
 const HomePage = lazy(() => import('../features/home/pages/HomePage.tsx'));
 const TopupPage = lazy(() => import('../features/topups/pages/TopupPage.tsx'));
 const MovementsPage = lazy(() => import('../features/movements/pages/MovementsPage.tsx'));
+const SendPage = lazy(() => import('../features/transfers/pages/SendPage.tsx'));
+const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {
@@ -54,6 +56,8 @@ export function AppRoutes() {
           <Route path="/inicio" element={<HomePage />} />
           <Route path="/recargar" element={<TopupPage />} />
           <Route path="/movimientos" element={<MovementsPage />} />
+          <Route path="/enviar" element={<SendPage />} />
+          <Route path="/perfil" element={<ProfilePage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

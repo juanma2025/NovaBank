@@ -1,4 +1,4 @@
-import { Eye, EyeOff, PlusCircle } from 'lucide-react';
+import { Eye, EyeOff, PlusCircle, Send } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { GlassCard } from '../../../components/GlassCard.tsx';
@@ -58,10 +58,18 @@ export function BalanceCard({ balance, hidden, onToggleHidden }: BalanceCardProp
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
         <Link
           to="/recargar"
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-brand px-5 py-2.5 text-[15px] font-semibold tracking-[-0.01em] text-on-brand shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-brand-hover active:bg-brand-active sm:w-auto"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-brand px-5 py-2.5 text-[15px] font-semibold tracking-[-0.01em] text-on-brand shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-brand-hover active:bg-brand-active sm:flex-initial"
         >
           <PlusCircle aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span>{HOME_MESSAGES.topupAction}</span>
+        </Link>
+
+        <Link
+          to="/enviar"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-5 py-2.5 text-[15px] font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle sm:flex-initial"
+        >
+          <Send aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span>{HOME_MESSAGES.sendAction}</span>
         </Link>
       </div>
     </GlassCard>
