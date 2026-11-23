@@ -131,17 +131,17 @@ export function CodeStep({
       </Button>
 
       <div className="flex flex-col items-center gap-2 pt-1">
-            <ResendButton
-              resendAvailableAt={state.resendAvailableAt}
-              prominent={highlightResend}
-              disabled={isVerifying}
-              onFlowLost={onFlowLost}
-              onResent={(nextState) => {
-                setCode('');
-                setCodeError(undefined);
-                setBannerError(undefined);
-                setHighlightResend(false);
-                onStateUpdated?.(nextState);
+        <ResendButton
+          resendAvailableAt={state.resendAvailableAt}
+          prominent={highlightResend}
+          disabled={isVerifying}
+          onFlowLost={onFlowLost}
+          onResent={(nextState) => {
+            setCode('');
+            setCodeError(undefined);
+            setBannerError(undefined);
+            setHighlightResend(false);
+            onStateUpdated?.(nextState);
           }}
         />
 

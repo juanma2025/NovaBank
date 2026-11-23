@@ -150,6 +150,9 @@ describe('useIdleTimer e InactivityDialog (US2)', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_000);
     });
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText(/60 segundos/i)).toBeTruthy();
   });

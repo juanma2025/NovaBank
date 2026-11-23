@@ -33,14 +33,20 @@ export function InactivityDialog({
 
     previousFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     primaryButtonRef.current?.focus();
 
     return () => {
+      document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
   }, [open]);
 
   if (!open) return null;
+
+  // Al abrir el modal, aria-describedby ya anuncia el tiempo inicial; el live region anuncia hitos.
+  const shouldAnnounce = secondsLeft === 30 || secondsLeft === 10 || secondsLeft <= 5;
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
     if (event.key !== 'Tab' || !dialogRef.current) return;
@@ -83,11 +89,13 @@ export function InactivityDialog({
             </h2>
             <p
               id={descriptionId}
-              aria-live="polite"
               className="text-sm leading-relaxed text-text-secondary tabular-nums"
             >
               {INACTIVITY_MESSAGES.description(secondsLeft)}
             </p>
+            <span className="sr-only" role="status" aria-live="polite">
+              {shouldAnnounce ? INACTIVITY_MESSAGES.description(secondsLeft) : ''}
+            </span>
           </div>
         </div>
 

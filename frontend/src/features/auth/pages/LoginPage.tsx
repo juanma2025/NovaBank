@@ -100,7 +100,7 @@ export default function LoginPage() {
       {LOGIN_MESSAGES.noAccountPrompt}{' '}
       <Link
         to="/registro"
-        className="font-semibold text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
+        className="inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-1 font-semibold text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
       >
         {LOGIN_MESSAGES.createAccount}
       </Link>

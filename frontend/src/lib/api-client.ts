@@ -99,7 +99,7 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
 
   const parsed = ErrorResponseSchema.safeParse(raw);
   if (parsed.success) {
-    const { code, requestId, details } = parsed.data.error;
+    const { code, message, requestId, details } = parsed.data.error;
     const retryAfterSeconds = details?.retryAfterSeconds ?? retryAfterHeader;
     const mergedDetails =
       retryAfterSeconds !== undefined && details?.retryAfterSeconds === undefined
@@ -108,7 +108,7 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
     return new ApiError({
       code,
       status: response.status,
-      message: formatApiErrorMessage(code, mergedDetails),
+      message: formatApiErrorMessage(code, mergedDetails, message),
       requestId,
       ...(mergedDetails !== undefined ? { details: mergedDetails } : {}),
       ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),

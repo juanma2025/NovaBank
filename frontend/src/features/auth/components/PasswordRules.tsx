@@ -1,7 +1,7 @@
 import { type PasswordRuleViolation, validatePasswordRules } from '@nova/shared';
 import { Check, Circle, X } from 'lucide-react';
 
-import { PASSWORD_RULE_MESSAGES } from '../../../lib/messages.ts';
+import { PASSWORD_RULE_MESSAGES, PASSWORD_RULE_STATUS_SR } from '../../../lib/messages.ts';
 
 export interface PasswordRulesProps {
   id?: string;
@@ -67,7 +67,12 @@ export function PasswordRules({
             ) : (
               <Circle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-60" />
             )}
-            <span>{PASSWORD_RULE_MESSAGES[rule]}</span>
+            <span>
+              {status !== 'idle' && (
+                <span className="sr-only">{PASSWORD_RULE_STATUS_SR[status]}</span>
+              )}
+              {PASSWORD_RULE_MESSAGES[rule]}
+            </span>
           </li>
         );
       })}

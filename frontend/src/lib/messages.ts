@@ -2,8 +2,34 @@ import type { ErrorCode, ErrorDetails, PasswordRuleViolation } from '@nova/share
 
 export type AuthNoticeReason = 'inactividad' | 'expirada' | 'clave-cambiada';
 
+/** Códigos de error propios de la spec 001 (subconjunto validado contra `ErrorCode` de `@nova/shared`). */
+export type AuthErrorCode = Extract<
+  ErrorCode,
+  | 'VALIDATION_ERROR'
+  | 'DOMAIN_NOT_ALLOWED'
+  | 'POLICY_VERSION_OUTDATED'
+  | 'VERIFICATION_NOT_FOUND'
+  | 'VERIFICATION_STEP_INVALID'
+  | 'VERIFICATION_EXPIRED'
+  | 'CODE_INVALID'
+  | 'CODE_EXPIRED'
+  | 'CODE_ATTEMPTS_EXHAUSTED'
+  | 'RESEND_TOO_SOON'
+  | 'CODE_SEND_LIMIT'
+  | 'PASSWORD_WEAK'
+  | 'EMAIL_ALREADY_REGISTERED'
+  | 'INVALID_CREDENTIALS'
+  | 'LOGIN_LOCKED'
+  | 'UNAUTHENTICATED'
+  | 'ACCESS_TOKEN_EXPIRED'
+  | 'SESSION_EXPIRED'
+  | 'RATE_LIMITED'
+  | 'NOT_FOUND'
+  | 'INTERNAL_ERROR'
+>;
+
 /** Catálogo único de errores de la API en español (es-CO). */
-export const ERROR_MESSAGES: Record<ErrorCode, string> = {
+export const ERROR_MESSAGES: Record<AuthErrorCode, string> & Partial<Record<ErrorCode, string>> = {
   VALIDATION_ERROR: 'Revisa los datos ingresados e intenta de nuevo.',
   DOMAIN_NOT_ALLOWED: 'Solo se aceptan correos institucionales de las universidades participantes.',
   POLICY_VERSION_OUTDATED:
@@ -37,6 +63,11 @@ export const PASSWORD_RULE_MESSAGES: Record<PasswordRuleViolation, string> = {
   contains_email: 'No puede contener tu correo ni tu nombre de usuario',
   common: 'No puede ser una contraseña común o fácil de adivinar',
 };
+
+export const PASSWORD_RULE_STATUS_SR = {
+  valid: 'Cumplida: ',
+  invalid: 'No cumplida: ',
+} as const;
 
 export const AUTH_REASON_BANNERS: Record<
   AuthNoticeReason,
@@ -80,7 +111,11 @@ export function formatAttemptsLeft(attemptsLeft: number): string {
     : `El código no es válido. Te quedan ${attemptsLeft} intentos.`;
 }
 
-export function formatApiErrorMessage(code: ErrorCode | 'NETWORK', details?: ErrorDetails): string {
+export function formatApiErrorMessage(
+  code: ErrorCode | 'NETWORK',
+  details?: ErrorDetails,
+  fallbackMessage?: string,
+): string {
   if (code === 'NETWORK') return NETWORK_ERROR_MESSAGE;
   if (code === 'CODE_INVALID' && details?.attemptsLeft !== undefined) {
     return formatAttemptsLeft(details.attemptsLeft);
@@ -97,7 +132,7 @@ export function formatApiErrorMessage(code: ErrorCode | 'NETWORK', details?: Err
   if (code === 'RATE_LIMITED' && details?.retryAfterSeconds !== undefined) {
     return `Hiciste demasiadas solicitudes. Intenta de nuevo en ${formatMinutesRemaining(details.retryAfterSeconds)}.`;
   }
-  return ERROR_MESSAGES[code];
+  return ERROR_MESSAGES[code] ?? fallbackMessage ?? ERROR_MESSAGES.INTERNAL_ERROR;
 }
 
 export const APP_MESSAGES = {

@@ -1,6 +1,6 @@
 import { CODE_LENGTH } from '@nova/shared';
 import { AlertCircle } from 'lucide-react';
-import { type ClipboardEvent, type KeyboardEvent, useId, useRef } from 'react';
+import { type ClipboardEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 
 import { VERIFICATION_MESSAGES } from '../../../lib/messages.ts';
 
@@ -29,8 +29,16 @@ export function CodeInput({
 }: CodeInputProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const lastSubmittedRef = useRef<string | null>(null);
+  const [shaking, setShaking] = useState(false);
   const groupId = useId();
   const errorId = error ? `${groupId}-error` : undefined;
+
+  useEffect(() => {
+    if (errorKey <= 0) return;
+    setShaking(true);
+    const timer = setTimeout(() => setShaking(false), 350);
+    return () => clearTimeout(timer);
+  }, [errorKey]);
 
   const digits = SLOTS.map((index) => value[index] ?? '');
 
@@ -120,10 +128,7 @@ export function CodeInput({
         {VERIFICATION_MESSAGES.codeLabel}
       </legend>
 
-      <div
-        key={errorKey}
-        className={`grid grid-cols-6 gap-1 sm:gap-2 ${error ? 'nova-animate-shake' : ''}`}
-      >
+      <div className={`grid grid-cols-6 gap-1 sm:gap-2 ${shaking ? 'nova-animate-shake' : ''}`}>
         {SLOTS.map((index) => (
           <input
             key={index}

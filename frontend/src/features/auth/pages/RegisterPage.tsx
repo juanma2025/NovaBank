@@ -48,7 +48,7 @@ export default function RegisterPage() {
       {REGISTER_MESSAGES.hasAccountPrompt}{' '}
       <Link
         to="/ingresar"
-        className="font-semibold text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
+        className="inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-1 font-semibold text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
       >
         {REGISTER_MESSAGES.goToLogin}
       </Link>

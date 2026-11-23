@@ -1,18 +1,23 @@
 import type { SessionEndReason } from '@nova/shared';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { Alert } from '../components/Alert.tsx';
-import { NovaMark } from '../components/AppHeader.tsx';
 import { Button } from '../components/Button.tsx';
 import { GlassCard } from '../components/GlassCard.tsx';
+import { NovaMark } from '../components/NovaMark.tsx';
 import { Spinner } from '../components/Spinner.tsx';
-import { InactivityDialog } from '../features/auth/components/InactivityDialog.tsx';
 import { useIdleTimer } from '../features/auth/hooks/useIdleTimer.ts';
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/hooks/useSession.ts';
 import { resetLastServerContactAt, setOnSessionExpired } from '../lib/api-client.ts';
 import { APP_MESSAGES } from '../lib/messages.ts';
+
+const InactivityDialog = lazy(() =>
+  import('../features/auth/components/InactivityDialog.tsx').then((mod) => ({
+    default: mod.InactivityDialog,
+  })),
+);
 
 export function createAppQueryClient(): QueryClient {
   return new QueryClient({
@@ -97,17 +102,21 @@ export function SessionProvider({ children }: SessionProviderProps) {
   return (
     <>
       {children}
-      <InactivityDialog
-        open={idle.warningOpen}
-        secondsLeft={idle.secondsLeft}
-        isRefreshing={idle.isRefreshing}
-        onStayConnected={() => {
-          void idle.stayConnected();
-        }}
-        onLogoutNow={() => {
-          void idle.logoutNow();
-        }}
-      />
+      {idle.warningOpen && (
+        <Suspense fallback={null}>
+          <InactivityDialog
+            open={idle.warningOpen}
+            secondsLeft={idle.secondsLeft}
+            isRefreshing={idle.isRefreshing}
+            onStayConnected={() => {
+              void idle.stayConnected();
+            }}
+            onLogoutNow={() => {
+              void idle.logoutNow();
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
