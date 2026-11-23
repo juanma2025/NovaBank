@@ -60,6 +60,10 @@ enum AuditEventType {
   CARD_CANCELED
   CARD_REVEALED
   CARD_PAYMENT_APPROVED
+  GOAL_CREATED
+  GOAL_CLOSED
+  SAVINGS_DEPOSIT
+  SAVINGS_WITHDRAWAL
 
   @@map("audit_event_type")
 }
@@ -102,6 +106,7 @@ model User {
   profile         Profile?
   cards           Card[]
   cardDeclines    CardPaymentDecline[]
+  savingsGoals    SavingsGoal[]
 
   @@map("users")
 }
@@ -235,6 +240,7 @@ enum AccountKind {
   student
   system_topups
   system_merchants
+  savings_goal
 
   @@map("account_kind")
 }
@@ -249,6 +255,8 @@ enum LedgerTransactionType {
   topup
   transfer
   card_payment
+  savings_deposit
+  savings_withdrawal
 
   @@map("ledger_transaction_type")
 }
@@ -278,6 +286,8 @@ model Account {
   transactions             LedgerTransaction[]
   /// Transferencias recibidas (spec 003).
   counterpartyTransactions LedgerTransaction[] @relation("Counterparty")
+  /// Spec 005: meta dueña de esta subcuenta (kind = savings_goal).
+  savingsGoal              SavingsGoal?
 
   @@map("accounts")
 }
@@ -305,6 +315,7 @@ model LedgerTransaction {
   reversals    LedgerTransaction[] @relation("Reversal")
   entries      LedgerEntry[]
   cardPayment  CardPayment?
+  closedGoal   SavingsGoal?
 
   @@index([accountId, type, createdAt])
   @@map("ledger_transactions")
@@ -432,4 +443,35 @@ model CardPaymentDecline {
 
   @@index([userId, createdAt])
   @@map("card_payment_declines")
+}
+
+/// Spec 005 · estado de la meta de ahorro.
+enum SavingsGoalStatus {
+  active
+  closed
+
+  @@map("savings_goal_status")
+}
+
+/// Spec 005 · meta de ahorro. Dueño: módulo savings. Su saldo vive en la subcuenta `account_id`.
+model SavingsGoal {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String            @map("user_id") @db.Uuid
+  accountId            String            @unique @map("account_id") @db.Uuid
+  name                 String            @db.VarChar(40)
+  targetAmount         BigInt            @map("target_amount")
+  targetDate           DateTime?         @map("target_date") @db.Date
+  status               SavingsGoalStatus
+  /// Devolución al cerrar, si hubo saldo (research R7).
+  closingTransactionId String?           @unique @map("closing_transaction_id") @db.Uuid
+  createdAt            DateTime          @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime          @map("updated_at") @db.Timestamptz(6)
+  closedAt             DateTime?         @map("closed_at") @db.Timestamptz(6)
+
+  user               User               @relation(fields: [userId], references: [id])
+  account            Account            @relation(fields: [accountId], references: [id])
+  closingTransaction LedgerTransaction? @relation(fields: [closingTransactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, createdAt])
+  @@map("savings_goals")
 }

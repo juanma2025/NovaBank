@@ -61,6 +61,10 @@ const EnvSchema = z
     CARD_PAYMENT_MIN_AMOUNT: z.coerce.number().int().min(1).default(1000),
     CARD_PAYMENT_MAX_AMOUNT: z.coerce.number().int().min(1).default(500_000),
     CARD_PAYMENT_DAILY_LIMIT: z.coerce.number().int().min(1).default(1_000_000),
+    // Spec 005: límites de aportes y retiros de metas (research R10).
+    SAVINGS_MIN_AMOUNT: z.coerce.number().int().min(1).default(1000),
+    SAVINGS_MAX_AMOUNT: z.coerce.number().int().min(1).default(2_000_000),
+    SAVINGS_DAILY_LIMIT: z.coerce.number().int().min(1).default(5_000_000),
   })
   .superRefine((env, ctx) => {
     const overrides = [
@@ -106,6 +110,16 @@ const EnvSchema = z
           'debe cumplirse CARD_PAYMENT_MIN_AMOUNT ≤ CARD_PAYMENT_MAX_AMOUNT ≤ CARD_PAYMENT_DAILY_LIMIT',
       });
     }
+    if (!(
+      env.SAVINGS_MIN_AMOUNT <= env.SAVINGS_MAX_AMOUNT &&
+      env.SAVINGS_MAX_AMOUNT <= env.SAVINGS_DAILY_LIMIT
+    )) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SAVINGS_MAX_AMOUNT'],
+        message: 'debe cumplirse SAVINGS_MIN_AMOUNT ≤ SAVINGS_MAX_AMOUNT ≤ SAVINGS_DAILY_LIMIT',
+      });
+    }
     const timeout = env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS;
     const warning = env.SESSION_IDLE_WARNING_SECONDS_OVERRIDE ?? SESSION_IDLE_WARNING_SECONDS;
     if (warning >= timeout) {
@@ -124,6 +138,7 @@ export interface AppConfig extends Env {
   topups: { minAmount: number; maxAmount: number; dailyLimit: number };
   transfers: { minAmount: number; maxAmount: number; dailyLimit: number; reauthThreshold: number };
   cardPayments: { minAmount: number; maxAmount: number; dailyLimit: number };
+  savings: { minAmount: number; maxAmount: number; dailyLimit: number };
 }
 
 export class EnvValidationError extends Error {
@@ -167,6 +182,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       minAmount: env.CARD_PAYMENT_MIN_AMOUNT,
       maxAmount: env.CARD_PAYMENT_MAX_AMOUNT,
       dailyLimit: env.CARD_PAYMENT_DAILY_LIMIT,
+    },
+    savings: {
+      minAmount: env.SAVINGS_MIN_AMOUNT,
+      maxAmount: env.SAVINGS_MAX_AMOUNT,
+      dailyLimit: env.SAVINGS_DAILY_LIMIT,
     },
     session: {
       idleTimeoutSeconds: env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS,
