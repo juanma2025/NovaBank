@@ -28,20 +28,20 @@ description: "Task list for 004-tarjeta-virtual"
 
 ### [SH] Contrato en código — rama de definición
 
-- [ ] T001 [P] [SH] Crear `shared/src/cards.ts`:
+- [X] T001 [P] [SH] Crear `shared/src/cards.ts`:
   - `MerchantCategorySchema` (`food`, `books`, `transport`, `stationery`, `entertainment`);
   - `DEMO_MERCHANTS`: los 6 comercios de `MerchantId` en el contrato, con `id`, `name` y `category`, y `MerchantIdSchema`;
   - `luhnCheckDigit(digits)`, `isValidCardNumber(number)` (16 dígitos y Luhn), `normalizeCardNumber` (quita espacios) y `maskCardNumber(last4)` («•••• 1234»).
 
   Pruebas en `shared/src/cards.test.ts`.
-- [ ] T002 [SH] Agregar `card_payment` a `MovementTypeSchema` en `shared/src/accounts.schemas.ts`, como en los contratos de la 002, la 003 y la 004 (research R9). Si algún `switch` del backend sobre el tipo deja de compilar, ajustarlo.
-- [ ] T003 [SH] Agregar a `shared/src/errors.ts` los códigos `CARD_LIMIT_REACHED`, `CARD_CANCELED`, `CARD_NOT_ACTIVE`, `CARD_DECLINED`, `CARD_PAYMENTS_LOCKED`, `PAYMENT_AMOUNT_OUT_OF_RANGE` y `PAYMENT_DAILY_LIMIT`.
+- [X] T002 [SH] Agregar `card_payment` a `MovementTypeSchema` en `shared/src/accounts.schemas.ts`, como en los contratos de la 002, la 003 y la 004 (research R9). Si algún `switch` del backend sobre el tipo deja de compilar, ajustarlo.
+- [X] T003 [SH] Agregar a `shared/src/errors.ts` los códigos `CARD_LIMIT_REACHED`, `CARD_CANCELED`, `CARD_NOT_ACTIVE`, `CARD_DECLINED`, `CARD_PAYMENTS_LOCKED`, `PAYMENT_AMOUNT_OUT_OF_RANGE` y `PAYMENT_DAILY_LIMIT`.
 
   Agregar sus mensajes y estados HTTP en `backend/src/lib/error-messages.ts` y `backend/src/lib/errors.ts`:
   - 409: `CARD_CANCELED`;
   - 429: `CARD_PAYMENTS_LOCKED`;
   - 422: los demás.
-- [ ] T004 [SH] Crear `shared/src/cards.schemas.ts`, cada esquema igual a [contracts/cards.openapi.json](contracts/cards.openapi.json):
+- [X] T004 [SH] Crear `shared/src/cards.schemas.ts`, cada esquema igual a [contracts/cards.openapi.json](contracts/cards.openapi.json):
   - `CardStatusSchema`, `CardSchema`, `CardListSchema`;
   - `CardNicknameRequestSchema` (recorta espacios; 1–30);
   - `RevealCardRequestSchema`, `CardSecretsSchema`;
@@ -51,10 +51,10 @@ description: "Task list for 004-tarjeta-virtual"
   - `CardPaymentResultSchema`.
 
   Reexportar `cards.ts` y `cards.schemas.ts` en `shared/src/index.ts`.
-- [ ] T005 [P] [SH] Pruebas:
+- [X] T005 [P] [SH] Pruebas:
   - en `shared/src/cards.schemas.test.ts`: el nombre se recorta y se rechaza vacío o de más de 30; el número se acepta con espacios; se rechazan un vencimiento `13/30`, un CVV de 4 dígitos y campos extra;
   - en `shared/src/contract.test.ts`: los comercios de `DEMO_MERCHANTS` coinciden con `MerchantId`, las categorías con `MerchantCategory`, y los ejemplos del contrato son válidos.
-- [ ] T006 [P] [SH] Agregar a `.env.example`:
+- [X] T006 [P] [SH] Agregar a `.env.example`:
   - `CARD_ENCRYPTION_KEY` (vacía, con el comando para generarla, como en quickstart.md);
   - `CARD_PAYMENT_MIN_AMOUNT=1000`, `CARD_PAYMENT_MAX_AMOUNT=500000` y `CARD_PAYMENT_DAILY_LIMIT=1000000`.
 

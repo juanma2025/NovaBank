@@ -27,6 +27,12 @@ import {
   PasswordRuleViolationSchema,
   SessionEndReasonSchema,
 } from './errors.js';
+import { DEMO_MERCHANTS, MerchantCategorySchema } from './cards.js';
+import {
+  CardNicknameRequestSchema,
+  CardSchema,
+  CreateCardPaymentRequestSchema,
+} from './cards.schemas.js';
 import { partialName } from './names.js';
 import {
   CreateTransferRequestSchema,
@@ -75,6 +81,7 @@ function schema(contract: Contract, name: string): SchemaObject {
 const auth = contractFile('auth.openapi.json');
 const accounts = contractFile('accounts.openapi.json');
 const transfers = contractFile('transfers.openapi.json');
+const cards = contractFile('cards.openapi.json');
 
 describe('contratos: códigos y enums', () => {
   it('hay al menos un contrato por spec', () => {
@@ -175,6 +182,40 @@ describe('contratos: ejemplos de la 003', () => {
       CreateTransferRequestSchema.safeParse({
         recipientId: '7b0e4c1a-3f2d-4e5b-9a8c-1d2e3f4a5b6c',
         amount,
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe('contratos: tarjetas y tienda de la 004', () => {
+  it('Movement de la 004 es igual al de la 002', () => {
+    expect(schema(cards, 'Movement')).toEqual(schema(accounts, 'Movement'));
+  });
+
+  it('los comercios y las categorías coinciden con el contrato', () => {
+    expect(DEMO_MERCHANTS.map((m) => m.id)).toEqual(schema(cards, 'MerchantId').enum);
+    expect(MerchantCategorySchema.options).toEqual(schema(cards, 'MerchantCategory').enum);
+  });
+
+  it('Card tiene los campos del contrato', () => {
+    expect(Object.keys(CardSchema.shape).sort()).toEqual(
+      [...(schema(cards, 'Card').required ?? [])].sort(),
+    );
+  });
+
+  it('los ejemplos del contrato son válidos', () => {
+    const card = schema(cards, 'Card').properties;
+    expect(
+      CardNicknameRequestSchema.safeParse({ nickname: card?.nickname?.examples?.[0] }).success,
+    ).toBe(true);
+    const req = schema(cards, 'CreateCardPaymentRequest').properties;
+    expect(
+      CreateCardPaymentRequestSchema.safeParse({
+        merchantId: DEMO_MERCHANTS[0].id,
+        amount: schema(cards, 'MoneyAmount').examples?.[0],
+        cardNumber: req?.cardNumber?.examples?.[0],
+        expiry: req?.expiry?.examples?.[0],
+        cvv: req?.cvv?.examples?.[0],
       }).success,
     ).toBe(true);
   });

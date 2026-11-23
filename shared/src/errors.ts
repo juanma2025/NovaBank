@@ -37,6 +37,14 @@ export const ERROR_CODES = [
   'REAUTH_REQUIRED',
   'REAUTH_FAILED',
   'REAUTH_LOCKED',
+  // Spec 004
+  'CARD_LIMIT_REACHED',
+  'CARD_CANCELED',
+  'CARD_NOT_ACTIVE',
+  'CARD_DECLINED',
+  'CARD_PAYMENTS_LOCKED',
+  'PAYMENT_AMOUNT_OUT_OF_RANGE',
+  'PAYMENT_DAILY_LIMIT',
 ] as const;
 
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
