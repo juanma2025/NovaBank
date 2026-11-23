@@ -13,3 +13,5 @@ export * from './savings.js';
 export * from './savings.schemas.js';
 export * from './budgets.js';
 export * from './budgets.schemas.js';
+export * from './splits.js';
+export * from './splits.schemas.js';

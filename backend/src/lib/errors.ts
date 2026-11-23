@@ -52,6 +52,12 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   GOAL_CLOSED: 409,
   SAVINGS_AMOUNT_OUT_OF_RANGE: 422,
   SAVINGS_DAILY_LIMIT: 422,
+  // Spec 007
+  SPLIT_SHARES_MISMATCH: 422,
+  SPLIT_SHARE_OUT_OF_RANGE: 422,
+  SPLIT_CLOSED: 409,
+  SHARE_NOT_PENDING: 409,
+  SPLIT_REMINDER_TOO_SOON: 429,
 };
 
 /** Error de negocio con un código estable del contrato. */

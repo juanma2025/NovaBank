@@ -28,14 +28,14 @@ heredadas).
 
 ### [SH] Contrato en código — rama de definición
 
-- [ ] T001 [P] [SH] Crear `shared/src/splits.ts` con `SPLIT_MAX_PARTICIPANTS = 10`, `SPLIT_TOTAL_MIN = 2000`, `SPLIT_TOTAL_MAX = 5_000_000`, `SPLIT_TITLE_MAX_LENGTH = 60`, `SPLIT_REMINDER_INTERVAL_HOURS = 24` y `splitEvenly(total, participants)` → `{ creatorShare, share }` (research R4). Pruebas en `shared/src/splits.test.ts`: división exacta, sobrante para quien crea ($10.000 entre 3 → 3.334 y 3.333) y 10 participantes.
-- [ ] T002 [SH] Agregar a `shared/src/errors.ts` los códigos `SPLIT_SHARES_MISMATCH`, `SPLIT_SHARE_OUT_OF_RANGE`, `SPLIT_CLOSED`, `SHARE_NOT_PENDING` y `SPLIT_REMINDER_TOO_SOON`.
+- [X] T001 [P] [SH] Crear `shared/src/splits.ts` con `SPLIT_MAX_PARTICIPANTS = 10`, `SPLIT_TOTAL_MIN = 2000`, `SPLIT_TOTAL_MAX = 5_000_000`, `SPLIT_TITLE_MAX_LENGTH = 60`, `SPLIT_REMINDER_INTERVAL_HOURS = 24` y `splitEvenly(total, participants)` → `{ creatorShare, share }` (research R4). Pruebas en `shared/src/splits.test.ts`: división exacta, sobrante para quien crea ($10.000 entre 3 → 3.334 y 3.333) y 10 participantes.
+- [X] T002 [SH] Agregar a `shared/src/errors.ts` los códigos `SPLIT_SHARES_MISMATCH`, `SPLIT_SHARE_OUT_OF_RANGE`, `SPLIT_CLOSED`, `SHARE_NOT_PENDING` y `SPLIT_REMINDER_TOO_SOON`.
 
   Agregar sus mensajes y estados HTTP en `backend/src/lib/error-messages.ts` y `backend/src/lib/errors.ts`:
   - 422: `SPLIT_SHARES_MISMATCH` y `SPLIT_SHARE_OUT_OF_RANGE`;
   - 409: `SPLIT_CLOSED` y `SHARE_NOT_PENDING`;
   - 429: `SPLIT_REMINDER_TOO_SOON`.
-- [ ] T003 [SH] Crear `shared/src/splits.schemas.ts`, cada esquema igual a [contracts/splits.openapi.json](contracts/splits.openapi.json):
+- [X] T003 [SH] Crear `shared/src/splits.schemas.ts`, cada esquema igual a [contracts/splits.openapi.json](contracts/splits.openapi.json):
   - `SplitStatusSchema`, `SplitShareStatusSchema`, `SplitRoleSchema`;
   - `SplitShareSchema`, `SplitSchema`, `SplitListItemSchema`, `SplitsPageSchema`, `SplitsQuerySchema`;
   - `PendingTotalsSchema`, `SplitsSummarySchema`;
@@ -43,10 +43,10 @@ heredadas).
   - `PayShareRequestSchema`, `PayShareResultSchema`.
 
   Reexportar ambos archivos en `shared/src/index.ts`.
-- [ ] T004 [P] [SH] Pruebas:
+- [X] T004 [P] [SH] Pruebas:
   - en `shared/src/splits.schemas.test.ts`: título vacío o largo, total fuera de rango, 0 u 11 partes, campos extra;
   - en `shared/src/contract.test.ts`: `Movement` de la 007 igual al de la 002, y ejemplos válidos.
-- [ ] T005 [P] [SH] Agregar las 9 operaciones de la 007 a `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
+- [X] T005 [P] [SH] Agregar las 9 operaciones de la 007 a `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
 
 **Checkpoint de definición**: PR → `main`.
 
