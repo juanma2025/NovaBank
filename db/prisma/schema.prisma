@@ -73,6 +73,7 @@ enum EmailTemplate {
   already_registered
   password_reset_code
   password_changed
+  budget_alert
 
   @@map("email_template")
 }
@@ -98,15 +99,18 @@ model User {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  consent         DataConsent?
-  sessions        Session[]
-  auditEvents     AuditEvent[]
-  account         Account?
-  idempotencyKeys IdempotencyKey[]
-  profile         Profile?
-  cards           Card[]
-  cardDeclines    CardPaymentDecline[]
-  savingsGoals    SavingsGoal[]
+  consent            DataConsent?
+  sessions           Session[]
+  auditEvents        AuditEvent[]
+  account            Account?
+  idempotencyKeys    IdempotencyKey[]
+  profile            Profile?
+  cards              Card[]
+  cardDeclines       CardPaymentDecline[]
+  savingsGoals       SavingsGoal[]
+  budgetLimits       BudgetLimit[]
+  transferCategories TransferCategory[]
+  budgetAlerts       BudgetAlert[]
 
   @@map("users")
 }
@@ -309,13 +313,14 @@ model LedgerTransaction {
   createdAt             DateTime                @map("created_at") @db.Timestamptz(6)
   completedAt           DateTime?               @map("completed_at") @db.Timestamptz(6)
 
-  account      Account             @relation(fields: [accountId], references: [id])
-  counterparty Account?            @relation("Counterparty", fields: [counterpartyAccountId], references: [id], onDelete: Restrict)
-  reversed     LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
-  reversals    LedgerTransaction[] @relation("Reversal")
-  entries      LedgerEntry[]
-  cardPayment  CardPayment?
-  closedGoal   SavingsGoal?
+  account        Account             @relation(fields: [accountId], references: [id])
+  counterparty   Account?            @relation("Counterparty", fields: [counterpartyAccountId], references: [id], onDelete: Restrict)
+  reversed       LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
+  reversals      LedgerTransaction[] @relation("Reversal")
+  entries        LedgerEntry[]
+  cardPayment    CardPayment?
+  closedGoal     SavingsGoal?
+  budgetCategory TransferCategory?
 
   @@index([accountId, type, createdAt])
   @@map("ledger_transactions")
@@ -474,4 +479,66 @@ model SavingsGoal {
 
   @@index([userId, status, createdAt])
   @@map("savings_goals")
+}
+
+/// Spec 006 · categorías del presupuesto (las 5 de comercios, transferencias y otros).
+enum BudgetCategory {
+  food
+  books
+  transport
+  stationery
+  entertainment
+  transfers
+  other
+
+  @@map("budget_category")
+}
+
+/// Spec 006 · tope mensual por categoría, versionado por mes (research R4). Dueño: budgets.
+model BudgetLimit {
+  userId         String         @map("user_id") @db.Uuid
+  category       BudgetCategory
+  /// AAAA-MM desde el que rige; el tope de un mes es la fila con el mayor mes ≤ ese mes.
+  effectiveMonth String         @map("effective_month") @db.Char(7)
+  /// NULL = sin tope desde ese mes.
+  monthlyLimit   BigInt?        @map("monthly_limit")
+  updatedAt      DateTime       @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([userId, category, effectiveMonth])
+  @@map("budget_limits")
+}
+
+/// Spec 006 · categoría elegida para una transferencia enviada. Dueño: budgets.
+model TransferCategory {
+  transactionId String         @id @map("transaction_id") @db.Uuid
+  userId        String         @map("user_id") @db.Uuid
+  category      BudgetCategory
+  updatedAt     DateTime       @map("updated_at") @db.Timestamptz(6)
+
+  user        User              @relation(fields: [userId], references: [id])
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+
+  @@index([userId])
+  @@map("transfer_categories")
+}
+
+/// Spec 006 · alerta de presupuesto, una por umbral, categoría y mes (research R5). Dueño: budgets.
+model BudgetAlert {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String         @map("user_id") @db.Uuid
+  month        String         @db.Char(7)
+  category     BudgetCategory
+  threshold    Int            @db.SmallInt
+  spent        BigInt
+  monthlyLimit BigInt         @map("monthly_limit")
+  createdAt    DateTime       @map("created_at") @db.Timestamptz(6)
+  seenAt       DateTime?      @map("seen_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month, category, threshold])
+  @@index([userId, month, createdAt])
+  @@map("budget_alerts")
 }

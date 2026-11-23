@@ -32,7 +32,22 @@ function codeEmail(title: string, intro: string, data: TemplateData): RenderedEm
   };
 }
 
-/** Las 4 plantillas en español (data-model.md `EmailOutbox.template`; tasks.md T029). */
+/** Alerta de presupuesto (spec 006, research R6): los montos llegan ya formateados. */
+function budgetAlertEmail(data: TemplateData): RenderedEmail {
+  const category = requireString(data, 'categoryName');
+  const exceeded = requireString(data, 'kind') === 'exceeded';
+  const title = exceeded
+    ? `Superaste tu presupuesto de ${category}`
+    : `Te estás acercando a tu presupuesto de ${category}`;
+  const paragraphs = [
+    `Llevas ${requireString(data, 'spent')} de ${requireString(data, 'limit')} en ${category} este mes (${requireString(data, 'percent')} %).`,
+    'El presupuesto es solo informativo: tus pagos y transferencias no se bloquean.',
+    'Puedes revisar o cambiar tus topes en Nova, en «Presupuesto».',
+  ];
+  return { subject: title, text: paragraphs.join('\n\n'), html: renderHtml(title, paragraphs) };
+}
+
+/** Las plantillas en español (data-model.md `EmailOutbox.template`; spec 001 T029, spec 006). */
 export function renderTemplate(template: EmailTemplate, data: TemplateData): RenderedEmail {
   switch (template) {
     case 'verification_code':
@@ -66,5 +81,7 @@ export function renderTemplate(template: EmailTemplate, data: TemplateData): Ren
         html: renderHtml('Tu contraseña cambió', paragraphs),
       };
     }
+    case 'budget_alert':
+      return budgetAlertEmail(data);
   }
 }

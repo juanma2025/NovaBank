@@ -91,16 +91,7 @@ const contractOps = new Map(contracts.flatMap((c) => operations(c)).map((o) => [
  * contrato antes que el código). Cada tarea [BE] que implementa una la quita de aquí: si se
  * implementa sin quitarla, la prueba falla.
  */
-const PENDING_BACKEND = new Set<string>([
-  // Spec 006: T014, T018 y T023.
-  'GET /budgets',
-  'PUT /budgets/limits/{category}',
-  'DELETE /budgets/limits/{category}',
-  'GET /budgets/alerts',
-  'POST /budgets/alerts/{alertId}/seen',
-  'GET /budgets/transfers',
-  'PUT /budgets/transfers/{transactionId}/category',
-]);
+const PENDING_BACKEND = new Set<string>([]);
 
 describe('contratos OpenAPI de todas las specs', () => {
   it('hay contratos de varias specs y ninguna operación está definida dos veces', () => {
