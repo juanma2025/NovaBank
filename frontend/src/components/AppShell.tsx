@@ -1,15 +1,4 @@
-import {
-  CreditCard,
-  Home,
-  LayoutGrid,
-  List,
-  LogOut,
-  PlusCircle,
-  Send,
-  ShoppingBag,
-  User,
-  X,
-} from 'lucide-react';
+import { LayoutGrid, LogOut, User, X } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 
@@ -17,35 +6,13 @@ import { useLogout } from '../features/auth/hooks/useLogout.ts';
 import { useSession } from '../features/auth/hooks/useSession.ts';
 import { APP_MESSAGES, NAV_MESSAGES } from '../lib/messages.ts';
 import { Button } from './Button.tsx';
+import { DESKTOP_NAV_ITEMS, MOBILE_MORE_ITEMS, MOBILE_PRIMARY_ITEMS } from './nav-items.ts';
 import { NovaMark } from './NovaMark.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 
 export interface AppShellProps {
   children: ReactNode;
 }
-
-const DESKTOP_NAV_ITEMS = [
-  { to: '/inicio', label: NAV_MESSAGES.home, icon: Home },
-  { to: '/enviar', label: NAV_MESSAGES.send, icon: Send },
-  { to: '/tarjetas', label: NAV_MESSAGES.cards, icon: CreditCard },
-  { to: '/tienda', label: NAV_MESSAGES.store, icon: ShoppingBag },
-  { to: '/recargar', label: NAV_MESSAGES.topup, icon: PlusCircle },
-  { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
-  { to: '/perfil', label: NAV_MESSAGES.profile, icon: User },
-] as const;
-
-const MOBILE_PRIMARY_ITEMS = [
-  { to: '/inicio', label: NAV_MESSAGES.home, icon: Home },
-  { to: '/enviar', label: NAV_MESSAGES.send, icon: Send },
-  { to: '/tarjetas', label: NAV_MESSAGES.cards, icon: CreditCard },
-  { to: '/recargar', label: NAV_MESSAGES.topup, icon: PlusCircle },
-] as const;
-
-const MOBILE_MORE_ITEMS = [
-  { to: '/tienda', label: NAV_MESSAGES.store, icon: ShoppingBag },
-  { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
-  { to: '/perfil', label: NAV_MESSAGES.profile, icon: User },
-] as const;
 
 function isRouteActive(pathname: string, target: string): boolean {
   return pathname === target || pathname.startsWith(`${target}/`);

@@ -102,9 +102,9 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [FE]
 
-- [ ] T015 [P] [US1] [FE] Crear `frontend/tests/GoalsPage.test.tsx`: vacío, crear meta (validación de nombre, objetivo y fecha), progreso, «Cumplida», `GOAL_LIMIT_REACHED` y aportar con `INSUFFICIENT_FUNDS`.
-- [ ] T016 [P] [US1] [FE] Crear `frontend/src/features/savings/components/GoalCard.tsx` (barra con porcentaje en texto, no solo color), `GoalFormDialog.tsx` y `SavingsAmountDialog.tsx`.
-- [ ] T017 [US1] [FE] Crear:
+- [X] T015 [P] [US1] [FE] Crear `frontend/tests/GoalsPage.test.tsx`: vacío, crear meta (validación de nombre, objetivo y fecha), progreso, «Cumplida», `GOAL_LIMIT_REACHED` y aportar con `INSUFFICIENT_FUNDS`.
+- [X] T016 [P] [US1] [FE] Crear `frontend/src/features/savings/components/GoalCard.tsx` (barra con porcentaje en texto, no solo color), `GoalFormDialog.tsx` y `SavingsAmountDialog.tsx`.
+- [X] T017 [US1] [FE] Crear:
   - `frontend/src/features/savings/api.ts` y los hooks (`useGoals`, `useCreateGoal`, `useDeposit`, `useSavingsLimits`);
   - `GoalsPage.tsx` y `GoalDetailPage.tsx` (progreso, aportar, historial);
   - las rutas `/metas` y `/metas/:id` y el acceso desde `HomePage`;
@@ -112,7 +112,7 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [E2E]
 
-- [ ] T018 [US1] [E2E] Crear `e2e/savings.spec.ts`: recargar, crear una meta, aportar y comprobar los dos saldos y el progreso.
+- [X] T018 [US1] [E2E] Crear `e2e/savings.spec.ts`: recargar, crear una meta, aportar y comprobar los dos saldos y el progreso.
 
 ---
 
@@ -130,7 +130,7 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [FE]
 
-- [ ] T021 [US2] [FE] Agregar «Retirar» a `GoalDetailPage` con `SavingsAmountDialog`, y su prueba en `frontend/tests/GoalDetailPage.test.tsx`.
+- [X] T021 [US2] [FE] Agregar «Retirar» a `GoalDetailPage` con `SavingsAmountDialog`, y su prueba en `frontend/tests/GoalDetailPage.test.tsx`.
 
 ---
 
@@ -152,19 +152,19 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [FE]
 
-- [ ] T024 [P] [US3] [FE] Agregar a `frontend/tests/GoalDetailPage.test.tsx`: editar, cerrar con confirmación que muestra el monto que vuelve, y una cerrada sin acciones.
-- [ ] T025 [US3] [FE] Agregar a `GoalDetailPage` editar (`GoalFormDialog`) y cerrar (diálogo de confirmación accesible); en `GoalsPage`, las cerradas al final y atenuadas.
+- [X] T024 [P] [US3] [FE] Agregar a `frontend/tests/GoalDetailPage.test.tsx`: editar, cerrar con confirmación que muestra el monto que vuelve, y una cerrada sin acciones.
+- [X] T025 [US3] [FE] Agregar a `GoalDetailPage` editar (`GoalFormDialog`) y cerrar (diálogo de confirmación accesible); en `GoalsPage`, las cerradas al final y atenuadas.
 
 ### [E2E]
 
-- [ ] T026 [US3] [E2E] Ampliar `e2e/savings.spec.ts`: retirar, cerrar con saldo y comprobar que el disponible recupera todo.
+- [X] T026 [US3] [E2E] Ampliar `e2e/savings.spec.ts`: retirar, cerrar con saldo y comprobar que el disponible recupera todo.
 
 ---
 
 ## Phase 5: Polish
 
-- [ ] T027 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/metas` y `/metas/:id` (SC-006). Registrar el resultado en `specs/005-metas-ahorro/checklists/accessibility.md`.
-- [ ] T028 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
+- [X] T027 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/metas` y `/metas/:id` (SC-006). Registrar el resultado en `specs/005-metas-ahorro/checklists/accessibility.md`.
+- [X] T028 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
 ---
 

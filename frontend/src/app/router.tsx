@@ -22,6 +22,8 @@ const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage.tsx
 const CardsPage = lazy(() => import('../features/cards/pages/CardsPage.tsx'));
 const CardDetailPage = lazy(() => import('../features/cards/pages/CardDetailPage.tsx'));
 const StorePage = lazy(() => import('../features/store/pages/StorePage.tsx'));
+const GoalsPage = lazy(() => import('../features/savings/pages/GoalsPage.tsx'));
+const GoalDetailPage = lazy(() => import('../features/savings/pages/GoalDetailPage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {
@@ -64,6 +66,8 @@ export function AppRoutes() {
           <Route path="/tarjetas" element={<CardsPage />} />
           <Route path="/tarjetas/:id" element={<CardDetailPage />} />
           <Route path="/tienda" element={<StorePage />} />
+          <Route path="/metas" element={<GoalsPage />} />
+          <Route path="/metas/:id" element={<GoalDetailPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
