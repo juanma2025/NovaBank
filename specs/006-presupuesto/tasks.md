@@ -28,14 +28,14 @@ exacto).
 
 ### [SH] Contrato en código — rama de definición
 
-- [ ] T001 [P] [SH] Crear `shared/src/budgets.ts`:
+- [X] T001 [P] [SH] Crear `shared/src/budgets.ts`:
   - `BUDGET_CATEGORIES` y `BudgetCategorySchema` (en el orden del contrato), `merchantToBudgetCategory`;
   - `BUDGET_LIMIT_MIN = 1000`, `BUDGET_LIMIT_MAX = 50_000_000` y `BUDGET_HISTORY_MONTHS = 6`;
   - `bogotaMonth(now)`, `addMonths(month, n)` e `isValidMonth`;
   - `budgetStatus(spent, limit)` → `{ percent, status }` (research R7).
 
   Pruebas en `shared/src/budgets.test.ts`: cambio de mes a las 00:00 de Bogotá; `addMonths` entre años; estados `none`, `ok`, `warning` (incluido exactamente el tope) y `exceeded`; porcentaje mayor que 100.
-- [ ] T002 [SH] Crear `shared/src/budgets.schemas.ts`, cada esquema igual a [contracts/budgets.openapi.json](contracts/budgets.openapi.json):
+- [X] T002 [SH] Crear `shared/src/budgets.schemas.ts`, cada esquema igual a [contracts/budgets.openapi.json](contracts/budgets.openapi.json):
   - `BudgetStatusSchema`, `BudgetCategorySummarySchema`, `BudgetMonthSchema`;
   - `BudgetMonthQuerySchema` (`month` opcional);
   - `SetBudgetLimitRequestSchema` (estricto);
@@ -44,10 +44,10 @@ exacto).
   - `BudgetAlertSchema`, `BudgetAlertListSchema`.
 
   Reexportar ambos archivos en `shared/src/index.ts`.
-- [ ] T003 [P] [SH] Pruebas:
+- [X] T003 [P] [SH] Pruebas:
   - en `shared/src/budgets.schemas.test.ts`: tope fuera de rango, categoría inválida, mes `2026-13`, campos extra;
   - en `shared/src/contract.test.ts`: `BUDGET_CATEGORIES` igual a `BudgetCategory` del contrato y sus 5 primeras iguales a las categorías de comercio de la 004, y los ejemplos del contrato válidos.
-- [ ] T004 [P] [SH] Agregar las 7 operaciones de la 006 a `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
+- [X] T004 [P] [SH] Agregar las 7 operaciones de la 006 a `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
 
 **Checkpoint de definición**: PR → `main`.
 
