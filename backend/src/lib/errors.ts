@@ -47,6 +47,11 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   CARD_PAYMENTS_LOCKED: 429,
   PAYMENT_AMOUNT_OUT_OF_RANGE: 422,
   PAYMENT_DAILY_LIMIT: 422,
+  // Spec 005
+  GOAL_LIMIT_REACHED: 422,
+  GOAL_CLOSED: 409,
+  SAVINGS_AMOUNT_OUT_OF_RANGE: 422,
+  SAVINGS_DAILY_LIMIT: 422,
 };
 
 /** Error de negocio con un código estable del contrato. */

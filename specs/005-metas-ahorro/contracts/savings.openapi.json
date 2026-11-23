@@ -1,0 +1,988 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nova API — Metas de ahorro (spec 005)",
+    "version": "1.0.0",
+    "description": "Contrato de diseño de la funcionalidad 005-metas-ahorro. Todas las rutas exigen sesión (cookie `nova_at`). Montos en pesos colombianos enteros. Todo error usa `ErrorResponse`."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "accessCookie": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "savings"
+    }
+  ],
+  "paths": {
+    "/savings/goals": {
+      "get": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "listMyGoals",
+        "summary": "Mis metas (activas primero, luego las cerradas) y el total ahorrado",
+        "responses": {
+          "200": {
+            "description": "Metas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "createGoal",
+        "summary": "Crear una meta",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Meta creada, activa y con saldo 0",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Goal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "422": {
+            "description": "`GOAL_LIMIT_REACHED`: ya tiene 5 metas activas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savings/goals/{goalId}": {
+      "patch": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "updateGoal",
+        "summary": "Cambiar nombre, objetivo o fecha",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "goalId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Meta actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Goal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o es de otro estudiante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`GOAL_CLOSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savings/goals/{goalId}/deposits": {
+      "post": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "depositToGoal",
+        "summary": "Aportar desde el saldo disponible",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "goalId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavingsAmountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Aporte aplicado (o respuesta original si se repitió la clave)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsMovementResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o es de otro estudiante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`GOAL_CLOSED` o `IDEMPOTENCY_KEY_REUSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`SAVINGS_AMOUNT_OUT_OF_RANGE` (minAmount, maxAmount), `SAVINGS_DAILY_LIMIT` (remainingToday) o `INSUFFICIENT_FUNDS` (availableBalance)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savings/goals/{goalId}/withdrawals": {
+      "post": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "withdrawFromGoal",
+        "summary": "Retirar al saldo disponible",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "goalId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavingsAmountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Retiro aplicado (o respuesta original si se repitió la clave)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsMovementResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o es de otro estudiante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`GOAL_CLOSED` o `IDEMPOTENCY_KEY_REUSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`SAVINGS_AMOUNT_OUT_OF_RANGE` (minAmount, maxAmount), `SAVINGS_DAILY_LIMIT` (remainingToday) o `INSUFFICIENT_FUNDS` (availableBalance)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savings/goals/{goalId}/close": {
+      "post": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "closeGoal",
+        "summary": "Cerrar y devolver todo el saldo a la cuenta principal",
+        "description": "La devolución no está sujeta a los límites de aportes y retiros.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "goalId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Meta cerrada (o respuesta original si se repitió la clave)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloseGoalResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o es de otro estudiante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`GOAL_CLOSED` o `IDEMPOTENCY_KEY_REUSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savings/goals/{goalId}/movements": {
+      "get": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "listGoalMovements",
+        "summary": "Historial de la meta",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "goalId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de movimientos vistos desde la meta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementsPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o es de otro estudiante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/savings/limits": {
+      "get": {
+        "tags": [
+          "savings"
+        ],
+        "operationId": "getSavingsLimits",
+        "summary": "Límites y lo que queda hoy",
+        "responses": {
+          "200": {
+            "description": "Límites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavingsLimits"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "accessCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "nova_at"
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "`VALIDATION_ERROR`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "SessionInvalid": {
+        "description": "`UNAUTHENTICATED`, `ACCESS_TOKEN_EXPIRED` o `SESSION_EXPIRED`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "MoneyAmount": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "examples": [
+          50000
+        ]
+      },
+      "GoalStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "closed"
+        ]
+      },
+      "Goal": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "targetAmount",
+          "targetDate",
+          "balance",
+          "completed",
+          "status",
+          "createdAt",
+          "closedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "targetAmount": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 100000000,
+            "examples": [
+              600000
+            ]
+          },
+          "targetDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "balance": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "balance ≥ targetAmount"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GoalStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "GoalList": {
+        "type": "object",
+        "required": [
+          "items",
+          "totalSaved"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Goal"
+            }
+          },
+          "totalSaved": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Suma de los saldos de las metas activas"
+          }
+        }
+      },
+      "CreateGoalRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "targetAmount"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "Se recortan los espacios",
+            "examples": [
+              "Viaje a Santa Marta"
+            ]
+          },
+          "targetAmount": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 100000000,
+            "examples": [
+              600000
+            ]
+          },
+          "targetDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "AAAA-MM-DD; hoy o futura (hora de Bogotá), hasta 10 años. null quita la fecha"
+          }
+        }
+      },
+      "UpdateGoalRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "Se recortan los espacios",
+            "examples": [
+              "Viaje a Santa Marta"
+            ]
+          },
+          "targetAmount": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 100000000,
+            "examples": [
+              600000
+            ]
+          },
+          "targetDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "AAAA-MM-DD; hoy o futura (hora de Bogotá), hasta 10 años. null quita la fecha"
+          }
+        }
+      },
+      "SavingsAmountRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          }
+        }
+      },
+      "Movement": {
+        "type": "object",
+        "required": [
+          "id",
+          "transactionId",
+          "type",
+          "description",
+          "note",
+          "amount",
+          "status",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "topup",
+              "transfer",
+              "card_payment",
+              "savings_deposit",
+              "savings_withdrawal"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 140,
+            "examples": [
+              "Recarga simulada",
+              "Transferencia a Ana P. G.",
+              "Compra en Cafetería Central · •••• 1234",
+              "Aporte a Viaje a Santa Marta"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 140,
+            "description": "Nota de la transferencia; null si no hay"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Con signo, desde la cuenta del estudiante: + entra, − sale"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "reversed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MovementsPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/Movement"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SavingsMovementResult": {
+        "type": "object",
+        "required": [
+          "goal",
+          "movement",
+          "availableBalance"
+        ],
+        "properties": {
+          "goal": {
+            "$ref": "#/components/schemas/Goal"
+          },
+          "movement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Movement"
+              }
+            ],
+            "description": "Visto desde la cuenta principal"
+          },
+          "availableBalance": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CloseGoalResult": {
+        "type": "object",
+        "required": [
+          "goal",
+          "movement",
+          "availableBalance"
+        ],
+        "properties": {
+          "goal": {
+            "$ref": "#/components/schemas/Goal"
+          },
+          "movement": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Movement"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "La devolución vista desde la cuenta principal; null si la meta no tenía saldo"
+          },
+          "availableBalance": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "SavingsLimits": {
+        "type": "object",
+        "required": [
+          "minAmount",
+          "maxAmount",
+          "dailyLimit",
+          "remainingToday"
+        ],
+        "properties": {
+          "minAmount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "maxAmount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "dailyLimit": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "remainingToday": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_ERROR",
+          "UNAUTHENTICATED",
+          "ACCESS_TOKEN_EXPIRED",
+          "SESSION_EXPIRED",
+          "RATE_LIMITED",
+          "NOT_FOUND",
+          "INTERNAL_ERROR",
+          "IDEMPOTENCY_KEY_REUSED",
+          "INSUFFICIENT_FUNDS",
+          "GOAL_LIMIT_REACHED",
+          "GOAL_CLOSED",
+          "SAVINGS_AMOUNT_OUT_OF_RANGE",
+          "SAVINGS_DAILY_LIMIT"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ],
+            "properties": {
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "retryAfterSeconds": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "minAmount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxAmount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "remainingToday": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "availableBalance": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "idle",
+                      "absolute",
+                      "revoked"
+                    ]
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

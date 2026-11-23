@@ -45,6 +45,11 @@ export const ERROR_CODES = [
   'CARD_PAYMENTS_LOCKED',
   'PAYMENT_AMOUNT_OUT_OF_RANGE',
   'PAYMENT_DAILY_LIMIT',
+  // Spec 005
+  'GOAL_LIMIT_REACHED',
+  'GOAL_CLOSED',
+  'SAVINGS_AMOUNT_OUT_OF_RANGE',
+  'SAVINGS_DAILY_LIMIT',
 ] as const;
 
 export const ErrorCodeSchema = z.enum(ERROR_CODES);

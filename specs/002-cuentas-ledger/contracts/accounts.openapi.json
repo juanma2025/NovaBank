@@ -3,7 +3,7 @@
   "info": {
     "title": "Nova API — Cuentas, libro contable y recargas (spec 002)",
     "version": "1.0.0",
-    "description": "Contrato de diseño de la funcionalidad 002-cuentas-ledger. Es la fuente de verdad entre backend y frontend: el documento generado en `/api/v1/openapi.json` DEBE coincidir con él.\n\nTodas las rutas exigen sesión (cookie `nova_at`, spec 001). Los montos viajan como enteros en pesos colombianos (constitución, Principio I). Todo error usa `ErrorResponse`.\n\nCambio aprobado en la definición de la spec 003: `Movement.type` incluye `transfer` y `Movement` incluye `note`.\n\nCambio aprobado en la definición de la spec 004: `Movement.type` incluye `card_payment`."
+    "description": "Contrato de diseño de la funcionalidad 002-cuentas-ledger. Es la fuente de verdad entre backend y frontend: el documento generado en `/api/v1/openapi.json` DEBE coincidir con él.\n\nTodas las rutas exigen sesión (cookie `nova_at`, spec 001). Los montos viajan como enteros en pesos colombianos (constitución, Principio I). Todo error usa `ErrorResponse`.\n\nCambio aprobado en la definición de la spec 003: `Movement.type` incluye `transfer` y `Movement` incluye `note`.\n\nCambio aprobado en la definición de la spec 004: `Movement.type` incluye `card_payment`.\n\nCambio aprobado en la definición de la spec 005: `Movement.type` incluye `savings_deposit` y `savings_withdrawal`."
   },
   "servers": [
     {
@@ -280,7 +280,9 @@
             "enum": [
               "topup",
               "transfer",
-              "card_payment"
+              "card_payment",
+              "savings_deposit",
+              "savings_withdrawal"
             ]
           },
           "description": {
@@ -289,7 +291,8 @@
             "examples": [
               "Recarga simulada",
               "Transferencia a Ana P. G.",
-              "Compra en Cafetería Central · •••• 1234"
+              "Compra en Cafetería Central · •••• 1234",
+              "Aporte a Viaje a Santa Marta"
             ]
           },
           "note": {
