@@ -30,11 +30,11 @@ Capas y ramas como en la 002:
 
 ### [SH] Contrato en código — rama de definición
 
-- [ ] T001 [P] [SH] Crear `shared/src/names.ts` con `partialName(fullName)`: primer nombre completo e inicial con punto de cada palabra restante («Ana Pérez Gómez» → «Ana P. G.»; «Lu» → «Lu»; respeta guiones y tildes). Pruebas en `shared/src/names.test.ts`.
-- [ ] T002 [SH] Cambiar en `shared/src/accounts.schemas.ts`: `MovementTypeSchema` agrega `transfer` y `MovementSchema` agrega `note` (`string ≤ 140 | null`), igual que `Movement` en los contratos de la 002 y la 003 (research R8).
+- [X] T001 [P] [SH] Crear `shared/src/names.ts` con `partialName(fullName)`: primer nombre completo e inicial con punto de cada palabra restante («Ana Pérez Gómez» → «Ana P. G.»; «Lu» → «Lu»; respeta guiones y tildes). Pruebas en `shared/src/names.test.ts`.
+- [X] T002 [SH] Cambiar en `shared/src/accounts.schemas.ts`: `MovementTypeSchema` agrega `transfer` y `MovementSchema` agrega `note` (`string ≤ 140 | null`), igual que `Movement` en los contratos de la 002 y la 003 (research R8).
 
   Para que el CI siga en verde, el backend de la 002 debe enviar `note: null` en `toMovement` (`backend/src/modules/ledger/ledger.service.ts`) hasta T010.
-- [ ] T003 [SH] Agregar a `shared/src/errors.ts`:
+- [X] T003 [SH] Agregar a `shared/src/errors.ts`:
   - los códigos `ALIAS_TAKEN`, `RECIPIENT_NOT_FOUND`, `TRANSFER_TO_SELF`, `TRANSFER_AMOUNT_OUT_OF_RANGE`, `TRANSFER_DAILY_LIMIT`, `INSUFFICIENT_FUNDS`, `REAUTH_REQUIRED`, `REAUTH_FAILED` y `REAUTH_LOCKED`;
   - en `details`, `availableBalance` y `reauthThreshold`.
 
@@ -43,7 +43,7 @@ Capas y ramas como en la 002:
   - 404: `RECIPIENT_NOT_FOUND`;
   - 429: `REAUTH_LOCKED`;
   - 422: los demás.
-- [ ] T004 [SH] Crear `shared/src/transfers.schemas.ts`, cada esquema igual a [contracts/transfers.openapi.json](contracts/transfers.openapi.json):
+- [X] T004 [SH] Crear `shared/src/transfers.schemas.ts`, cada esquema igual a [contracts/transfers.openapi.json](contracts/transfers.openapi.json):
   - `AliasSchema`: `trim`, quita la `@` inicial, minúsculas y el patrón de data-model.md `Profile.alias`;
   - `ProfileSchema`, `SetAliasRequestSchema`;
   - `RecipientQuerySchema` (`q` de 3 a 254) y `RecipientPreviewSchema`;
@@ -52,11 +52,11 @@ Capas y ramas como en la 002:
   - `TransferResultSchema`.
 
   Agregar también la constante `TRANSFER_NOTE_MAX_LENGTH = 140` y reexportar todo en `shared/src/index.ts`.
-- [ ] T005 [P] [SH] Pruebas en `shared/src/transfers.schemas.test.ts`:
+- [X] T005 [P] [SH] Pruebas en `shared/src/transfers.schemas.test.ts`:
   - `AliasSchema` normaliza «@Ana.Perez» → «ana.perez» y rechaza «.ab», «ab_», «a», «con espacio» y «ñandu»;
   - `CreateTransferRequest` rechaza campos extra y notas de más de 140 caracteres;
   - los ejemplos del contrato son válidos.
-- [ ] T006 [P] [SH] Agregar a `.env.example` `TRANSFER_MIN_AMOUNT=1000`, `TRANSFER_MAX_AMOUNT=500000`, `TRANSFER_DAILY_LIMIT=1000000` y `TRANSFER_REAUTH_THRESHOLD=200000`, con comentarios.
+- [X] T006 [P] [SH] Agregar a `.env.example` `TRANSFER_MIN_AMOUNT=1000`, `TRANSFER_MAX_AMOUNT=500000`, `TRANSFER_DAILY_LIMIT=1000000` y `TRANSFER_REAUTH_THRESHOLD=200000`, con comentarios.
 
 **Checkpoint de definición**: PR → `main`. Ambos aprueban también el cambio en el contrato de la 002.
 
@@ -86,7 +86,7 @@ Capas y ramas como en la 002:
   - `backend/src/modules/auth/reauth.service.ts`: `verify(userId, password, requestId)` con Argon2. Los fallos van a `login_attempts` con `origin_key = sha256('reauth:' + userId)` (5 fallos en 15 min dan 15 min de bloqueo → `REAUTH_LOCKED`); un acierto borra esos fallos; cada fallo lanza `REAUTH_FAILED` (research R4).
 
   Exponer ambos en `createAuthModule`.
-- [ ] T013 [BE] Actualizar las pruebas de la 002 para el campo `note` y el tipo `transfer` (`backend/tests/integration/accounts.test.ts`, `movements.test.ts`) y verificar que la prueba de contrato cubre las 22 operaciones de las tres specs.
+- [ ] T013 [BE] Actualizar las pruebas de la 002 para el campo `note` y el tipo `transfer` (`backend/tests/integration/accounts.test.ts`, `movements.test.ts`) y verificar que la prueba de contrato cubre las 22 operaciones de las tres specs (las 6 de la 003 quedan en `PENDING_BACKEND` hasta T016 y T023).
 
 ---
 
@@ -113,7 +113,7 @@ cada uno ve su movimiento con signo y nota.
   - auditoría `TRANSFER_COMPLETED`;
   - la suma del libro es 0.
 - [ ] T015 [US1] [BE] Crear `backend/src/modules/transfers/transfers.service.ts` con `findRecipient(userId, q)` (correo → `auth.directory`; alias → `profile.findUserIdByAlias`; cuenta con `accounts.ensureForUser`; `partialName` y correo enmascarado), `limits(userId)` y `create(...)` según el flujo de research R7. Los asientos van con `description` («Transferencia a …» / «Transferencia de …») y la nota en data-model.md `LedgerTransaction.note`.
-- [ ] T016 [US1] [BE] Crear `backend/src/modules/transfers/transfers.controller.ts` y `transfers.routes.ts` para `GET /transfers/recipient`, `GET /transfers/limits` y `POST /transfers` (`Idempotency-Key`). Agregar los limitadores `recipientLookup` (60 / 15 min) y `transfers` (30 / 15 min) en `backend/src/middleware/rate-limit/limiters.ts`, montar las rutas en `backend/src/modules/banking.module.ts` y `backend/src/app.ts`, y registrar `findRecipient`, `getTransferLimits` y `createTransfer` en `backend/src/openapi/registry.ts`.
+- [ ] T016 [US1] [BE] Crear `backend/src/modules/transfers/transfers.controller.ts` y `transfers.routes.ts` para `GET /transfers/recipient`, `GET /transfers/limits` y `POST /transfers` (`Idempotency-Key`). Agregar los limitadores `recipientLookup` (60 / 15 min) y `transfers` (30 / 15 min) en `backend/src/middleware/rate-limit/limiters.ts`, montar las rutas en `backend/src/modules/banking.module.ts` y `backend/src/app.ts`, y registrar `findRecipient`, `getTransferLimits` y `createTransfer` en `backend/src/openapi/registry.ts` y quitarlas de `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
 
 ### [FE]
 
@@ -155,7 +155,7 @@ cada uno ve su movimiento con signo y nota.
   - `findUserIdByAlias` para `transfers`;
   - la violación de unicidad sobre data-model.md `Profile.alias` → 409 `ALIAS_TAKEN`.
 
-  Montarlo en `backend/src/app.ts` y registrar las 3 operaciones en `backend/src/openapi/registry.ts`.
+  Montarlo en `backend/src/app.ts`, registrar las 3 operaciones en `backend/src/openapi/registry.ts` y quitarlas de `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
 
 ### [FE]
 

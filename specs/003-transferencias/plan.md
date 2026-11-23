@@ -77,7 +77,7 @@ shared/src/
 ├── transfers.schemas.ts     # [SH] AliasSchema (normaliza), Profile, SetAliasRequest, RecipientPreview,
 │                            #      RecipientQuery, TransferLimits, CreateTransferRequest, TransferResult
 ├── names.ts                 # [SH] partialName("Ana Pérez Gómez") → "Ana P. G."
-└── errors.ts                # [SH] + 10 códigos; details + availableBalance, reauthThreshold
+└── errors.ts                # [SH] + 9 códigos; details + availableBalance, reauthThreshold
 
 db/prisma/                   # [BE] Profile; columnas nuevas; enums; migración (CHECK + trigger actualizado)
 
@@ -85,7 +85,7 @@ backend/src/
 ├── modules/auth/auth.directory.ts   # [BE] findByEmail, findById → { userId, fullName, email }
 ├── modules/auth/reauth.service.ts   # [BE] verify(userId, password) con bloqueo (login_attempts)
 ├── modules/profile/                 # [BE] repository, service, controller, routes
-├── modules/accounts/accounts.service.ts  # [BE] + lockManyForUpdate (orden de id), + isStudentAccount
+├── modules/accounts/accounts.service.ts  # [BE] + lockManyForUpdate (orden de id), + findStudentAccountById
 ├── modules/ledger/                  # [BE] post con counterparty, note y descripción por asiento; toMovement + note
 └── modules/transfers/               # [BE] service, controller, routes
 

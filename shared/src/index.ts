@@ -5,3 +5,5 @@ export * from './password.js';
 export * from './auth.schemas.js';
 export * from './money.js';
 export * from './accounts.schemas.js';
+export * from './names.js';
+export * from './transfers.schemas.js';

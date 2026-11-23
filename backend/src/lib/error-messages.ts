@@ -31,4 +31,14 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   TOPUP_AMOUNT_OUT_OF_RANGE: 'El monto está fuera del rango permitido para recargar.',
   TOPUP_DAILY_LIMIT: 'Superas el tope diario de recargas.',
   IDEMPOTENCY_KEY_REUSED: 'Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.',
+  // Spec 003
+  ALIAS_TAKEN: 'Ese alias no está disponible. Prueba con otro.',
+  RECIPIENT_NOT_FOUND: 'No encontramos un estudiante de Nova con ese correo o alias.',
+  TRANSFER_TO_SELF: 'No puedes enviarte dinero a ti mismo.',
+  TRANSFER_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  TRANSFER_DAILY_LIMIT: 'Superas el tope diario de envíos.',
+  INSUFFICIENT_FUNDS: 'No tienes saldo suficiente para este envío.',
+  REAUTH_REQUIRED: 'Para este monto debes confirmar con tu contraseña.',
+  REAUTH_FAILED: 'La contraseña no es correcta.',
+  REAUTH_LOCKED: 'Demasiados intentos con la contraseña. Espera unos minutos.',
 };

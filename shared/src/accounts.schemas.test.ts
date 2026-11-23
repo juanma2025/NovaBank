@@ -15,6 +15,7 @@ const movement = {
   transactionId: '8d4f2a1b-3c5e-4d7f-9a21-2b3c4d5e6f70',
   type: 'topup',
   description: 'Recarga simulada',
+  note: null,
   amount: 50_000,
   status: 'completed',
   createdAt: '2026-11-22T15:00:00Z',

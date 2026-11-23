@@ -8,7 +8,12 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { CreateTopupRequestSchema, LedgerTransactionStatusSchema } from './accounts.schemas.js';
+import {
+  CreateTopupRequestSchema,
+  LedgerTransactionStatusSchema,
+  MovementSchema,
+  MovementTypeSchema,
+} from './accounts.schemas.js';
 import {
   CompleteRegistrationRequestSchema,
   LoginRequestSchema,
@@ -16,10 +21,22 @@ import {
   StartRegistrationRequestSchema,
   VerifyCodeRequestSchema,
 } from './auth.schemas.js';
-import { ERROR_CODES, PasswordRuleViolationSchema, SessionEndReasonSchema } from './errors.js';
+import {
+  ERROR_CODES,
+  ErrorDetailsSchema,
+  PasswordRuleViolationSchema,
+  SessionEndReasonSchema,
+} from './errors.js';
+import { partialName } from './names.js';
+import {
+  CreateTransferRequestSchema,
+  RecipientPreviewSchema,
+  SetAliasRequestSchema,
+} from './transfers.schemas.js';
 
 interface SchemaObject {
   $ref?: string;
+  required?: string[];
   enum?: string[];
   examples?: unknown[];
   properties?: Record<string, SchemaObject>;
@@ -57,6 +74,7 @@ function schema(contract: Contract, name: string): SchemaObject {
 
 const auth = contractFile('auth.openapi.json');
 const accounts = contractFile('accounts.openapi.json');
+const transfers = contractFile('transfers.openapi.json');
 
 describe('contratos: códigos y enums', () => {
   it('hay al menos un contrato por spec', () => {
@@ -79,6 +97,24 @@ describe('contratos: códigos y enums', () => {
     expect(LedgerTransactionStatusSchema.options).toEqual(
       schema(accounts, 'Movement').properties?.status?.enum,
     );
+  });
+
+  it('Movement es igual en los contratos de la 002 y la 003 y coincide con el esquema', () => {
+    expect(schema(transfers, 'Movement')).toEqual(schema(accounts, 'Movement'));
+    const movement = schema(accounts, 'Movement');
+    expect(MovementTypeSchema.options).toEqual(movement.properties?.type?.enum);
+    expect(Object.keys(MovementSchema.shape).sort()).toEqual([...(movement.required ?? [])].sort());
+  });
+
+  it('details incluye todos los campos de los contratos', () => {
+    const fields = new Set(
+      contracts.flatMap((c) =>
+        Object.keys(
+          schema(c, 'ErrorResponse').properties?.error?.properties?.details?.properties ?? {},
+        ),
+      ),
+    );
+    expect([...fields].filter((f) => !(f in ErrorDetailsSchema.shape))).toEqual([]);
   });
 });
 
@@ -112,5 +148,34 @@ describe('contratos: los ejemplos son válidos', () => {
   it('002: CreateTopupRequest con el ejemplo de MoneyAmount', () => {
     const amount = schema(accounts, 'MoneyAmount').examples?.[0];
     expect(CreateTopupRequestSchema.safeParse({ amount }).success).toBe(true);
+  });
+});
+
+describe('contratos: ejemplos de la 003', () => {
+  it('SetAliasRequest con el ejemplo de Alias', () => {
+    const alias = schema(transfers, 'Alias').examples?.[0];
+    expect(SetAliasRequestSchema.safeParse({ alias }).success).toBe(true);
+  });
+
+  it('RecipientPreview: el ejemplo de displayName sale de partialName', () => {
+    const props = schema(transfers, 'RecipientPreview').properties;
+    expect(partialName('Ana Pérez Gómez')).toBe(props?.displayName?.examples?.[0]);
+    expect(
+      RecipientPreviewSchema.safeParse({
+        recipientId: '7b0e4c1a-3f2d-4e5b-9a8c-1d2e3f4a5b6c',
+        displayName: props?.displayName?.examples?.[0],
+        maskedEmail: props?.maskedEmail?.examples?.[0],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('CreateTransferRequest con el ejemplo de MoneyAmount', () => {
+    const amount = schema(transfers, 'MoneyAmount').examples?.[0];
+    expect(
+      CreateTransferRequestSchema.safeParse({
+        recipientId: '7b0e4c1a-3f2d-4e5b-9a8c-1d2e3f4a5b6c',
+        amount,
+      }).success,
+    ).toBe(true);
   });
 });
