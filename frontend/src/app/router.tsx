@@ -25,6 +25,9 @@ const StorePage = lazy(() => import('../features/store/pages/StorePage.tsx'));
 const GoalsPage = lazy(() => import('../features/savings/pages/GoalsPage.tsx'));
 const GoalDetailPage = lazy(() => import('../features/savings/pages/GoalDetailPage.tsx'));
 const BudgetPage = lazy(() => import('../features/budgets/pages/BudgetPage.tsx'));
+const SplitsPage = lazy(() => import('../features/splits/pages/SplitsPage.tsx'));
+const NewSplitPage = lazy(() => import('../features/splits/pages/NewSplitPage.tsx'));
+const SplitDetailPage = lazy(() => import('../features/splits/pages/SplitDetailPage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {
@@ -70,6 +73,9 @@ export function AppRoutes() {
           <Route path="/metas" element={<GoalsPage />} />
           <Route path="/metas/:id" element={<GoalDetailPage />} />
           <Route path="/presupuesto" element={<BudgetPage />} />
+          <Route path="/compartidos" element={<SplitsPage />} />
+          <Route path="/compartidos/nueva" element={<NewSplitPage />} />
+          <Route path="/compartidos/:id" element={<SplitDetailPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

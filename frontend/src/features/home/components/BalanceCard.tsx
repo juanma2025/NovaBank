@@ -7,6 +7,7 @@ import {
   PlusCircle,
   Send,
   ShoppingBag,
+  Users,
 } from 'lucide-react';
 import { Link } from 'react-router';
 
@@ -111,6 +112,14 @@ export function BalanceCard({ balance, hidden, onToggleHidden }: BalanceCardProp
         >
           <PieChart aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span>{HOME_MESSAGES.budgetAction}</span>
+        </Link>
+
+        <Link
+          to="/compartidos"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
+        >
+          <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span>{HOME_MESSAGES.splitsAction}</span>
         </Link>
       </div>
     </GlassCard>

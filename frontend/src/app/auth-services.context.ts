@@ -9,6 +9,7 @@ import { BudgetService } from '../features/budgets/services/budget-service.ts';
 import { CardService } from '../features/cards/services/card-service.ts';
 import { ProfileService } from '../features/profile/services/profile-service.ts';
 import { SavingsService } from '../features/savings/services/savings-service.ts';
+import { SplitsService } from '../features/splits/services/splits-service.ts';
 import { StoreService } from '../features/store/services/store-service.ts';
 import { TransferService } from '../features/transfers/services/transfer-service.ts';
 import { httpClient, type HttpClient } from '../lib/api-client.ts';
@@ -25,6 +26,7 @@ export interface AuthServices {
   storeService: StoreService;
   savingsService: SavingsService;
   budgetService: BudgetService;
+  splitsService: SplitsService;
   balanceVisibilityStore: BalanceVisibilityStore;
   themeController: ThemeController;
   createBroadcaster: () => SessionBroadcaster;
@@ -41,6 +43,7 @@ export function createDefaultAuthServices(overrides?: Partial<AuthServices>): Au
   const storeService = overrides?.storeService ?? new StoreService(client);
   const savingsService = overrides?.savingsService ?? new SavingsService(client);
   const budgetService = overrides?.budgetService ?? new BudgetService(client);
+  const splitsService = overrides?.splitsService ?? new SplitsService(client);
   const balanceVisibilityStore = overrides?.balanceVisibilityStore ?? new BalanceVisibilityStore();
   const resolvedTheme = overrides?.themeController ?? themeController;
   const createBroadcaster = overrides?.createBroadcaster ?? (() => new SessionBroadcaster());
@@ -55,6 +58,7 @@ export function createDefaultAuthServices(overrides?: Partial<AuthServices>): Au
     storeService,
     savingsService,
     budgetService,
+    splitsService,
     balanceVisibilityStore,
     themeController: resolvedTheme,
     createBroadcaster,

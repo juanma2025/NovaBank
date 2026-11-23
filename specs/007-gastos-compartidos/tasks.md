@@ -97,15 +97,15 @@ sube $30.000 y su parte queda pagada.
 
 ### [FE]
 
-- [ ] T014 [P] [US1] [FE] Crear `frontend/tests/NewSplitPage.test.tsx` y `frontend/tests/SplitDetailPage.test.tsx`:
+- [X] T014 [P] [US1] [FE] Crear `frontend/tests/NewSplitPage.test.tsx` y `frontend/tests/SplitDetailPage.test.tsx`:
   - partes propuestas y editables, con la suma visible;
   - errores de participantes y de suma;
   - «Pagar mi parte», con contraseña sobre el umbral y reintento con la misma clave.
-- [ ] T015 [US1] [FE] Crear `frontend/src/features/splits/` (api, hooks, `NewSplitPage.tsx` y `SplitDetailPage.tsx`) y las rutas `/compartidos/nueva` y `/compartidos/:id`.
+- [X] T015 [US1] [FE] Crear `frontend/src/features/splits/` (api, hooks, `NewSplitPage.tsx` y `SplitDetailPage.tsx`) y las rutas `/compartidos/nueva` y `/compartidos/:id`.
 
 ### [E2E]
 
-- [ ] T016 [US1] [E2E] Crear `e2e/splits.spec.ts`: dos contextos; Ana divide con Juan; Juan paga su parte; los saldos y el estado son correctos.
+- [X] T016 [US1] [E2E] Crear `e2e/splits.spec.ts`: dos contextos; Ana divide con Juan; Juan paga su parte; los saldos y el estado son correctos.
 
 ---
 
@@ -126,15 +126,15 @@ sube $30.000 y su parte queda pagada.
 
 ### [FE]
 
-- [ ] T019 [P] [US2] [FE] Agregar pruebas de la lista, el resumen del inicio y las acciones (marcar, rechazar, recordar con `SPLIT_REMINDER_TOO_SOON` y cancelar con confirmación).
-- [ ] T020 [US2] [FE] Crear `SplitsPage.tsx` (ruta `/compartidos`), `SplitsSummaryCard.tsx` en el inicio y las acciones según el rol en `SplitDetailPage`.
+- [X] T019 [P] [US2] [FE] Agregar pruebas de la lista, el resumen del inicio y las acciones (marcar, rechazar, recordar con `SPLIT_REMINDER_TOO_SOON` y cancelar con confirmación).
+- [X] T020 [US2] [FE] Crear `SplitsPage.tsx` (ruta `/compartidos`), `SplitsSummaryCard.tsx` en el inicio y las acciones según el rol en `SplitDetailPage`.
 
 ---
 
 ## Phase 4: Polish
 
-- [ ] T021 [P] [FE] Revisar la accesibilidad y el diseño adaptable de las pantallas de gastos compartidos (SC-005). Registrar el resultado en `specs/007-gastos-compartidos/checklists/accessibility.md`.
-- [ ] T022 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
+- [X] T021 [P] [FE] Revisar la accesibilidad y el diseño adaptable de las pantallas de gastos compartidos (SC-005). Registrar el resultado en `specs/007-gastos-compartidos/checklists/accessibility.md`.
+- [X] T022 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
 ---
 

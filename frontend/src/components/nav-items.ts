@@ -8,6 +8,7 @@ import {
   Send,
   ShoppingBag,
   User,
+  Users,
 } from 'lucide-react';
 
 import { NAV_MESSAGES } from '../lib/messages.ts';
@@ -18,6 +19,7 @@ export const DESKTOP_NAV_ITEMS = [
   { to: '/tarjetas', label: NAV_MESSAGES.cards, icon: CreditCard },
   { to: '/metas', label: NAV_MESSAGES.goals, icon: PiggyBank },
   { to: '/presupuesto', label: NAV_MESSAGES.budget, icon: PieChart },
+  { to: '/compartidos', label: NAV_MESSAGES.splits, icon: Users },
   { to: '/tienda', label: NAV_MESSAGES.store, icon: ShoppingBag },
   { to: '/recargar', label: NAV_MESSAGES.topup, icon: PlusCircle },
   { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
@@ -34,6 +36,7 @@ export const MOBILE_PRIMARY_ITEMS = [
 export const MOBILE_MORE_ITEMS = [
   { to: '/metas', label: NAV_MESSAGES.goals, icon: PiggyBank },
   { to: '/presupuesto', label: NAV_MESSAGES.budget, icon: PieChart },
+  { to: '/compartidos', label: NAV_MESSAGES.splits, icon: Users },
   { to: '/tienda', label: NAV_MESSAGES.store, icon: ShoppingBag },
   { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
   { to: '/perfil', label: NAV_MESSAGES.profile, icon: User },
