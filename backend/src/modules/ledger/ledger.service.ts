@@ -25,6 +25,8 @@ function toMovement(entry: EntryWithTransaction): Movement {
     transactionId: entry.transactionId,
     type: entry.transaction.type,
     description: entry.transaction.description,
+    // Provisional hasta T010 (spec 003): la columna `note` llega con la migración del backend.
+    note: null,
     amount: toSafeNumber(entry.amount),
     status: entry.transaction.status,
     createdAt: entry.createdAt.toISOString(),

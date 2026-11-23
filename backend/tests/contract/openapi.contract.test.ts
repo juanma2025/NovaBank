@@ -86,11 +86,29 @@ function operations(doc: Doc) {
 
 const contractOps = new Map(contracts.flatMap((c) => operations(c)).map((o) => [o.key, o]));
 
+/**
+ * Operaciones con contrato aprobado cuyo backend aún no existe (la rama de definición congela el
+ * contrato antes que el código). Cada tarea [BE] que implementa una la quita de aquí: si se
+ * implementa sin quitarla, la prueba falla. Spec 003: T016 (transfers) y T023 (profile).
+ */
+const PENDING_BACKEND = new Set([
+  'GET /transfers/recipient',
+  'GET /transfers/limits',
+  'POST /transfers',
+  'GET /profile/me',
+  'PUT /profile/me/alias',
+  'DELETE /profile/me/alias',
+]);
+
 describe('contratos OpenAPI de todas las specs', () => {
   it('hay contratos de varias specs y ninguna operación está definida dos veces', () => {
     expect(contracts.length).toBeGreaterThanOrEqual(2);
     const all = contracts.flatMap((c) => operations(c).map((o) => o.key));
     expect(new Set(all).size).toBe(all.length);
+  });
+
+  it('cada operación pendiente existe en algún contrato', () => {
+    expect([...PENDING_BACKEND].filter((k) => !contractOps.has(k))).toEqual([]);
   });
 
   it('están todas las operaciones de los contratos: ninguna falta ni sobra', () => {
@@ -99,7 +117,8 @@ describe('contratos OpenAPI de todas las specs', () => {
       .map((o) => o.key)
       .filter((k) => k !== 'GET /openapi.json')
       .sort();
-    expect(generatedKeys).toEqual([...contractOps.keys()].sort());
+    const expectedKeys = [...contractOps.keys()].filter((k) => !PENDING_BACKEND.has(k)).sort();
+    expect(generatedKeys).toEqual(expectedKeys);
   });
 
   it('cada operación coincide en operationId y códigos de estado', () => {

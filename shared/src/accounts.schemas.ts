@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { MOVEMENTS_PAGE_SIZE, RECENT_MOVEMENTS } from './constants.js';
 import { MoneyAmountSchema, SignedMoneySchema } from './money.js';
 
-export const MovementTypeSchema = z.enum(['topup']);
+export const MovementTypeSchema = z.enum(['topup', 'transfer']);
 export type MovementType = z.infer<typeof MovementTypeSchema>;
 
 /** Estados de una operación (constitución, regla de dominio 7). */
@@ -20,6 +20,8 @@ export const MovementSchema = z.object({
   transactionId: z.uuid(),
   type: MovementTypeSchema,
   description: z.string().max(140),
+  /** Nota de la transferencia; null si no hay (cambio aprobado en la spec 003). */
+  note: z.string().max(140).nullable(),
   /** Con signo: + entra, − sale. */
   amount: SignedMoneySchema,
   status: LedgerTransactionStatusSchema,
