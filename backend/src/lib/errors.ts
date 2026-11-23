@@ -25,6 +25,10 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   RATE_LIMITED: 429,
   NOT_FOUND: 404,
   INTERNAL_ERROR: 500,
+  // Spec 002
+  TOPUP_AMOUNT_OUT_OF_RANGE: 422,
+  TOPUP_DAILY_LIMIT: 422,
+  IDEMPOTENCY_KEY_REUSED: 409,
 };
 
 /** Error de negocio con un código estable del contrato. */

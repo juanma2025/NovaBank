@@ -23,6 +23,10 @@ export const ERROR_CODES = [
   'RATE_LIMITED',
   'NOT_FOUND',
   'INTERNAL_ERROR',
+  // Spec 002
+  'TOPUP_AMOUNT_OUT_OF_RANGE',
+  'TOPUP_DAILY_LIMIT',
+  'IDEMPOTENCY_KEY_REUSED',
 ] as const;
 
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
@@ -51,6 +55,10 @@ export const ErrorDetailsSchema = z.object({
   reason: SessionEndReasonSchema.optional(),
   reasons: z.array(PasswordRuleViolationSchema).optional(),
   fields: z.record(z.string(), z.string()).optional(),
+  // Spec 002: límites de recarga.
+  minAmount: z.int().min(1).optional(),
+  maxAmount: z.int().min(1).optional(),
+  remainingToday: z.int().min(0).optional(),
 });
 export type ErrorDetails = z.infer<typeof ErrorDetailsSchema>;
 
