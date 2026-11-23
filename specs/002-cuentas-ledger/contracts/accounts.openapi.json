@@ -3,7 +3,7 @@
   "info": {
     "title": "Nova API — Cuentas, libro contable y recargas (spec 002)",
     "version": "1.0.0",
-    "description": "Contrato de diseño de la funcionalidad 002-cuentas-ledger. Es la fuente de verdad entre backend y frontend: el documento generado en `/api/v1/openapi.json` DEBE coincidir con él.\n\nTodas las rutas exigen sesión (cookie `nova_at`, spec 001). Los montos viajan como enteros en pesos colombianos (constitución, Principio I). Todo error usa `ErrorResponse`."
+    "description": "Contrato de diseño de la funcionalidad 002-cuentas-ledger. Es la fuente de verdad entre backend y frontend: el documento generado en `/api/v1/openapi.json` DEBE coincidir con él.\n\nTodas las rutas exigen sesión (cookie `nova_at`, spec 001). Los montos viajan como enteros en pesos colombianos (constitución, Principio I). Todo error usa `ErrorResponse`.\n\nCambio aprobado en la definición de la spec 003: `Movement.type` incluye `transfer` y `Movement` incluye `note`."
   },
   "servers": [
     {
@@ -261,6 +261,7 @@
           "transactionId",
           "type",
           "description",
+          "note",
           "amount",
           "status",
           "createdAt"
@@ -277,15 +278,25 @@
           "type": {
             "type": "string",
             "enum": [
-              "topup"
+              "topup",
+              "transfer"
             ]
           },
           "description": {
             "type": "string",
             "maxLength": 140,
             "examples": [
-              "Recarga simulada"
+              "Recarga simulada",
+              "Transferencia a Ana P. G."
             ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 140,
+            "description": "Nota de la transferencia; null si no hay"
           },
           "amount": {
             "type": "integer",
