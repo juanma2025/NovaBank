@@ -11,3 +11,5 @@ export * from './cards.js';
 export * from './cards.schemas.js';
 export * from './savings.js';
 export * from './savings.schemas.js';
+export * from './budgets.js';
+export * from './budgets.schemas.js';

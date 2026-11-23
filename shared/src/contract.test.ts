@@ -27,6 +27,8 @@ import {
   PasswordRuleViolationSchema,
   SessionEndReasonSchema,
 } from './errors.js';
+import { BUDGET_CATEGORIES } from './budgets.js';
+import { SetBudgetLimitRequestSchema } from './budgets.schemas.js';
 import { DEMO_MERCHANTS, MerchantCategorySchema } from './cards.js';
 import {
   CardNicknameRequestSchema,
@@ -84,6 +86,7 @@ const accounts = contractFile('accounts.openapi.json');
 const transfers = contractFile('transfers.openapi.json');
 const cards = contractFile('cards.openapi.json');
 const savings = contractFile('savings.openapi.json');
+const budgets = contractFile('budgets.openapi.json');
 
 describe('contratos: códigos y enums', () => {
   it('hay al menos un contrato por spec', () => {
@@ -245,5 +248,20 @@ describe('contratos: metas de ahorro de la 005', () => {
         targetDate: null,
       }).success,
     ).toBe(true);
+  });
+});
+
+describe('contratos: presupuesto de la 006', () => {
+  it('las categorías coinciden con el contrato y empiezan por las de comercio de la 004', () => {
+    expect([...BUDGET_CATEGORIES]).toEqual(schema(budgets, 'BudgetCategory').enum);
+    expect(BUDGET_CATEGORIES.slice(0, MerchantCategorySchema.options.length)).toEqual(
+      MerchantCategorySchema.options,
+    );
+  });
+
+  it('los ejemplos del contrato son válidos', () => {
+    const monthlyLimit = schema(budgets, 'SetBudgetLimitRequest').properties?.monthlyLimit
+      ?.examples?.[0];
+    expect(SetBudgetLimitRequestSchema.safeParse({ monthlyLimit }).success).toBe(true);
   });
 });
