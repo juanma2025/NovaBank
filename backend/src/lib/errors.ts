@@ -39,6 +39,14 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   REAUTH_REQUIRED: 422,
   REAUTH_FAILED: 422,
   REAUTH_LOCKED: 429,
+  // Spec 004
+  CARD_LIMIT_REACHED: 422,
+  CARD_CANCELED: 409,
+  CARD_NOT_ACTIVE: 422,
+  CARD_DECLINED: 422,
+  CARD_PAYMENTS_LOCKED: 429,
+  PAYMENT_AMOUNT_OUT_OF_RANGE: 422,
+  PAYMENT_DAILY_LIMIT: 422,
 };
 
 /** Error de negocio con un código estable del contrato. */

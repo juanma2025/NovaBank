@@ -504,7 +504,8 @@
             "type": "string",
             "enum": [
               "topup",
-              "transfer"
+              "transfer",
+              "card_payment"
             ]
           },
           "description": {
@@ -512,7 +513,8 @@
             "maxLength": 140,
             "examples": [
               "Recarga simulada",
-              "Transferencia a Ana P. G."
+              "Transferencia a Ana P. G.",
+              "Compra en Cafetería Central · •••• 1234"
             ]
           },
           "note": {

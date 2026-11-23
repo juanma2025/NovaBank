@@ -41,4 +41,12 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   REAUTH_REQUIRED: 'Para este monto debes confirmar con tu contraseña.',
   REAUTH_FAILED: 'La contraseña no es correcta.',
   REAUTH_LOCKED: 'Demasiados intentos con la contraseña. Espera unos minutos.',
+  // Spec 004
+  CARD_LIMIT_REACHED: 'Alcanzaste el máximo de 3 tarjetas. Cancela una para emitir otra.',
+  CARD_CANCELED: 'Esta tarjeta está cancelada.',
+  CARD_NOT_ACTIVE: 'La tarjeta no está activa. Descongélala para pagar.',
+  CARD_DECLINED: 'Pago rechazado. Revisa los datos de la tarjeta.',
+  CARD_PAYMENTS_LOCKED: 'Demasiados pagos rechazados. Espera unos minutos.',
+  PAYMENT_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  PAYMENT_DAILY_LIMIT: 'Superas el tope diario de pagos con tarjeta.',
 };

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { MOVEMENTS_PAGE_SIZE, RECENT_MOVEMENTS } from './constants.js';
 import { MoneyAmountSchema, SignedMoneySchema } from './money.js';
 
-export const MovementTypeSchema = z.enum(['topup', 'transfer']);
+export const MovementTypeSchema = z.enum(['topup', 'transfer', 'card_payment']);
 export type MovementType = z.infer<typeof MovementTypeSchema>;
 
 /** Estados de una operación (constitución, regla de dominio 7). */
