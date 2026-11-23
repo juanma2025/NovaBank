@@ -14,6 +14,7 @@ const LIMITS = {
   login: { windowMs: 15 * MINUTE, limit: 30 },
   start: { windowMs: 60 * MINUTE, limit: 20 },
   verify: { windowMs: 15 * MINUTE, limit: 60 },
+  topups: { windowMs: 15 * MINUTE, limit: 30 },
 } as const;
 
 export type LimiterName = keyof typeof LIMITS;
@@ -44,5 +45,10 @@ export function createLimiters(
       },
     });
   };
-  return { login: build('login'), start: build('start'), verify: build('verify') };
+  return {
+    login: build('login'),
+    start: build('start'),
+    verify: build('verify'),
+    topups: build('topups'),
+  };
 }

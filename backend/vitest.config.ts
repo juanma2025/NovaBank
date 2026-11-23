@@ -34,6 +34,10 @@ export default defineConfig({
       SMTP_PORT: '1025',
       MAIL_FROM: 'Nova <no-reply@nova.test>',
       LOG_LEVEL: 'silent',
+      // Límites bajos para ejercitar el tope diario con pocas recargas (spec 002).
+      TOPUP_MIN_AMOUNT: '1000',
+      TOPUP_MAX_AMOUNT: '50000',
+      TOPUP_DAILY_LIMIT: '100000',
     },
   },
 });

@@ -45,6 +45,10 @@ const EnvSchema = z
     MAIL_FROM: z.string().min(1),
     SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE: optionalPositiveInt,
     SESSION_IDLE_WARNING_SECONDS_OVERRIDE: optionalPositiveInt,
+    // Spec 002: límites de recarga en pesos enteros (research R7).
+    TOPUP_MIN_AMOUNT: z.coerce.number().int().min(1).default(1000),
+    TOPUP_MAX_AMOUNT: z.coerce.number().int().min(1).default(500_000),
+    TOPUP_DAILY_LIMIT: z.coerce.number().int().min(1).default(2_000_000),
   })
   .superRefine((env, ctx) => {
     const overrides = [
@@ -57,6 +61,15 @@ const EnvSchema = z
           ctx.addIssue({ code: 'custom', path: [key], message: 'prohibida en producción' });
         }
       }
+    }
+    if (!(
+      env.TOPUP_MIN_AMOUNT <= env.TOPUP_MAX_AMOUNT && env.TOPUP_MAX_AMOUNT <= env.TOPUP_DAILY_LIMIT
+    )) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TOPUP_MAX_AMOUNT'],
+        message: 'debe cumplirse TOPUP_MIN_AMOUNT ≤ TOPUP_MAX_AMOUNT ≤ TOPUP_DAILY_LIMIT',
+      });
     }
     const timeout = env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS;
     const warning = env.SESSION_IDLE_WARNING_SECONDS_OVERRIDE ?? SESSION_IDLE_WARNING_SECONDS;
@@ -73,6 +86,7 @@ export type Env = z.infer<typeof EnvSchema>;
 
 export interface AppConfig extends Env {
   session: { idleTimeoutSeconds: number; idleWarningSeconds: number };
+  topups: { minAmount: number; maxAmount: number; dailyLimit: number };
 }
 
 export class EnvValidationError extends Error {
@@ -101,6 +115,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   const env = result.data;
   return {
     ...env,
+    topups: {
+      minAmount: env.TOPUP_MIN_AMOUNT,
+      maxAmount: env.TOPUP_MAX_AMOUNT,
+      dailyLimit: env.TOPUP_DAILY_LIMIT,
+    },
     session: {
       idleTimeoutSeconds: env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS,
       idleWarningSeconds: env.SESSION_IDLE_WARNING_SECONDS_OVERRIDE ?? SESSION_IDLE_WARNING_SECONDS,

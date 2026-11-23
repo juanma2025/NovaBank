@@ -28,12 +28,13 @@ function start(): void {
   const logger = createLogger(config.LOG_LEVEL);
   const prisma = createPrismaClient(config.DATABASE_URL);
   const clock = systemClock;
-  const { app, auth } = createApp({ config, prisma, logger, clock });
+  const { app, auth, banking } = createApp({ config, prisma, logger, clock });
 
   // Registro de preparadores y limpiezas de cada dueño antes de arrancar (research R6).
   const worker = new OutboxWorker(prisma, createSmtpProvider(config), clock, logger);
   const maintenance = new Maintenance(clock, logger);
   registerAuthJobs(worker, maintenance, { prisma, verification: auth.verification });
+  banking.idempotency.registerCleanup(maintenance, prisma);
   maintenance.registerCleanup('rate_limit_hits', (now) =>
     PgRateLimitStore.cleanupExpired(prisma, now),
   );

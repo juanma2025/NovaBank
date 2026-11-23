@@ -73,6 +73,9 @@ Configúralas en *Environment*. La aplicación las valida al arrancar y no inici
 | `JWT_ACCESS_SECRET` | Secreto aleatorio nuevo (ver abajo) |
 | `CODE_HMAC_SECRET` | Otro secreto aleatorio nuevo |
 | `STUDENT_EMAIL_DOMAINS` | `ucc.edu.co` (separa con comas si agregas universidades) |
+| `TOPUP_MIN_AMOUNT` | `1000` (recarga mínima en pesos) |
+| `TOPUP_MAX_AMOUNT` | `500000` (recarga máxima en pesos) |
+| `TOPUP_DAILY_LIMIT` | `2000000` (tope diario de recargas por estudiante, en hora de Colombia) |
 | `SMTP_HOST` | `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` |
 | `SMTP_SECURE` | `false` |
