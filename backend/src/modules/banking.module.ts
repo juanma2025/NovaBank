@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 
 import { createCardCrypto } from '../lib/card-crypto.js';
+import { createEventBus } from '../lib/events.js';
 import { createIdempotencyService } from '../lib/idempotency/idempotency.service.js';
 import type { ModuleContext } from '../lib/module-context.js';
 import { createAccountsController } from './accounts/accounts.controller.js';
@@ -8,6 +9,9 @@ import { createAccountsRouter } from './accounts/accounts.routes.js';
 import { createAccountsService } from './accounts/accounts.service.js';
 import type { AuthDirectory } from './auth/auth.directory.js';
 import type { ReauthService } from './auth/reauth.service.js';
+import { createBudgetsController } from './budgets/budgets.controller.js';
+import { createBudgetsRouter } from './budgets/budgets.routes.js';
+import { createBudgetsService } from './budgets/budgets.service.js';
 import { createCardsController } from './cards/cards.controller.js';
 import { createCardsRouter } from './cards/cards.routes.js';
 import { createCardsService } from './cards/cards.service.js';
@@ -30,7 +34,8 @@ import { createTransfersService } from './transfers/transfers.service.js';
 
 /**
  * Composición de los módulos de dinero y perfil: accounts, ledger, topups (spec 002), profile y
- * transfers (spec 003), cards (spec 004) y savings (spec 005), con sus routers. Cada módulo usa solo los servicios públicos de los demás
+ * transfers (spec 003), cards (spec 004), savings (spec 005) y budgets (spec 006), con sus
+ * routers. El bus de eventos avisa a budgets de cada gasto confirmado (spec 006, research R2). Cada módulo usa solo los servicios públicos de los demás
  * (Principio VI); de auth reciben el directorio y la reautenticación.
  */
 export function createBankingModules(
@@ -50,6 +55,7 @@ export function createBankingModules(
   const accounts = createAccountsService(ctx);
   const ledger = createLedgerService(ctx, { accounts });
   const idempotency = createIdempotencyService(ctx.clock);
+  const events = createEventBus(ctx.logger);
   const topups = createTopupsService(ctx, { accounts, ledger, idempotency });
   const profile = createProfileService(ctx, { directory: auth.directory });
   const transfers = createTransfersService(ctx, {
@@ -59,6 +65,7 @@ export function createBankingModules(
     directory: auth.directory,
     reauth: auth.reauth,
     profile,
+    events,
   });
   const cardCrypto = createCardCrypto(ctx.config.CARD_ENCRYPTION_KEY);
   const cards = createCardsService(ctx, {
@@ -67,13 +74,22 @@ export function createBankingModules(
     reauth: auth.reauth,
     crypto: cardCrypto,
   });
-  const savings = createSavingsService(ctx, { accounts, ledger, idempotency });
   const payments = createPaymentsService(ctx, {
     accounts,
     ledger,
     idempotency,
     crypto: cardCrypto,
+    events,
   });
+  const savings = createSavingsService(ctx, { accounts, ledger, idempotency });
+  const budgets = createBudgetsService(ctx, {
+    accounts,
+    ledger,
+    payments,
+    directory: auth.directory,
+  });
+  // Se llama a la propiedad en cada evento (no se captura la función) para poder sustituirla en pruebas.
+  events.on('spending.recorded', ({ userId }) => budgets.evaluateCurrentMonth(userId));
 
   const accountsRouter = createAccountsRouter(
     createAccountsController({ prisma: ctx.prisma, accounts, ledger }),
@@ -109,6 +125,11 @@ export function createBankingModules(
     movementsLimiter: middleware.savingsMovementsLimiter,
   });
 
+  const budgetsRouter = createBudgetsRouter(
+    createBudgetsController({ budgets }),
+    middleware.requireAuth,
+  );
+
   return {
     accounts,
     ledger,
@@ -119,6 +140,8 @@ export function createBankingModules(
     cards,
     payments,
     savings,
+    budgets,
+    events,
     accountsRouter,
     topupsRouter,
     profileRouter,
@@ -126,6 +149,7 @@ export function createBankingModules(
     cardsRouter,
     storeRouter,
     savingsRouter,
+    budgetsRouter,
   };
 }
 

@@ -89,6 +89,7 @@ export function createApp(deps: AppDeps): NovaApp {
   api.use('/cards', banking.cardsRouter);
   api.use('/store', banking.storeRouter);
   api.use('/savings', banking.savingsRouter);
+  api.use('/budgets', banking.budgetsRouter);
   api.use(apiNotFound);
   app.use('/api/v1', api);
   app.use('/api', apiNotFound);

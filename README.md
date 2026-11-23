@@ -42,7 +42,7 @@ Al cerrar cada etapa, actualiza su columna: `Pendiente` → `En curso` → `List
 | 003 | `003-transferencias` | Envíos entre estudiantes verificados por correo o alias, idempotencia y límites. | 002 | Listo | Listo | Pendiente |
 | 004 | `004-tarjeta-virtual` | Emitir, congelar, ver datos con reautenticación y pagos simulados. | 002 | Listo | Listo | Pendiente |
 | 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Listo | Listo | Pendiente |
-| 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Listo | Pendiente | Pendiente |
+| 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Listo | Listo | Pendiente |
 | 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Pendiente | Pendiente | Pendiente |
 | 008 | `008-landing-publica` | Página de inicio pública para visitantes sin sesión y selector de tema claro u oscuro. Solo frontend. | 001 | Listo | — | En curso |
 
