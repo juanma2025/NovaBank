@@ -76,6 +76,10 @@ Configúralas en *Environment*. La aplicación las valida al arrancar y no inici
 | `TOPUP_MIN_AMOUNT` | `1000` (recarga mínima en pesos) |
 | `TOPUP_MAX_AMOUNT` | `500000` (recarga máxima en pesos) |
 | `TOPUP_DAILY_LIMIT` | `2000000` (tope diario de recargas por estudiante, en hora de Colombia) |
+| `TRANSFER_MIN_AMOUNT` | `1000` (transferencia mínima en pesos) |
+| `TRANSFER_MAX_AMOUNT` | `500000` (transferencia máxima en pesos) |
+| `TRANSFER_DAILY_LIMIT` | `1000000` (tope diario de lo enviado por estudiante, en hora de Colombia) |
+| `TRANSFER_REAUTH_THRESHOLD` | `200000` (por encima de este monto se pide la contraseña; regla: mínimo ≤ umbral ≤ máximo ≤ tope) |
 | `SMTP_HOST` | `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` |
 | `SMTP_SECURE` | `false` |

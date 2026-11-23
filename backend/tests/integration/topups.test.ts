@@ -32,6 +32,9 @@ describe('US2 · recarga', () => {
       amount: 50_000,
       status: 'completed',
       description: 'Recarga simulada',
+      type: 'topup',
+      // Spec 003: las recargas no tienen nota.
+      note: null,
     });
     expect((await agent.get('/api/v1/accounts/me')).body.balance).toBe(50_000);
   });

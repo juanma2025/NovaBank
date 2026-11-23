@@ -36,7 +36,10 @@ export function originKeyFor(device: { id?: string; ip: string }): string {
  * Fin del bloqueo según los fallos más recientes: si son `failures` y el más antiguo ocurrió
  * dentro de la ventana respecto al más reciente, dura hasta el más reciente + 15 min.
  */
-function lockedUntil(latest: Date[], rule: { failures: number; windowMs: number }): Date | null {
+export function lockedUntil(
+  latest: Date[],
+  rule: { failures: number; windowMs: number },
+): Date | null {
   const newest = latest[0];
   const oldest = latest[rule.failures - 1];
   if (!newest || !oldest) return null;

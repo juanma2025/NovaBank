@@ -38,6 +38,11 @@ export default defineConfig({
       TOPUP_MIN_AMOUNT: '1000',
       TOPUP_MAX_AMOUNT: '50000',
       TOPUP_DAILY_LIMIT: '100000',
+      // Spec 003: mínimo, umbral de contraseña, máximo y tope diario de envíos.
+      TRANSFER_MIN_AMOUNT: '1000',
+      TRANSFER_REAUTH_THRESHOLD: '20000',
+      TRANSFER_MAX_AMOUNT: '50000',
+      TRANSFER_DAILY_LIMIT: '60000',
     },
   },
 });

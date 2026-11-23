@@ -57,6 +57,20 @@ export class TestAgent {
     return this.store(await req);
   }
 
+  async put(path: string, body?: object): Promise<request.Response> {
+    let req = request(this.app).put(path).set('Origin', ORIGIN).set('Cookie', this.cookieHeader());
+    if (body !== undefined) req = req.send(body);
+    return this.store(await req);
+  }
+
+  async delete(path: string): Promise<request.Response> {
+    const res = await request(this.app)
+      .delete(path)
+      .set('Origin', ORIGIN)
+      .set('Cookie', this.cookieHeader());
+    return this.store(res);
+  }
+
   /** Atributos de la última Set-Cookie con ese nombre (para verificar HttpOnly/Secure/SameSite). */
   lastSetCookie(name: string): string | undefined {
     return this.setCookieHeaders.filter((h) => h.startsWith(`${name}=`)).at(-1);

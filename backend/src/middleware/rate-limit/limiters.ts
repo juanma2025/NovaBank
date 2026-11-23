@@ -15,6 +15,9 @@ const LIMITS = {
   start: { windowMs: 60 * MINUTE, limit: 20 },
   verify: { windowMs: 15 * MINUTE, limit: 60 },
   topups: { windowMs: 15 * MINUTE, limit: 30 },
+  // Spec 003 (plan.md): búsquedas de destinatario (anti-rastreo) y envíos.
+  recipientLookup: { windowMs: 15 * MINUTE, limit: 60 },
+  transfers: { windowMs: 15 * MINUTE, limit: 30 },
 } as const;
 
 export type LimiterName = keyof typeof LIMITS;
@@ -50,5 +53,7 @@ export function createLimiters(
     start: build('start'),
     verify: build('verify'),
     topups: build('topups'),
+    recipientLookup: build('recipientLookup'),
+    transfers: build('transfers'),
   };
 }
