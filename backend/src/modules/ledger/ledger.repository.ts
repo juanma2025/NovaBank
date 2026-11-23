@@ -61,6 +61,16 @@ export const ledgerRepository = {
     });
   },
 
+  /** Spec 005: suma de los montos de operaciones dadas (research R7). */
+  async sumAmountsByIds(db: Db, ids: string[]): Promise<bigint> {
+    if (ids.length === 0) return 0n;
+    const result = await db.ledgerTransaction.aggregate({
+      where: { id: { in: ids } },
+      _sum: { amount: true },
+    });
+    return result._sum.amount ?? 0n;
+  },
+
   async sumCompletedSince(
     db: Db,
     accountId: string,

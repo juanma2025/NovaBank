@@ -69,11 +69,11 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
   }
 
   /**
-   * Aplica un cambio al saldo materializado. Solo afecta cuentas de estudiantes; el CHECK de la
-   * base rechaza un saldo negativo (data-model.md `Account.balance`).
+   * Aplica un cambio al saldo materializado de cuentas de estudiantes y subcuentas de metas; el
+   * CHECK de la base rechaza un saldo negativo (data-model.md `Account.balance`, spec 005 R2).
    */
   async function applyBalanceDelta(tx: Db, accountId: string, delta: number): Promise<void> {
-    await repo.incrementStudentBalance(tx, accountId, BigInt(delta));
+    await repo.incrementMaterializedBalance(tx, accountId, BigInt(delta));
   }
 
   async function getSystemTopupsAccountId(db: Db): Promise<string> {
@@ -93,6 +93,17 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
     return system.id;
   }
 
+  /** Spec 005: crea la subcuenta de una meta de ahorro (research R2). */
+  async function createSavingsAccount(tx: Db): Promise<AccountView> {
+    return toView(await repo.createSavingsGoal(tx, ctx.clock.now()));
+  }
+
+  /** Saldos por id de cuenta (para listar metas). */
+  async function balancesByIds(db: Db, ids: string[]): Promise<Map<string, number>> {
+    const rows = await repo.findManyByIds(db, ids);
+    return new Map(rows.map((row) => [row.id, toSafeNumber(row.balance)]));
+  }
+
   return {
     ensureForUser,
     lockForUpdate,
@@ -101,6 +112,8 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
     applyBalanceDelta,
     getSystemTopupsAccountId,
     getSystemMerchantsAccountId,
+    createSavingsAccount,
+    balancesByIds,
   };
 }
 

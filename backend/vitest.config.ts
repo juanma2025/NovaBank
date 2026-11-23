@@ -48,6 +48,10 @@ export default defineConfig({
       CARD_PAYMENT_MIN_AMOUNT: '1000',
       CARD_PAYMENT_MAX_AMOUNT: '50000',
       CARD_PAYMENT_DAILY_LIMIT: '60000',
+      // Spec 005: aportes y retiros de metas.
+      SAVINGS_MIN_AMOUNT: '1000',
+      SAVINGS_MAX_AMOUNT: '50000',
+      SAVINGS_DAILY_LIMIT: '80000',
     },
   },
 });

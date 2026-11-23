@@ -52,22 +52,22 @@ description: "Task list for 005-metas-ahorro"
 
 ### [BE] Base
 
-- [ ] T007 [BE] Agregar a `db/prisma/schema.prisma`:
+- [X] T007 [BE] Agregar a `db/prisma/schema.prisma`:
   - el modelo `SavingsGoal` con data-model.md `SavingsGoal.id`, `SavingsGoal.user_id`, `SavingsGoal.account_id`, `SavingsGoal.name`, `SavingsGoal.target_amount`, `SavingsGoal.target_date`, `SavingsGoal.status`, `SavingsGoal.closing_transaction_id`, `SavingsGoal.created_at`, `SavingsGoal.updated_at` y `SavingsGoal.closed_at`;
   - el enum `savings_goal_status`;
   - los valores `savings_goal` en `account_kind`, `savings_deposit` y `savings_withdrawal` en `ledger_transaction_type`, y `GOAL_CREATED`, `GOAL_CLOSED`, `SAVINGS_DEPOSIT` y `SAVINGS_WITHDRAWAL` en `audit_event_type`.
-- [ ] T008 [BE] Generar las migraciones (los valores de enum nuevos en una migración aparte, como en la 004) y agregar a mano:
+- [X] T008 [BE] Generar las migraciones (los valores de enum nuevos en una migración aparte, como en la 004) y agregar a mano:
   - el `CHECK` de data-model.md `SavingsGoal.target_amount` y el de `SavingsGoal.closed_at`;
   - el reemplazo del `CHECK` de saldo no negativo de `accounts` para incluir `savings_goal` (data-model.md, Account);
   - el trigger de data-model.md, SavingsGoal (cerradas inmutables, sin borrados).
 
   Aplicarlas a `nova` y `nova_e2e`.
-- [ ] T009 [P] [BE] Agregar a `backend/src/config/env.ts` las 3 variables `SAVINGS_*` con la regla `min ≤ max ≤ tope` (research R10), y a `backend/vitest.config.ts` los valores de prueba 1000 / 50000 / 80000. Agregarlas a `docs/despliegue.md`.
-- [ ] T010 [BE] En `backend/src/modules/accounts/`:
+- [X] T009 [P] [BE] Agregar a `backend/src/config/env.ts` las 3 variables `SAVINGS_*` con la regla `min ≤ max ≤ tope` (research R10), y a `backend/vitest.config.ts` los valores de prueba 1000 / 50000 / 80000. Agregarlas a `docs/despliegue.md`.
+- [X] T010 [BE] En `backend/src/modules/accounts/`:
   - `createSavingsAccount(tx)` (inserta una fila `savings_goal`);
   - `applyBalanceDelta` también actualiza cuentas `savings_goal` (research R2);
   - `findById` para leer el saldo de una subcuenta.
-- [ ] T011 [BE] Crear `backend/src/modules/savings/savings.repository.ts`:
+- [X] T011 [BE] Crear `backend/src/modules/savings/savings.repository.ts`:
   - crear meta, listar por usuario y contar activas;
   - buscar propia y `lockOwned` (`FOR UPDATE`);
   - actualizar campos y cerrar;
@@ -82,7 +82,7 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [BE]
 
-- [ ] T012 [P] [US1] [BE] Crear `backend/tests/integration/savings.test.ts`. Debe comprobar:
+- [X] T012 [P] [US1] [BE] Crear `backend/tests/integration/savings.test.ts`. Debe comprobar:
   - crear: 201, activa, saldo 0, nombre recortado; fecha pasada → 400; 5 activas y la sexta → `GOAL_LIMIT_REACHED`, también con 6 creaciones simultáneas;
   - listar: activas primero, `totalSaved`, `completed`;
   - aportar: saldos de la cuenta y la meta, movimiento «Aporte a {meta}» en la cuenta principal y «Aporte desde tu cuenta» en el historial de la meta;
@@ -94,8 +94,8 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
   - metas ajenas o ids inválidos → 404;
   - auditoría `GOAL_CREATED` y `SAVINGS_DEPOSIT` sin el nombre;
   - la suma del libro es 0 y cada saldo (principal y subcuentas) coincide con sus asientos.
-- [ ] T013 [US1] [BE] Crear `backend/src/modules/savings/savings.service.ts` con `list`, `create` (cuenta principal bloqueada, research R4), `deposit` (research R5), `listMovements` y `limits`.
-- [ ] T014 [US1] [BE] Crear `backend/src/modules/savings/savings.controller.ts` y `savings.routes.ts` para `GET /savings/goals`, `POST /savings/goals`, `POST /savings/goals/{goalId}/deposits`, `GET /savings/goals/{goalId}/movements` y `GET /savings/limits`. Agregar:
+- [X] T013 [US1] [BE] Crear `backend/src/modules/savings/savings.service.ts` con `list`, `create` (cuenta principal bloqueada, research R4), `deposit` (research R5), `listMovements` y `limits`.
+- [X] T014 [US1] [BE] Crear `backend/src/modules/savings/savings.controller.ts` y `savings.routes.ts` para `GET /savings/goals`, `POST /savings/goals`, `POST /savings/goals/{goalId}/deposits`, `GET /savings/goals/{goalId}/movements` y `GET /savings/limits`. Agregar:
   - el limitador `savingsMovements` en `backend/src/middleware/rate-limit/limiters.ts`;
   - la composición en `backend/src/modules/banking.module.ts` y el montaje en `backend/src/app.ts`;
   - el registro de las operaciones en `backend/src/openapi/registry.ts`, quitándolas de `PENDING_BACKEND`.
@@ -120,13 +120,13 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [BE]
 
-- [ ] T019 [P] [US2] [BE] Agregar a `backend/tests/integration/savings.test.ts`:
+- [X] T019 [P] [US2] [BE] Agregar a `backend/tests/integration/savings.test.ts`:
   - retirar: saldos y movimientos «Retiro de {meta}» / «Retiro a tu cuenta»;
   - retiro mayor que la meta → `INSUFFICIENT_FUNDS` con el saldo de la meta;
   - los retiros cuentan para el mismo tope diario que los aportes;
   - **concurrencia**: retiros simultáneos que superan la meta, y aportes y retiros cruzados entre la cuenta y dos metas (sin deadlock; la suma disponible + metas no cambia);
   - auditoría `SAVINGS_WITHDRAWAL`.
-- [ ] T020 [US2] [BE] Agregar `withdraw` a `savings.service.ts` y `POST /savings/goals/{goalId}/withdrawals` al controlador y las rutas; registrar `withdrawFromGoal` y quitarla de `PENDING_BACKEND`.
+- [X] T020 [US2] [BE] Agregar `withdraw` a `savings.service.ts` y `POST /savings/goals/{goalId}/withdrawals` al controlador y las rutas; registrar `withdrawFromGoal` y quitarla de `PENDING_BACKEND`.
 
 ### [FE]
 
@@ -138,7 +138,7 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
 
 ### [BE]
 
-- [ ] T022 [P] [US3] [BE] Agregar a `backend/tests/integration/savings.test.ts`:
+- [X] T022 [P] [US3] [BE] Agregar a `backend/tests/integration/savings.test.ts`:
   - editar nombre, objetivo y fecha (y quitarla); fecha pasada → 400; actualización vacía → 400;
   - cerrar con saldo: devuelve todo, `movement` «Cierre de {meta}», meta cerrada con saldo 0, deja de contar para el máximo;
   - cerrar sin saldo: `movement: null`;
@@ -148,7 +148,7 @@ disponible queda en $50.000 y la meta en $50.000 (8 %).
   - **concurrencia**: cerrar con aportes en curso (ningún dinero se pierde: la suma disponible + metas no cambia);
   - la base impide modificar una meta cerrada y borrar metas;
   - auditoría `GOAL_CLOSED` con el monto devuelto.
-- [ ] T023 [US3] [BE] Agregar `update` y `close` (research R6, R7) a `savings.service.ts`, y `PATCH /savings/goals/{goalId}` y `POST /savings/goals/{goalId}/close` al controlador y las rutas. Registrar ambas, quitarlas de `PENDING_BACKEND` y dejar la lista vacía.
+- [X] T023 [US3] [BE] Agregar `update` y `close` (research R6, R7) a `savings.service.ts`, y `PATCH /savings/goals/{goalId}` y `POST /savings/goals/{goalId}/close` al controlador y las rutas. Registrar ambas, quitarlas de `PENDING_BACKEND` y dejar la lista vacía.
 
 ### [FE]
 

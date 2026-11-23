@@ -113,7 +113,12 @@ export function createLedgerService(
     return toSafeNumber(await repo.sumCompletedSince(db, accountId, type, since));
   }
 
-  return { post, recentMovements, listMovements, sumCompletedSince };
+  /** Spec 005: suma de los montos de las operaciones dadas (devoluciones de cierre, R7). */
+  async function sumTransactionAmounts(db: Db, transactionIds: string[]): Promise<number> {
+    return toSafeNumber(await repo.sumAmountsByIds(db, transactionIds));
+  }
+
+  return { post, recentMovements, listMovements, sumCompletedSince, sumTransactionAmounts };
 }
 
 export type LedgerService = ReturnType<typeof createLedgerService>;

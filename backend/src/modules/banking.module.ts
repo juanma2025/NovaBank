@@ -18,6 +18,9 @@ import { createLedgerService } from './ledger/ledger.service.js';
 import { createProfileController } from './profile/profile.controller.js';
 import { createProfileRouter } from './profile/profile.routes.js';
 import { createProfileService } from './profile/profile.service.js';
+import { createSavingsController } from './savings/savings.controller.js';
+import { createSavingsRouter } from './savings/savings.routes.js';
+import { createSavingsService } from './savings/savings.service.js';
 import { createTopupsController } from './topups/topups.controller.js';
 import { createTopupsRouter } from './topups/topups.routes.js';
 import { createTopupsService } from './topups/topups.service.js';
@@ -27,7 +30,7 @@ import { createTransfersService } from './transfers/transfers.service.js';
 
 /**
  * Composición de los módulos de dinero y perfil: accounts, ledger, topups (spec 002), profile y
- * transfers (spec 003) y cards (spec 004), con sus routers. Cada módulo usa solo los servicios públicos de los demás
+ * transfers (spec 003), cards (spec 004) y savings (spec 005), con sus routers. Cada módulo usa solo los servicios públicos de los demás
  * (Principio VI); de auth reciben el directorio y la reautenticación.
  */
 export function createBankingModules(
@@ -40,6 +43,7 @@ export function createBankingModules(
     cardIssueLimiter: RequestHandler;
     cardRevealLimiter: RequestHandler;
     storePaymentsLimiter: RequestHandler;
+    savingsMovementsLimiter: RequestHandler;
   },
   auth: { directory: AuthDirectory; reauth: ReauthService },
 ) {
@@ -63,6 +67,7 @@ export function createBankingModules(
     reauth: auth.reauth,
     crypto: cardCrypto,
   });
+  const savings = createSavingsService(ctx, { accounts, ledger, idempotency });
   const payments = createPaymentsService(ctx, {
     accounts,
     ledger,
@@ -99,6 +104,11 @@ export function createBankingModules(
     paymentsLimiter: middleware.storePaymentsLimiter,
   });
 
+  const savingsRouter = createSavingsRouter(createSavingsController({ savings }), {
+    requireAuth: middleware.requireAuth,
+    movementsLimiter: middleware.savingsMovementsLimiter,
+  });
+
   return {
     accounts,
     ledger,
@@ -108,12 +118,14 @@ export function createBankingModules(
     transfers,
     cards,
     payments,
+    savings,
     accountsRouter,
     topupsRouter,
     profileRouter,
     transfersRouter,
     cardsRouter,
     storeRouter,
+    savingsRouter,
   };
 }
 
