@@ -90,8 +90,8 @@ resumen muestra Comida con $5.000 de $20.000 (25 %).
 
 ### [FE]
 
-- [ ] T015 [P] [US1] [FE] Crear `frontend/tests/BudgetPage.test.tsx`: resumen vacío, poner tope con validación, porcentajes y estados con texto.
-- [ ] T016 [US1] [FE] Crear `frontend/src/features/budgets/` (api, hooks, `BudgetPage.tsx`, `BudgetCategoryRow.tsx`, `BudgetLimitDialog.tsx`) y la ruta `/presupuesto` con acceso desde `HomePage`.
+- [X] T015 [P] [US1] [FE] Crear `frontend/tests/BudgetPage.test.tsx`: resumen vacío, poner tope con validación, porcentajes y estados con texto.
+- [X] T016 [US1] [FE] Crear `frontend/src/features/budgets/` (api, hooks, `BudgetPage.tsx`, `BudgetCategoryRow.tsx`, `BudgetLimitDialog.tsx`) y la ruta `/presupuesto` con acceso desde `HomePage`.
 
 ---
 
@@ -113,12 +113,12 @@ resumen muestra Comida con $5.000 de $20.000 (25 %).
 
 ### [FE]
 
-- [ ] T019 [P] [US2] [FE] Crear `frontend/tests/BudgetAlerts.test.tsx`: el aviso del inicio y el mensaje tras un gasto que marca la alerta como vista.
-- [ ] T020 [US2] [FE] Crear `BudgetAlertBanner.tsx` (inicio) y `BudgetAlertToast.tsx`, mostrado tras pagar (`/tienda`) y transferir (`/enviar`).
+- [X] T019 [P] [US2] [FE] Crear `frontend/tests/BudgetAlerts.test.tsx`: el aviso del inicio y el mensaje tras un gasto que marca la alerta como vista.
+- [X] T020 [US2] [FE] Crear `BudgetAlertBanner.tsx` (inicio) y `BudgetAlertToast.tsx`, mostrado tras pagar (`/tienda`) y transferir (`/enviar`).
 
 ### [E2E]
 
-- [ ] T021 [US2] [E2E] Crear `e2e/budgets.spec.ts`: poner un tope, pagar hasta pasar el 80 % y comprobar el mensaje, el aviso del inicio y el correo en Mailpit.
+- [X] T021 [US2] [E2E] Crear `e2e/budgets.spec.ts`: poner un tope, pagar hasta pasar el 80 % y comprobar el mensaje, el aviso del inicio y el correo en Mailpit.
 
 ---
 
@@ -135,14 +135,14 @@ resumen muestra Comida con $5.000 de $20.000 (25 %).
 
 ### [FE]
 
-- [ ] T024 [US3] [FE] Agregar a `BudgetPage` el selector de mes (solo lectura en meses pasados) y la lista de transferencias con su selector de categoría, con pruebas en `frontend/tests/BudgetPage.test.tsx`.
+- [X] T024 [US3] [FE] Agregar a `BudgetPage` el selector de mes (solo lectura en meses pasados) y la lista de transferencias con su selector de categoría, con pruebas en `frontend/tests/BudgetPage.test.tsx`.
 
 ---
 
 ## Phase 5: Polish
 
-- [ ] T025 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/presupuesto` y del aviso del inicio (SC-005). Registrar el resultado en `specs/006-presupuesto/checklists/accessibility.md`.
-- [ ] T026 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
+- [X] T025 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/presupuesto` y del aviso del inicio (SC-005). Registrar el resultado en `specs/006-presupuesto/checklists/accessibility.md`.
+- [X] T026 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
 ### Ajustes del análisis de consistencia (A1)
 

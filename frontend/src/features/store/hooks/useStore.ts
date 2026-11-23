@@ -7,6 +7,7 @@ import type { ApiError } from '../../../lib/http-client.ts';
 import { ACCOUNT_QUERY_KEY } from '../../accounts/hooks/useAccount.ts';
 import { MOVEMENTS_QUERY_KEY } from '../../accounts/hooks/useMovements.ts';
 import { IdempotencyKeyManager } from '../../accounts/services/idempotency-key-manager.ts';
+import { BUDGET_ALERTS_QUERY_KEY, BUDGET_QUERY_KEY } from '../../budgets/hooks/useBudgets.ts';
 import { CARDS_QUERY_KEY } from '../../cards/hooks/useCards.ts';
 
 export const STORE_LIMITS_QUERY_KEY = ['store-limits'] as const;
@@ -47,6 +48,8 @@ export function useCreateCardPayment() {
         queryClient.invalidateQueries({ queryKey: MOVEMENTS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: CARDS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: STORE_LIMITS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: BUDGET_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: BUDGET_ALERTS_QUERY_KEY }),
       ]);
     },
     onError: (error) => {

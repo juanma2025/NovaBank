@@ -2,6 +2,7 @@ import {
   CreditCard,
   Home,
   List,
+  PieChart,
   PiggyBank,
   PlusCircle,
   Send,
@@ -16,6 +17,7 @@ export const DESKTOP_NAV_ITEMS = [
   { to: '/enviar', label: NAV_MESSAGES.send, icon: Send },
   { to: '/tarjetas', label: NAV_MESSAGES.cards, icon: CreditCard },
   { to: '/metas', label: NAV_MESSAGES.goals, icon: PiggyBank },
+  { to: '/presupuesto', label: NAV_MESSAGES.budget, icon: PieChart },
   { to: '/tienda', label: NAV_MESSAGES.store, icon: ShoppingBag },
   { to: '/recargar', label: NAV_MESSAGES.topup, icon: PlusCircle },
   { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
@@ -31,6 +33,7 @@ export const MOBILE_PRIMARY_ITEMS = [
 
 export const MOBILE_MORE_ITEMS = [
   { to: '/metas', label: NAV_MESSAGES.goals, icon: PiggyBank },
+  { to: '/presupuesto', label: NAV_MESSAGES.budget, icon: PieChart },
   { to: '/tienda', label: NAV_MESSAGES.store, icon: ShoppingBag },
   { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
   { to: '/perfil', label: NAV_MESSAGES.profile, icon: User },

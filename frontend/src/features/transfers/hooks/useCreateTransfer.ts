@@ -7,6 +7,11 @@ import type { ApiError } from '../../../lib/http-client.ts';
 import { ACCOUNT_QUERY_KEY } from '../../accounts/hooks/useAccount.ts';
 import { MOVEMENTS_QUERY_KEY } from '../../accounts/hooks/useMovements.ts';
 import { IdempotencyKeyManager } from '../../accounts/services/idempotency-key-manager.ts';
+import {
+  BUDGET_ALERTS_QUERY_KEY,
+  BUDGET_QUERY_KEY,
+  BUDGET_TRANSFERS_QUERY_KEY,
+} from '../../budgets/hooks/useBudgets.ts';
 import { TRANSFER_LIMITS_QUERY_KEY } from './useTransferLimits.ts';
 
 /**
@@ -35,6 +40,9 @@ export function useCreateTransfer() {
         queryClient.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: MOVEMENTS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: TRANSFER_LIMITS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: BUDGET_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: BUDGET_ALERTS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: BUDGET_TRANSFERS_QUERY_KEY }),
       ]);
     },
     onError: (error) => {

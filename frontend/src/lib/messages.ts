@@ -3,6 +3,7 @@ import { type ErrorCode, type ErrorDetails, formatCOP } from '@nova/shared';
 export * from './landing-messages.ts';
 export * from './messages-auth.ts';
 export * from './messages-banking.ts';
+export * from './messages-budgets.ts';
 export * from './messages-cards.ts';
 export * from './messages-savings.ts';
 export * from './messages-transfers.ts';
