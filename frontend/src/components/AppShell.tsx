@@ -7,6 +7,7 @@ import { useSession } from '../features/auth/hooks/useSession.ts';
 import { APP_MESSAGES, NAV_MESSAGES } from '../lib/messages.ts';
 import { Button } from './Button.tsx';
 import { NovaMark } from './NovaMark.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
 
 export interface AppShellProps {
   children: ReactNode;
@@ -88,31 +89,37 @@ export function AppShell({ children }: AppShellProps) {
           <span>{APP_MESSAGES.brandName}</span>
         </Link>
 
-        {session && (
-          <Button
-            variant="secondary"
-            loading={logoutMutation.isPending}
-            loadingLabel={APP_MESSAGES.loggingOut}
-            onClick={() => logoutMutation.mutate()}
-          >
-            <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />
-            <span className="sr-only sm:not-sr-only">{APP_MESSAGES.logout}</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {session && (
+            <Button
+              variant="secondary"
+              loading={logoutMutation.isPending}
+              loadingLabel={APP_MESSAGES.loggingOut}
+              onClick={() => logoutMutation.mutate()}
+            >
+              <LogOut aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <span className="sr-only sm:not-sr-only">{APP_MESSAGES.logout}</span>
+            </Button>
+          )}
+        </div>
       </header>
 
       {/* Menú lateral escritorio (≥ 1024 px) */}
       <aside className="nova-glass sticky top-0 hidden h-dvh flex-col justify-between border-y-0 border-l-0 p-5 lg:flex">
         <div className="space-y-8">
-          <div className="space-y-1 px-2">
-            <Link
-              to="/inicio"
-              className="inline-flex min-h-11 items-center gap-2.5 rounded-[var(--radius-sm)] text-xl font-semibold tracking-[-0.025em] text-text transition-opacity duration-[var(--duration-quick)] hover:opacity-85"
-            >
-              <NovaMark className="h-8 w-8 shrink-0" />
-              <span>{APP_MESSAGES.brandName}</span>
-            </Link>
-            <p className="text-xs text-text-muted">{NAV_MESSAGES.accountSectionLabel}</p>
+          <div className="flex items-start justify-between gap-2 px-2">
+            <div className="space-y-1">
+              <Link
+                to="/inicio"
+                className="inline-flex min-h-11 items-center gap-2.5 rounded-[var(--radius-sm)] text-xl font-semibold tracking-[-0.025em] text-text transition-opacity duration-[var(--duration-quick)] hover:opacity-85"
+              >
+                <NovaMark className="h-8 w-8 shrink-0" />
+                <span>{APP_MESSAGES.brandName}</span>
+              </Link>
+              <p className="text-xs text-text-muted">{NAV_MESSAGES.accountSectionLabel}</p>
+            </div>
+            <ThemeToggle />
           </div>
 
           <nav aria-label={NAV_MESSAGES.mainNavLabel} className="space-y-1">

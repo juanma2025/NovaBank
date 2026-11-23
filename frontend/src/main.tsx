@@ -6,6 +6,9 @@ import { BrowserRouter } from 'react-router';
 
 import { AppProviders, AppStartupGate, SessionProvider } from './app/providers.tsx';
 import { AppRoutes } from './app/router.tsx';
+import { themeController } from './lib/theme-controller.ts';
+
+themeController.apply();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
