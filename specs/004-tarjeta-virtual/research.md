@@ -97,7 +97,8 @@ desmontarse, y nunca en TanStack Query (que es una caché del cliente).
    2. bloquear la fila de la tarjeta (`SELECT … FOR UPDATE`): serializa con congelar y cancelar;
    3. `idempotency.begin` (scope `store.payments`; el hash cubre `{ merchantId, amount, cardId }`,
       nunca el número ni el CVV);
-   4. tarjeta no activa → `CARD_NOT_ACTIVE`;
+   4. tarjeta no activa (congelada, cancelada o vencida: su mes de vencimiento ya terminó en hora
+      de Bogotá) → `CARD_NOT_ACTIVE`;
    5. tope diario de pagos con tarjeta desde el inicio del día en Bogotá → `PAYMENT_DAILY_LIMIT`;
    6. saldo → `INSUFFICIENT_FUNDS` con `availableBalance`;
    7. `ledger.post` (`card_payment`): −monto al estudiante con la descripción

@@ -28,8 +28,9 @@ suscribe en la composición (`banking.module.ts`) y evalúa las alertas del mes 
 
 - El bus atrapa y registra en el log cualquier error del suscriptor: el gasto ya está confirmado y
   la respuesta no cambia (FR-008, regla de dominio 10).
-- `emit` espera a los suscriptores para que las pruebas sean deterministas; la evaluación es una
-  consulta agregada y una inserción, así que no demora visiblemente la respuesta.
+- `emit` espera a los suscriptores: así, cuando el frontend consulta las alertas justo después del
+  gasto, ya existen, y las pruebas son deterministas. La evaluación es una consulta agregada y una
+  inserción; su costo se acota con SC-006 (95 % de las respuestas en menos de 1 s con 7 topes).
 - Los contratos de la 003 y la 004 no cambian.
 
 **Alternatives considered**: que `transfers` y `cards` llamen directamente a `budgets` (los módulos

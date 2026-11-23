@@ -148,4 +148,5 @@ historias: US1 (crear y pagar) → US2 (seguir y gestionar).
 
 | Decisión | Por qué se necesita | Alternativa más simple descartada porque |
 | :--- | :--- | :--- |
+| `db/prisma/schema.prisma` de más de 300 líneas (constitución, «Complejidad») | Es el esquema declarativo único de todos los módulos (un modelo por tabla); Prisma toma de él el historial de migraciones | Dividirlo en varios archivos obliga a mover la configuración de migraciones con 10 ya aplicadas, sin reducir lógica |
 | Paso opcional dentro de la transacción de `transfers.create` | Que la transferencia y la parte pagada sean atómicas y una parte nunca se pague dos veces (R2) | Dos transacciones separadas pueden dejar dinero movido con la parte pendiente; copiar la lógica de transferencias incumple la regla de dominio 11 |

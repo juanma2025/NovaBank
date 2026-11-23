@@ -144,8 +144,9 @@ suma en «Comida»; el mes anterior muestra sus propios gastos y topes.
   gastado.
 - **FR-007**: La estudiante DEBE poder ver el resumen del mes actual y de los 6 meses anteriores, con
   el tope que tenía cada categoría en cada mes.
-- **FR-008**: El presupuesto NUNCA DEBE bloquear, demorar visiblemente ni revertir un pago o una
-  transferencia (regla de dominio 10).
+- **FR-008**: El presupuesto NUNCA DEBE bloquear ni revertir un pago o una transferencia (regla de
+  dominio 10): sus alertas se evalúan después de confirmar la operación y, si fallan, la operación
+  responde igual. El tiempo de respuesta se mide con SC-006.
 
 **Alertas**
 
@@ -182,6 +183,8 @@ suma en «Comida»; el mes anterior muestra sus propios gastos y topes.
 - **SC-004**: Ningún pago ni transferencia se rechaza o se revierte por el presupuesto, ni siquiera si
   fallan las alertas.
 - **SC-005**: Las pantallas cumplen WCAG 2.1 AA y funcionan desde 360 px de ancho.
+- **SC-006**: Con topes en las 7 categorías, el 95 % de los pagos y transferencias responden en menos
+  de 1 segundo.
 
 ## Assumptions
 
