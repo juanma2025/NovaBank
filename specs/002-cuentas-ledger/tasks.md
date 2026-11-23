@@ -170,7 +170,8 @@ Structure» en [plan.md](plan.md).
 - [ ] T025 [P] [US1] [FE] Crear `frontend/src/features/home/components/BalanceCard.tsx` (saldo con `formatCOP`; botón con `aria-pressed` que guarda `localStorage['nova:hide-balance']` dentro de `try/catch`, research R11) y `frontend/src/features/home/components/ComingSoonCard.tsx` (tarjeta de vidrio «Wallet cripto · Muy pronto» con un diálogo informativo).
 - [ ] T026 [US1] [FE] Crear `frontend/src/features/home/pages/HomePage.tsx`:
   - saludo con el primer nombre, `BalanceCard`, `MovementList` (5), «Ver todos», «Recargar» y `ComingSoonCard`;
-  - en `frontend/src/app/router.tsx`, `/inicio` usa `HomePage` y **se elimina** `WelcomePage` de la spec 001 (FR-015).
+  - en `frontend/src/app/router.tsx`, `/inicio` usa `HomePage` y **se elimina** `WelcomePage` de la spec 001 (FR-015);
+  - actualizar las pruebas de la spec 001 que esperaban `WelcomePage` o el texto «Hola, …» al terminar el registro o el login (`frontend/tests/RegisterPage.test.tsx`, `LoginPage.test.tsx`) y los E2E de la 001 que la verifiquen.
 
 ### [E2E]
 
@@ -280,7 +281,7 @@ siguientes sin repetir.
 ## Phase 5: Polish & Cross-Cutting Concerns
 
 - [ ] T040 [P] [BE] Agregar `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT` a la tabla de variables de `docs/despliegue.md`.
-- [ ] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
+- [ ] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Medir además que el saldo aparece en menos de 2 s después de iniciar sesión (SC-001). Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
 - [ ] T042 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) (secciones 2–4, incluidas las consultas del libro contable) con todo integrado en `main`, antes de `/speckit-converge`.
 
 ---
