@@ -33,6 +33,16 @@ export interface CreateTransferInput {
   requestId: string;
 }
 
+/** Opciones para otros módulos que orquestan una transferencia (spec 007, research R2). */
+export interface CreateTransferOptions {
+  /**
+   * Se ejecuta DENTRO de la transacción de la transferencia, después de registrarla y antes de
+   * confirmar. Si lanza, se revierte todo (incluida la transferencia). No se ejecuta en una
+   * repetición idempotente.
+   */
+  inTransaction?: (tx: Db, result: TransferResult) => Promise<void>;
+}
+
 export interface CreateTransferOutcome {
   status: number;
   body: TransferResult;
@@ -112,7 +122,10 @@ export function createTransfersService(
   }
 
   /** POST /transfers: flujo de research R7. */
-  async function create(input: CreateTransferInput): Promise<CreateTransferOutcome> {
+  async function create(
+    input: CreateTransferInput,
+    options: CreateTransferOptions = {},
+  ): Promise<CreateTransferOutcome> {
     const { minAmount, maxAmount, reauthThreshold } = config.transfers;
     const note = cleanNote(input.note);
 
@@ -194,6 +207,7 @@ export function createTransfersService(
         });
 
         const body: TransferResult = { movement, balance: sender.balance - input.amount };
+        await options.inTransaction?.(tx, body);
         await idempotency.complete(tx, begun.id, 201, body as unknown as Prisma.InputJsonValue);
         return { status: 201, body, replayed: false };
       },

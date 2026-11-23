@@ -74,6 +74,9 @@ enum EmailTemplate {
   password_reset_code
   password_changed
   budget_alert
+  split_invitation
+  split_reminder
+  split_paid
 
   @@map("email_template")
 }
@@ -111,6 +114,8 @@ model User {
   budgetLimits       BudgetLimit[]
   transferCategories TransferCategory[]
   budgetAlerts       BudgetAlert[]
+  createdSplits      Split[]
+  splitShares        SplitShare[]
 
   @@map("users")
 }
@@ -321,6 +326,7 @@ model LedgerTransaction {
   cardPayment    CardPayment?
   closedGoal     SavingsGoal?
   budgetCategory TransferCategory?
+  splitShare     SplitShare?
 
   @@index([accountId, type, createdAt])
   @@map("ledger_transactions")
@@ -541,4 +547,64 @@ model BudgetAlert {
   @@unique([userId, month, category, threshold])
   @@index([userId, month, createdAt])
   @@map("budget_alerts")
+}
+
+/// Spec 007 · estado de una división.
+enum SplitStatus {
+  open
+  completed
+  canceled
+
+  @@map("split_status")
+}
+
+/// Spec 007 · estado de una parte (solo sale de pending, research R5).
+enum SplitShareStatus {
+  pending
+  paid
+  paid_outside
+  declined
+  canceled
+
+  @@map("split_share_status")
+}
+
+/// Spec 007 · gasto dividido entre compañeros. No mueve dinero (regla de dominio 11). Dueño: splits.
+model Split {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorUserId String      @map("creator_user_id") @db.Uuid
+  title         String      @db.VarChar(60)
+  totalAmount   BigInt      @map("total_amount")
+  creatorShare  BigInt      @map("creator_share")
+  status        SplitStatus
+  createdAt     DateTime    @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime    @map("updated_at") @db.Timestamptz(6)
+  closedAt      DateTime?   @map("closed_at") @db.Timestamptz(6)
+
+  creator User         @relation(fields: [creatorUserId], references: [id])
+  shares  SplitShare[]
+
+  @@index([creatorUserId, createdAt])
+  @@map("splits")
+}
+
+/// Spec 007 · parte de un participante; se paga con una transferencia normal (research R2).
+model SplitShare {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  splitId               String           @map("split_id") @db.Uuid
+  userId                String           @map("user_id") @db.Uuid
+  amount                BigInt
+  status                SplitShareStatus
+  transferTransactionId String?          @unique @map("transfer_transaction_id") @db.Uuid
+  resolvedAt            DateTime?        @map("resolved_at") @db.Timestamptz(6)
+  lastRemindedAt        DateTime?        @map("last_reminded_at") @db.Timestamptz(6)
+  createdAt             DateTime         @map("created_at") @db.Timestamptz(6)
+
+  split    Split              @relation(fields: [splitId], references: [id])
+  user     User               @relation(fields: [userId], references: [id])
+  transfer LedgerTransaction? @relation(fields: [transferTransactionId], references: [id], onDelete: Restrict)
+
+  @@unique([splitId, userId])
+  @@index([userId, status])
+  @@map("split_shares")
 }

@@ -25,6 +25,9 @@ import { createProfileService } from './profile/profile.service.js';
 import { createSavingsController } from './savings/savings.controller.js';
 import { createSavingsRouter } from './savings/savings.routes.js';
 import { createSavingsService } from './savings/savings.service.js';
+import { createSplitsController } from './splits/splits.controller.js';
+import { createSplitsRouter } from './splits/splits.routes.js';
+import { createSplitsService } from './splits/splits.service.js';
 import { createTopupsController } from './topups/topups.controller.js';
 import { createTopupsRouter } from './topups/topups.routes.js';
 import { createTopupsService } from './topups/topups.service.js';
@@ -34,7 +37,8 @@ import { createTransfersService } from './transfers/transfers.service.js';
 
 /**
  * Composición de los módulos de dinero y perfil: accounts, ledger, topups (spec 002), profile y
- * transfers (spec 003), cards (spec 004), savings (spec 005) y budgets (spec 006), con sus
+ * transfers (spec 003), cards (spec 004), savings (spec 005), budgets (spec 006) y splits
+ * (spec 007), con sus
  * routers. El bus de eventos avisa a budgets de cada gasto confirmado (spec 006, research R2). Cada módulo usa solo los servicios públicos de los demás
  * (Principio VI); de auth reciben el directorio y la reautenticación.
  */
@@ -49,6 +53,7 @@ export function createBankingModules(
     cardRevealLimiter: RequestHandler;
     storePaymentsLimiter: RequestHandler;
     savingsMovementsLimiter: RequestHandler;
+    splitCreateLimiter: RequestHandler;
   },
   auth: { directory: AuthDirectory; reauth: ReauthService },
 ) {
@@ -90,6 +95,8 @@ export function createBankingModules(
   });
   // Se llama a la propiedad en cada evento (no se captura la función) para poder sustituirla en pruebas.
   events.on('spending.recorded', ({ userId }) => budgets.evaluateCurrentMonth(userId));
+  // El pago de una parte es una transferencia normal (regla de dominio 11, spec 007 R2).
+  const splits = createSplitsService(ctx, { accounts, transfers, directory: auth.directory });
 
   const accountsRouter = createAccountsRouter(
     createAccountsController({ prisma: ctx.prisma, accounts, ledger }),
@@ -130,6 +137,12 @@ export function createBankingModules(
     middleware.requireAuth,
   );
 
+  const splitsRouter = createSplitsRouter(createSplitsController({ splits }), {
+    requireAuth: middleware.requireAuth,
+    createLimiter: middleware.splitCreateLimiter,
+    paymentsLimiter: middleware.transfersLimiter,
+  });
+
   return {
     accounts,
     ledger,
@@ -141,6 +154,7 @@ export function createBankingModules(
     payments,
     savings,
     budgets,
+    splits,
     events,
     accountsRouter,
     topupsRouter,
@@ -150,6 +164,7 @@ export function createBankingModules(
     storeRouter,
     savingsRouter,
     budgetsRouter,
+    splitsRouter,
   };
 }
 

@@ -69,6 +69,7 @@ export function createApp(deps: AppDeps): NovaApp {
       cardRevealLimiter: limiters.cardReveal,
       storePaymentsLimiter: limiters.storePayments,
       savingsMovementsLimiter: limiters.savingsMovements,
+      splitCreateLimiter: limiters.splitCreate,
     },
     { directory: auth.directory, reauth: auth.reauth },
   );
@@ -90,6 +91,7 @@ export function createApp(deps: AppDeps): NovaApp {
   api.use('/store', banking.storeRouter);
   api.use('/savings', banking.savingsRouter);
   api.use('/budgets', banking.budgetsRouter);
+  api.use('/splits', banking.splitsRouter);
   api.use(apiNotFound);
   app.use('/api/v1', api);
   app.use('/api', apiNotFound);
