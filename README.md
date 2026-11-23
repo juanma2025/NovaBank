@@ -43,7 +43,7 @@ Al cerrar cada etapa, actualiza su columna: `Pendiente` → `En curso` → `List
 | 004 | `004-tarjeta-virtual` | Emitir, congelar, ver datos con reautenticación y pagos simulados. | 002 | Listo | Listo | Pendiente |
 | 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Listo | Listo | Pendiente |
 | 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Listo | Listo | Pendiente |
-| 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Listo | Pendiente | Pendiente |
+| 007 | `007-gastos-compartidos` | Dividir un gasto entre compañeros y pagar cada parte con una transferencia. | 003 | Listo | Listo | Pendiente |
 | 008 | `008-landing-publica` | Página de inicio pública para visitantes sin sesión y selector de tema claro u oscuro. Solo frontend. | 001 | Listo | — | En curso |
 
 **Fase 2 («Muy pronto»)**: wallet de criptoactivos. No se especifica hasta que la constitución se

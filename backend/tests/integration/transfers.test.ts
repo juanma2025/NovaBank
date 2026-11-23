@@ -445,3 +445,50 @@ describe('US1 · destinatario fijado, auditoría e invariantes', () => {
     ).toBe(401);
   });
 });
+
+describe('spec 007 · paso dentro de la transacción (research R2)', () => {
+  it('si inTransaction lanza, la transferencia se revierte entera', async () => {
+    const { a, bId } = await pair('en-transaccion');
+    const before = await t.prisma.ledgerTransaction.count({ where: { type: 'transfer' } });
+    await expect(
+      t.banking.transfers.create(
+        {
+          userId: a.userId,
+          idempotencyKey: newKey(),
+          recipientId: bId,
+          amount: 5000,
+          requestId: randomUUID(),
+        },
+        {
+          inTransaction: () => Promise.reject(new Error('falla simulada')),
+        },
+      ),
+    ).rejects.toThrow('falla simulada');
+    expect(await balanceOf(a)).toBe(50_000);
+    expect(await t.prisma.ledgerTransaction.count({ where: { type: 'transfer' } })).toBe(before);
+  });
+
+  it('inTransaction recibe el resultado y corre antes de confirmar', async () => {
+    const { a, bId } = await pair('en-transaccion-ok');
+    let seen: string | null = null;
+    const outcome = await t.banking.transfers.create(
+      {
+        userId: a.userId,
+        idempotencyKey: newKey(),
+        recipientId: bId,
+        amount: 5000,
+        requestId: randomUUID(),
+      },
+      {
+        inTransaction: async (tx, result) => {
+          // Dentro de la misma transacción la operación ya existe.
+          const op = await tx.ledgerTransaction.findUnique({
+            where: { id: result.movement.transactionId },
+          });
+          seen = op?.id ?? null;
+        },
+      },
+    );
+    expect(seen).toBe(outcome.body.movement.transactionId);
+  });
+});

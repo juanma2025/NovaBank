@@ -23,3 +23,26 @@ describe('budget_alert', () => {
     expect(() => renderTemplate('budget_alert', { kind: 'warning' })).toThrow(/categoryName/);
   });
 });
+
+describe('gastos compartidos (spec 007)', () => {
+  const split = { creatorName: 'Ana P. G.', title: 'Cena', amount: '$ 30.000' };
+
+  it('invitación y recordatorio dicen quién, qué y cuánto', () => {
+    const invitation = renderTemplate('split_invitation', split);
+    expect(invitation.subject).toBe('Ana P. G. dividió «Cena» contigo');
+    expect(invitation.text).toContain('Tu parte es de $ 30.000');
+    const reminder = renderTemplate('split_reminder', split);
+    expect(reminder.subject).toBe('Recordatorio: tu parte de «Cena»');
+    expect(reminder.text).toContain('$ 30.000');
+  });
+
+  it('pago recibido', () => {
+    const paid = renderTemplate('split_paid', {
+      participantName: 'Juan C. R.',
+      title: 'Cena',
+      amount: '$ 30.000',
+    });
+    expect(paid.subject).toBe('Juan C. R. pagó su parte de «Cena»');
+    expect(paid.text).toContain('te transfirió $ 30.000');
+  });
+});
