@@ -27,6 +27,8 @@ import {
   PasswordRuleViolationSchema,
   SessionEndReasonSchema,
 } from './errors.js';
+import { BUDGET_CATEGORIES } from './budgets.js';
+import { SetBudgetLimitRequestSchema } from './budgets.schemas.js';
 import { DEMO_MERCHANTS, MerchantCategorySchema } from './cards.js';
 import {
   CardNicknameRequestSchema,
@@ -34,6 +36,8 @@ import {
   CreateCardPaymentRequestSchema,
 } from './cards.schemas.js';
 import { partialName } from './names.js';
+import { CreateGoalRequestSchema, GoalSchema } from './savings.schemas.js';
+import { CreateSplitRequestSchema, SplitSchema } from './splits.schemas.js';
 import {
   CreateTransferRequestSchema,
   RecipientPreviewSchema,
@@ -82,6 +86,9 @@ const auth = contractFile('auth.openapi.json');
 const accounts = contractFile('accounts.openapi.json');
 const transfers = contractFile('transfers.openapi.json');
 const cards = contractFile('cards.openapi.json');
+const savings = contractFile('savings.openapi.json');
+const budgets = contractFile('budgets.openapi.json');
+const splits = contractFile('splits.openapi.json');
 
 describe('contratos: códigos y enums', () => {
   it('hay al menos un contrato por spec', () => {
@@ -216,6 +223,73 @@ describe('contratos: tarjetas y tienda de la 004', () => {
         cardNumber: req?.cardNumber?.examples?.[0],
         expiry: req?.expiry?.examples?.[0],
         cvv: req?.cvv?.examples?.[0],
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe('contratos: metas de ahorro de la 005', () => {
+  it('Movement es igual en los contratos de la 002 a la 005', () => {
+    for (const contract of [transfers, cards, savings]) {
+      expect(schema(contract, 'Movement'), contract.file).toEqual(schema(accounts, 'Movement'));
+    }
+  });
+
+  it('Goal tiene los campos del contrato', () => {
+    expect(Object.keys(GoalSchema.shape).sort()).toEqual(
+      [...(schema(savings, 'Goal').required ?? [])].sort(),
+    );
+  });
+
+  it('los ejemplos del contrato son válidos', () => {
+    const props = schema(savings, 'CreateGoalRequest').properties;
+    expect(
+      CreateGoalRequestSchema.safeParse({
+        name: props?.name?.examples?.[0],
+        targetAmount: props?.targetAmount?.examples?.[0],
+        targetDate: null,
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe('contratos: presupuesto de la 006', () => {
+  it('las categorías coinciden con el contrato y empiezan por las de comercio de la 004', () => {
+    expect([...BUDGET_CATEGORIES]).toEqual(schema(budgets, 'BudgetCategory').enum);
+    expect(BUDGET_CATEGORIES.slice(0, MerchantCategorySchema.options.length)).toEqual(
+      MerchantCategorySchema.options,
+    );
+  });
+
+  it('los ejemplos del contrato son válidos', () => {
+    const monthlyLimit = schema(budgets, 'SetBudgetLimitRequest').properties?.monthlyLimit
+      ?.examples?.[0];
+    expect(SetBudgetLimitRequestSchema.safeParse({ monthlyLimit }).success).toBe(true);
+  });
+});
+
+describe('contratos: gastos compartidos de la 007', () => {
+  it('Movement de la 007 es igual al de la 002', () => {
+    expect(schema(splits, 'Movement')).toEqual(schema(accounts, 'Movement'));
+  });
+
+  it('Split tiene los campos del contrato', () => {
+    expect(Object.keys(SplitSchema.shape).sort()).toEqual(
+      [...(schema(splits, 'Split').required ?? [])].sort(),
+    );
+  });
+
+  it('los ejemplos del contrato son válidos', () => {
+    const props = schema(splits, 'CreateSplitRequest').properties;
+    expect(
+      CreateSplitRequestSchema.safeParse({
+        title: props?.title?.examples?.[0],
+        totalAmount: props?.totalAmount?.examples?.[0],
+        creatorShare: props?.creatorShare?.examples?.[0],
+        shares: [
+          { recipientId: '7b0e4c1a-3f2d-4e5b-9a8c-1d2e3f4a5b6c', amount: 30_000 },
+          { recipientId: '8c1f5d2b-4a3e-4f6c-8b9d-2e3f4a5b6c7d', amount: 30_000 },
+        ],
       }).success,
     ).toBe(true);
   });

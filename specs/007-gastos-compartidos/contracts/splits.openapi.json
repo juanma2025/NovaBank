@@ -1,0 +1,1151 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nova API — Gastos compartidos (spec 007)",
+    "version": "1.0.0",
+    "description": "Contrato de diseño de la funcionalidad 007-gastos-compartidos. Todas las rutas exigen sesión (cookie `nova_at`). Montos en pesos colombianos enteros. Todo error usa `ErrorResponse`. Solo «Pagar mi parte» mueve dinero, con una transferencia normal de la spec 003 (regla de dominio 11)."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "accessCookie": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "splits"
+    }
+  ],
+  "paths": {
+    "/splits": {
+      "get": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "listMySplits",
+        "summary": "Divisiones que creé o en las que participo, de la más nueva a la más vieja",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitsPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "createSplit",
+        "summary": "Crear una división (no mueve dinero)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSplitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "División abierta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Split"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`RECIPIENT_NOT_FOUND`: un participante no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`SPLIT_SHARES_MISMATCH` o `SPLIT_SHARE_OUT_OF_RANGE` (minAmount, maxAmount)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/splits/summary": {
+      "get": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "getSplitsSummary",
+        "summary": "Cuánto me deben y cuánto debo",
+        "responses": {
+          "200": {
+            "description": "Resumen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitsSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          }
+        }
+      }
+    },
+    "/splits/{splitId}": {
+      "get": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "getSplit",
+        "summary": "Detalle de una división",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "splitId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "División",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Split"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o la estudiante no participa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/splits/{splitId}/cancel": {
+      "post": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "cancelSplit",
+        "summary": "Cancelar (solo quien la creó); no devuelve las partes pagadas",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "splitId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "División actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Split"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o la estudiante no participa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`SPLIT_CLOSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/splits/{splitId}/shares/me/pay": {
+      "post": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "paySplitShare",
+        "summary": "Pagar mi parte con una transferencia a quien creó la división",
+        "description": "Exige `Idempotency-Key`. Aplica todas las reglas de `POST /transfers` (spec 003): `password` si el monto supera el umbral. La transferencia y la parte pagada se aplican juntas o no se aplican.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "splitId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayShareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Parte pagada (o respuesta original si se repitió la clave)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayShareResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o la estudiante no participa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`SPLIT_CLOSED`, `SHARE_NOT_PENDING` o `IDEMPOTENCY_KEY_REUSED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`TRANSFER_AMOUNT_OUT_OF_RANGE`, `TRANSFER_DAILY_LIMIT` (remainingToday), `INSUFFICIENT_FUNDS` (availableBalance), `REAUTH_REQUIRED` (reauthThreshold) o `REAUTH_FAILED`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`REAUTH_LOCKED` (retryAfterSeconds) o `RATE_LIMITED`",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/splits/{splitId}/shares/me/decline": {
+      "post": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "declineSplitShare",
+        "summary": "Rechazar mi parte",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "splitId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "División actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Split"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o la estudiante no participa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`SPLIT_CLOSED` o `SHARE_NOT_PENDING`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/splits/{splitId}/shares/{shareId}/mark-paid": {
+      "post": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "markSplitSharePaid",
+        "summary": "Marcar una parte como pagada por fuera (solo quien creó; no mueve dinero)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "splitId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "shareId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "División actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Split"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o la estudiante no participa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`SPLIT_CLOSED` o `SHARE_NOT_PENDING`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/splits/{splitId}/shares/{shareId}/remind": {
+      "post": {
+        "tags": [
+          "splits"
+        ],
+        "operationId": "remindSplitShare",
+        "summary": "Enviar un recordatorio por correo (solo quien creó; uno cada 24 h por parte)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "splitId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "shareId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "División actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Split"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/SessionInvalid"
+          },
+          "404": {
+            "description": "`NOT_FOUND`: no existe o la estudiante no participa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`SPLIT_CLOSED` o `SHARE_NOT_PENDING`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`SPLIT_REMINDER_TOO_SOON` (retryAfterSeconds)",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "accessCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "nova_at"
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "`VALIDATION_ERROR`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "SessionInvalid": {
+        "description": "`UNAUTHENTICATED`, `ACCESS_TOKEN_EXPIRED` o `SESSION_EXPIRED`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "MoneyAmount": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "examples": [
+          30000
+        ]
+      },
+      "SplitStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "completed",
+          "canceled"
+        ]
+      },
+      "SplitShareStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "paid",
+          "paid_outside",
+          "declined",
+          "canceled"
+        ]
+      },
+      "SplitRole": {
+        "type": "string",
+        "enum": [
+          "creator",
+          "participant"
+        ]
+      },
+      "SplitShare": {
+        "type": "object",
+        "required": [
+          "id",
+          "displayName",
+          "amount",
+          "status",
+          "resolvedAt",
+          "lastRemindedAt",
+          "isMe"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "examples": [
+              "Juan C. R."
+            ]
+          },
+          "amount": {
+            "$ref": "#/components/schemas/MoneyAmount"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SplitShareStatus"
+          },
+          "resolvedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lastRemindedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "isMe": {
+            "type": "boolean",
+            "description": "Es la parte de quien consulta"
+          }
+        }
+      },
+      "Split": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "totalAmount",
+          "creatorShare",
+          "creatorName",
+          "role",
+          "status",
+          "shares",
+          "createdAt",
+          "closedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "examples": [
+              "Cena de cumpleaños"
+            ]
+          },
+          "totalAmount": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 5000000
+          },
+          "creatorShare": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "creatorName": {
+            "type": "string",
+            "examples": [
+              "Ana P. G."
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/SplitRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SplitStatus"
+          },
+          "shares": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/SplitShare"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "SplitListItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "totalAmount",
+          "creatorName",
+          "role",
+          "status",
+          "pendingCount",
+          "pendingAmount",
+          "myShare",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "integer",
+            "minimum": 2000
+          },
+          "creatorName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/SplitRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SplitStatus"
+          },
+          "pendingCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingAmount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "myShare": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "status"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/components/schemas/MoneyAmount"
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/SplitShareStatus"
+                  }
+                }
+              }
+            ],
+            "description": "Mi parte si participo; null si la creé"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SplitsPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/SplitListItem"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PendingTotals": {
+        "type": "object",
+        "required": [
+          "count",
+          "amount"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "SplitsSummary": {
+        "type": "object",
+        "required": [
+          "toCollect",
+          "toPay"
+        ],
+        "properties": {
+          "toCollect": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PendingTotals"
+              }
+            ],
+            "description": "Partes pendientes de mis divisiones abiertas"
+          },
+          "toPay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PendingTotals"
+              }
+            ],
+            "description": "Mis partes pendientes en divisiones abiertas"
+          }
+        }
+      },
+      "CreateSplitRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "totalAmount",
+          "creatorShare",
+          "shares"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "Se recortan los espacios",
+            "examples": [
+              "Cena de cumpleaños"
+            ]
+          },
+          "totalAmount": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 5000000,
+            "examples": [
+              90000
+            ]
+          },
+          "creatorShare": {
+            "type": "integer",
+            "minimum": 0,
+            "examples": [
+              30000
+            ]
+          },
+          "shares": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "recipientId",
+                "amount"
+              ],
+              "properties": {
+                "recipientId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "De GET /transfers/recipient (spec 003)"
+                },
+                "amount": {
+                  "$ref": "#/components/schemas/MoneyAmount"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PayShareRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Obligatoria si el monto supera el umbral de las transferencias"
+          }
+        }
+      },
+      "Movement": {
+        "type": "object",
+        "required": [
+          "id",
+          "transactionId",
+          "type",
+          "description",
+          "note",
+          "amount",
+          "status",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "topup",
+              "transfer",
+              "card_payment",
+              "savings_deposit",
+              "savings_withdrawal"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 140,
+            "examples": [
+              "Recarga simulada",
+              "Transferencia a Ana P. G.",
+              "Compra en Cafetería Central · •••• 1234",
+              "Aporte a Viaje a Santa Marta"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 140,
+            "description": "Nota de la transferencia; null si no hay"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Con signo, desde la cuenta del estudiante: + entra, − sale"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "reversed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PayShareResult": {
+        "type": "object",
+        "required": [
+          "split",
+          "movement",
+          "balance"
+        ],
+        "properties": {
+          "split": {
+            "$ref": "#/components/schemas/Split"
+          },
+          "movement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Movement"
+              }
+            ],
+            "description": "La transferencia vista desde quien paga"
+          },
+          "balance": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_ERROR",
+          "UNAUTHENTICATED",
+          "ACCESS_TOKEN_EXPIRED",
+          "SESSION_EXPIRED",
+          "RATE_LIMITED",
+          "NOT_FOUND",
+          "INTERNAL_ERROR",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RECIPIENT_NOT_FOUND",
+          "TRANSFER_AMOUNT_OUT_OF_RANGE",
+          "TRANSFER_DAILY_LIMIT",
+          "INSUFFICIENT_FUNDS",
+          "REAUTH_REQUIRED",
+          "REAUTH_FAILED",
+          "REAUTH_LOCKED",
+          "SPLIT_SHARES_MISMATCH",
+          "SPLIT_SHARE_OUT_OF_RANGE",
+          "SPLIT_CLOSED",
+          "SHARE_NOT_PENDING",
+          "SPLIT_REMINDER_TOO_SOON"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ],
+            "properties": {
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "retryAfterSeconds": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "minAmount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxAmount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "remainingToday": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "availableBalance": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reauthThreshold": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "idle",
+                      "absolute",
+                      "revoked"
+                    ]
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

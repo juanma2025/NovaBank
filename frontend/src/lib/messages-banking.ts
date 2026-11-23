@@ -55,6 +55,8 @@ export const MOVEMENT_MESSAGES = {
     topup: 'Recarga simulada',
     transfer: 'Transferencia',
     card_payment: 'Pago con tarjeta',
+    savings_deposit: 'Aporte a meta',
+    savings_withdrawal: 'Retiro de meta',
   },
 } as const;
 

@@ -19,6 +19,8 @@ export interface MovementTypeLabels {
   topup: string;
   transfer: string;
   card_payment: string;
+  savings_deposit: string;
+  savings_withdrawal: string;
 }
 
 export interface PresentedMovement {
@@ -45,6 +47,8 @@ const DEFAULT_TYPE_LABELS: MovementTypeLabels = {
   topup: 'Recarga',
   transfer: 'Transferencia',
   card_payment: 'Pago con tarjeta',
+  savings_deposit: 'Aporte a meta',
+  savings_withdrawal: 'Retiro de meta',
 };
 
 const bogotaDateFormatter = new Intl.DateTimeFormat('es-CO', {

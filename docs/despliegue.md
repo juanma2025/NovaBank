@@ -83,6 +83,9 @@ Configúralas en *Environment*. La aplicación las valida al arrancar y no inici
 | `CARD_PAYMENT_MIN_AMOUNT` | `1000` (pago mínimo con tarjeta) |
 | `CARD_PAYMENT_MAX_AMOUNT` | `500000` (pago máximo con tarjeta) |
 | `CARD_PAYMENT_DAILY_LIMIT` | `1000000` (tope diario de pagos con tarjeta por estudiante) |
+| `SAVINGS_MIN_AMOUNT` | `1000` (aporte o retiro mínimo de una meta) |
+| `SAVINGS_MAX_AMOUNT` | `2000000` (aporte o retiro máximo; la devolución al cerrar no tiene tope) |
+| `SAVINGS_DAILY_LIMIT` | `5000000` (tope diario de aportes más retiros por estudiante) |
 | `TRANSFER_REAUTH_THRESHOLD` | `200000` (por encima de este monto se pide la contraseña; regla: mínimo ≤ umbral ≤ máximo ≤ tope) |
 | `SMTP_HOST` | `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` |

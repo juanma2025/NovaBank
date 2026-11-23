@@ -1,5 +1,5 @@
 import type { LedgerTransactionStatus, Movement, MovementType } from '@nova/shared';
-import { ArrowDownLeft, ArrowLeftRight, CreditCard } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, CreditCard, PiggyBank } from 'lucide-react';
 
 import { SoftSwapText } from '../../../components/SoftSwapText.tsx';
 import { HOME_MESSAGES, MOVEMENT_MESSAGES } from '../../../lib/messages.ts';
@@ -27,6 +27,9 @@ function MovementTypeIcon({ type }: { type: MovementType }) {
   }
   if (type === 'card_payment') {
     return <CreditCard aria-hidden="true" className="h-[18px] w-[18px]" />;
+  }
+  if (type === 'savings_deposit' || type === 'savings_withdrawal') {
+    return <PiggyBank aria-hidden="true" className="h-[18px] w-[18px]" />;
   }
   return <ArrowDownLeft aria-hidden="true" className="h-[18px] w-[18px]" />;
 }

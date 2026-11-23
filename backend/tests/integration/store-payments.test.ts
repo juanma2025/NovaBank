@@ -366,3 +366,24 @@ describe('US3 · auditoría, logs e invariantes', () => {
     ).toBe(401);
   });
 });
+
+// Al final del archivo: adelanta el reloj 4 años.
+describe('US3 · tarjeta vencida (FR-013, tasks.md T036)', () => {
+  it('paga hasta el último día de su mes de vencimiento y se rechaza al mes siguiente', async () => {
+    const { user, card, secrets } = await setup('vencida');
+    const lastDay = new Date(Date.UTC(card.expYear, card.expMonth, 0)).getUTCDate();
+    const month = String(card.expMonth).padStart(2, '0');
+    // 23:00 del último día del mes de vencimiento, hora de Bogotá.
+    const lastHour = new Date(`${card.expYear}-${month}-${lastDay}T23:00:00-05:00`);
+    t.clock.advanceSeconds((lastHour.getTime() - t.clock.now().getTime()) / 1000);
+    await renewSession(t, user);
+    expect((await pay(user, paymentBody(secrets, 1000))).status).toBe(201);
+
+    t.clock.advanceMinutes(2 * 60);
+    await renewSession(t, user);
+    const expired = await pay(user, paymentBody(secrets, 1000));
+    expect(expired.status).toBe(422);
+    expect(expired.body.error.code).toBe('CARD_NOT_ACTIVE');
+    expect(await balanceOf(user)).toBe(49_000);
+  });
+});

@@ -123,6 +123,19 @@ export const cardsRepository = {
     });
   },
 
+  /** Spec 006: pagos aprobados por categoría de las tarjetas del usuario en [desde, hasta). */
+  async sumByCategory(
+    db: Db,
+    userId: string,
+    range: { from: Date; to: Date },
+  ): Promise<{ category: MerchantCategory; total: bigint }[]> {
+    return db.$queryRaw<{ category: MerchantCategory; total: bigint }[]>`
+      SELECT p.category, SUM(p.amount)::bigint AS total
+      FROM card_payments p JOIN cards c ON c.id = p.card_id
+      WHERE c.user_id = ${userId}::uuid AND p.created_at >= ${range.from} AND p.created_at < ${range.to}
+      GROUP BY p.category`;
+  },
+
   async insertDecline(db: Db, userId: string, now: Date): Promise<void> {
     await db.cardPaymentDecline.create({ data: { userId, createdAt: now } });
   },

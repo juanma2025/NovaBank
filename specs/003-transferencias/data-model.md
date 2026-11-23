@@ -80,3 +80,9 @@ Valores nuevos del enum `audit_event_type`:
 Los fallos de reautenticación se guardan con
 `origin_key = sha256('reauth:' + userId)` y se aplica la regla por origen de la spec 001 (5 fallos en
 15 minutos dan 15 minutos de bloqueo). Un acierto borra esos fallos (research R4).
+
+Como se guardan con el correo del usuario, estos fallos **también cuentan para la regla global de la
+spec 001** (20 por hora por correo). Es intencional: ante una sesión robada, el bloqueo lleva al dueño
+a recuperar su contraseña, lo que borra todos los fallos y cierra todas las sesiones, incluida la del
+atacante (spec 001, FR-020c). La misma regla aplica a ver los datos de la tarjeta (spec 004, research
+R4), que comparte esta reautenticación.

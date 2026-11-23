@@ -505,7 +505,9 @@
             "enum": [
               "topup",
               "transfer",
-              "card_payment"
+              "card_payment",
+              "savings_deposit",
+              "savings_withdrawal"
             ]
           },
           "description": {
@@ -514,7 +516,8 @@
             "examples": [
               "Recarga simulada",
               "Transferencia a Ana P. G.",
-              "Compra en Cafetería Central · •••• 1234"
+              "Compra en Cafetería Central · •••• 1234",
+              "Aporte a Viaje a Santa Marta"
             ]
           },
           "note": {
