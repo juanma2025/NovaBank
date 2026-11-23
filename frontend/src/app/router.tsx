@@ -11,7 +11,7 @@ const LoginPage = lazy(() => import('../features/auth/pages/LoginPage.tsx'));
 const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage.tsx'));
 const PasswordResetPage = lazy(() => import('../features/auth/pages/PasswordResetPage.tsx'));
 const PrivacyPolicyPage = lazy(() => import('../features/legal/PrivacyPolicyPage.tsx'));
-const WelcomePage = lazy(() => import('../features/auth/pages/WelcomePage.tsx'));
+const HomePage = lazy(() => import('../features/home/pages/HomePage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {
@@ -43,7 +43,7 @@ export function AppRoutes() {
         <Route path="/privacidad" element={<PrivacyPolicyPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/inicio" element={<WelcomePage />} />
+          <Route path="/inicio" element={<HomePage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

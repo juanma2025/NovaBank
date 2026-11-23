@@ -1,0 +1,97 @@
+/** Catálogo de textos en español (es-CO) para inicio, recargas simuladas e historial (spec 002). */
+
+export const NAV_MESSAGES = {
+  mainNavLabel: 'Navegación principal',
+  mobileNavLabel: 'Navegación móvil',
+  home: 'Inicio',
+  topup: 'Recargar',
+  movements: 'Movimientos',
+  accountSectionLabel: 'Cuenta estudiantil en COP',
+} as const;
+
+export const HOME_MESSAGES = {
+  greeting: (firstName: string) => `Hola, ${firstName}`,
+  subtitle: 'Tu cuenta universitaria en pesos colombianos (COP).',
+  balanceLabel: 'Saldo disponible',
+  currencyBadge: 'COP',
+  hideBalance: 'Ocultar saldo',
+  showBalance: 'Mostrar saldo',
+  balanceHiddenSr: 'Saldo oculto',
+  amountHiddenSr: 'Monto oculto',
+  topupAction: 'Recargar',
+  recentMovementsTitle: 'Últimos movimientos',
+  viewAllMovements: 'Ver todos',
+  emptyTitle: 'Aún no tienes movimientos',
+  emptyDescription:
+    'Haz una recarga con dinero de demostración para empezar a probar tu cuenta Nova.',
+  emptyAction: 'Recargar',
+  loadError: 'No pudimos cargar el resumen de tu cuenta. Intenta de nuevo.',
+  comingSoonBadge: 'Muy pronto',
+  comingSoonTitle: 'Wallet cripto',
+  comingSoonSubtitle:
+    'Explora criptoactivos y conversiones a COP desde tu cuenta universitaria en una próxima fase.',
+  comingSoonAction: 'Conocer más',
+  comingSoonDialogTitle: 'Wallet de criptoactivos · Muy pronto',
+  comingSoonDialogBody:
+    'La wallet de criptoactivos llegará en una próxima fase de Nova. Por ahora esta función es solo informativa y tu cuenta opera únicamente con pesos colombianos (COP) de demostración.',
+  comingSoonDialogClose: 'Entendido',
+} as const;
+
+export const MOVEMENT_MESSAGES = {
+  pageTitle: 'Movimientos',
+  pageSubtitle: 'Historial completo de tu cuenta en COP, del más reciente al más antiguo.',
+  backToHome: 'Volver al inicio',
+  loadMore: 'Cargar más',
+  loadingMore: 'Cargando más…',
+  endOfHistory: 'Llegaste al final de tu historial.',
+  loadError: 'No pudimos cargar tus movimientos. Intenta de nuevo.',
+  listAriaLabel: 'Lista de movimientos de la cuenta',
+  statusLabels: {
+    pending: 'Pendiente',
+    failed: 'Fallida',
+    reversed: 'Revertida',
+  },
+  typeLabels: {
+    topup: 'Recarga simulada',
+    transfer: 'Transferencia',
+    card_payment: 'Pago con tarjeta',
+  },
+} as const;
+
+export const TOPUP_MESSAGES = {
+  pageTitle: 'Recargar cuenta',
+  pageSubtitle: 'Agrega dinero de demostración a tu cuenta estudiantil en pesos colombianos.',
+  demoNoticeTitle: 'Dinero de demostración',
+  demoNoticeBody:
+    'Esta recarga es simulada con fines académicos. No hay conexión con bancos reales ni cobros reales.',
+  amountLabel: 'Monto a recargar',
+  amountPlaceholder: '50.000',
+  suggestedLabel: 'Montos sugeridos',
+  limitsHint: (min: string, max: string) => `Puedes recargar entre ${min} y ${max} por operación.`,
+  remainingTodayLabel: (remaining: string, dailyLimit: string) =>
+    `Disponible hoy: ${remaining} de ${dailyLimit}`,
+  dailyLimitReached: 'Ya alcanzaste tu tope diario de recargas. Vuelve mañana para continuar.',
+  continueSubmit: 'Continuar',
+  loadingLimits: 'Consultando límites de recarga…',
+  limitsError: 'No pudimos consultar los límites de recarga. Intenta de nuevo.',
+  validationRequired: 'Escribe un monto para recargar.',
+  validationInvalid: 'Ingresa un monto entero en pesos colombianos, sin decimales ni letras.',
+  validationOutOfRange: (min: string, max: string) => `El monto debe estar entre ${min} y ${max}.`,
+  validationExceedsRemaining: (remaining: string) => `Puedes recargar hasta ${remaining} hoy.`,
+  confirmTitle: 'Confirmar recarga simulada',
+  confirmSubtitle: 'Revisa el resumen antes de acreditar el dinero de demostración en tu cuenta.',
+  confirmAmountLabel: 'Monto a acreditar',
+  confirmOriginLabel: 'Origen',
+  confirmOriginValue: 'Recarga simulada (dinero de demostración)',
+  confirmDemoWarning:
+    'Este monto corresponde a dinero de demostración sin valor bancario real. Al confirmar se registrará de inmediato en tu libro contable.',
+  confirmAction: 'Confirmar recarga',
+  confirmingAction: 'Aplicando recarga…',
+  cancelAction: 'Cancelar',
+  retryAction: 'Reintentar recarga',
+  successTitle: 'Recarga aplicada',
+  successToast: (amount: string) => `Recargaste ${amount} en dinero de demostración.`,
+  successNewBalanceLabel: 'Saldo actualizado',
+  successGoHome: 'Volver al inicio',
+  successAnother: 'Hacer otra recarga',
+} as const;

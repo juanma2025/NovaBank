@@ -1,0 +1,169 @@
+/* Transiciones de flujo, modales y carga (`transitions-dev`, ≤ 400 ms). */
+
+@keyframes t-surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-base));
+    filter: blur(var(--blur-transition));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.t-surface-enter {
+  animation: t-surface-enter var(--duration-fast) var(--ease-smooth-out) both;
+}
+
+/* 08-page-side-by-side — Deslizamiento lateral entre pasos 1 → 2 → 3 (350 ms) */
+.t-page-slide {
+  --slide-dur: var(--duration-medium);
+  --slide-ease: var(--ease-smooth-out);
+  position: relative;
+  overflow-x: clip;
+}
+
+@keyframes t-page-enter-forward {
+  from {
+    opacity: 0;
+    transform: translateX(var(--distance-slide));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes t-page-enter-backward {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--distance-slide) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.t-page-slide[data-direction='forward'] .t-page {
+  animation: t-page-enter-forward var(--slide-dur) var(--slide-ease) both;
+}
+
+.t-page-slide[data-direction='backward'] .t-page {
+  animation: t-page-enter-backward var(--slide-dur) var(--slide-ease) both;
+}
+
+/* 06-modal — Apertura y cierre del diálogo de inactividad (250 ms / 150 ms) */
+@keyframes t-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes t-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes t-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--scale-modal)) translateY(var(--distance-small));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes t-modal-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(var(--scale-modal));
+  }
+}
+
+.t-modal-backdrop.is-open {
+  animation: t-backdrop-in var(--duration-fast) var(--ease-out) both;
+}
+
+.t-modal-backdrop.is-closing {
+  animation: t-backdrop-out var(--duration-quick) var(--ease-out) both;
+}
+
+.t-modal {
+  box-shadow: var(--shadow-elevated);
+}
+
+.t-modal.is-open {
+  animation: t-modal-in var(--duration-fast) var(--ease-smooth-out) both;
+}
+
+.t-modal.is-closing {
+  animation: t-modal-out var(--duration-quick) var(--ease-out) both;
+}
+
+/* 14-skeleton-reveal — Transición de esqueleto a contenido real (350 ms) */
+.t-skel {
+  --reveal-dur: var(--duration-medium);
+  display: grid;
+}
+
+.t-skel-skeleton,
+.t-skel-content {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--reveal-dur) var(--ease-smooth-out),
+    transform var(--reveal-dur) var(--ease-smooth-out);
+}
+
+.t-skel-skeleton {
+  opacity: 1;
+}
+
+.t-skel-content {
+  opacity: 0;
+  transform: translateY(var(--distance-micro));
+  pointer-events: none;
+}
+
+.t-skel.is-revealed .t-skel-skeleton {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.t-skel.is-revealed .t-skel-content {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-surface-enter,
+  .t-page-slide .t-page,
+  .t-modal-backdrop.is-open,
+  .t-modal-backdrop.is-closing,
+  .t-modal.is-open,
+  .t-modal.is-closing {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .t-skel-content {
+    transform: none !important;
+  }
+}

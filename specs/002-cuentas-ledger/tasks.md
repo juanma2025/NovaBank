@@ -134,9 +134,9 @@ Structure» en [plan.md](plan.md).
 
 ### [FE] Base del frontend
 
-- [ ] T019 [P] [FE] Crear `frontend/src/features/accounts/api.ts` (una función por operación del contrato de la 002; `createTopup` envía la cabecera `IDEMPOTENCY_HEADER`) y los hooks `frontend/src/features/accounts/hooks/useAccount.ts` (`['account']`) y `useMovements.ts` (`useInfiniteQuery` con `['movements']`).
-- [ ] T020 [P] [FE] Agregar a `frontend/src/lib/messages.ts` los textos de inicio, recarga e historial, los avisos de «dinero de demostración» y los mensajes de `TOPUP_AMOUNT_OUT_OF_RANGE`, `TOPUP_DAILY_LIMIT` e `IDEMPOTENCY_KEY_REUSED`.
-- [ ] T021 [P] [FE] Crear en `frontend/src/features/home/components/`:
+- [X] T019 [P] [FE] Crear `frontend/src/features/accounts/api.ts` (una función por operación del contrato de la 002; `createTopup` envía la cabecera `IDEMPOTENCY_HEADER`) y los hooks `frontend/src/features/accounts/hooks/useAccount.ts` (`['account']`) y `useMovements.ts` (`useInfiniteQuery` con `['movements']`).
+- [X] T020 [P] [FE] Agregar a `frontend/src/lib/messages.ts` los textos de inicio, recarga e historial, los avisos de «dinero de demostración» y los mensajes de `TOPUP_AMOUNT_OUT_OF_RANGE`, `TOPUP_DAILY_LIMIT` e `IDEMPOTENCY_KEY_REUSED`.
+- [X] T021 [P] [FE] Crear en `frontend/src/features/home/components/`:
   - `MovementItem.tsx`: descripción, fecha en `America/Bogota`, monto con `formatCOP`, signo y color (verde «+»), estado si no es `completed`, y «••••••» si el saldo está oculto;
   - `MovementList.tsx`;
   - `EmptyMovements.tsx`: con el botón «Recargar».
@@ -166,15 +166,15 @@ Structure» en [plan.md](plan.md).
 
 ### [FE]
 
-- [ ] T024 [P] [US1] [FE] Crear `frontend/tests/HomePage.test.tsx`. Debe comprobar:
+- [X] T024 [P] [US1] [FE] Crear `frontend/tests/HomePage.test.tsx`. Debe comprobar:
   - el estado de carga;
   - el estado vacío con «Recargar»;
   - la lista con signo y color;
   - ocultar y mostrar el saldo, que persiste en `localStorage` y sigue funcionando si `localStorage` falla;
   - la tarjeta «Muy pronto» abre un mensaje sin llamar a la API;
   - el error con «Reintentar».
-- [ ] T025 [P] [US1] [FE] Crear `frontend/src/features/home/components/BalanceCard.tsx` (saldo con `formatCOP`; botón con `aria-pressed` que guarda `localStorage['nova:hide-balance']` dentro de `try/catch`, research R11) y `frontend/src/features/home/components/ComingSoonCard.tsx` (tarjeta de vidrio «Wallet cripto · Muy pronto» con un diálogo informativo).
-- [ ] T026 [US1] [FE] Crear `frontend/src/features/home/pages/HomePage.tsx`:
+- [X] T025 [P] [US1] [FE] Crear `frontend/src/features/home/components/BalanceCard.tsx` (saldo con `formatCOP`; botón con `aria-pressed` que guarda `localStorage['nova:hide-balance']` dentro de `try/catch`, research R11) y `frontend/src/features/home/components/ComingSoonCard.tsx` (tarjeta de vidrio «Wallet cripto · Muy pronto» con un diálogo informativo).
+- [X] T026 [US1] [FE] Crear `frontend/src/features/home/pages/HomePage.tsx`:
   - saludo con el primer nombre, `BalanceCard`, `MovementList` (5), «Ver todos», «Recargar» y `ComingSoonCard`;
   - en `frontend/src/app/router.tsx`, `/inicio` usa `HomePage` y **se elimina** `WelcomePage` de la spec 001 (FR-015);
   - actualizar las pruebas de la spec 001 que esperaban `WelcomePage` o el texto «Hola, …» al terminar el registro o el login (`frontend/tests/RegisterPage.test.tsx`, `LoginPage.test.tsx`) y los E2E de la 001 que la verifiquen.

@@ -3,11 +3,11 @@ import { useMutation } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { useAuthServices } from '../../../app/auth-services.context.ts';
 import { Alert } from '../../../components/Alert.tsx';
 import { Button } from '../../../components/Button.tsx';
-import { ApiError } from '../../../lib/api-client.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 import { VERIFICATION_MESSAGES } from '../../../lib/messages.ts';
-import { resendVerification } from '../api.ts';
 
 export interface ResendButtonProps {
   resendAvailableAt: string;
@@ -33,6 +33,7 @@ export function ResendButton({
   onResent,
   onFlowLost,
 }: ResendButtonProps) {
+  const { authService } = useAuthServices();
   const [targetMs, setTargetMs] = useState<number>(() => parseTimestamp(resendAvailableAt));
   const [secondsLeft, setSecondsLeft] = useState<number>(() =>
     secondsRemainingUntil(parseTimestamp(resendAvailableAt)),
@@ -63,7 +64,7 @@ export function ResendButton({
   }, [targetMs]);
 
   const mutation = useMutation({
-    mutationFn: resendVerification,
+    mutationFn: () => authService.resendVerification(),
     onSuccess: (nextState) => {
       const nextTarget = parseTimestamp(nextState.resendAvailableAt);
       setTargetMs(nextTarget);

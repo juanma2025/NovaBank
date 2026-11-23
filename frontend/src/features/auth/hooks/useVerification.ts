@@ -5,8 +5,8 @@ import {
 } from '@nova/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { ApiError } from '../../../lib/api-client.ts';
-import { getVerification, startPasswordReset, startRegistration, verifyEmail } from '../api.ts';
+import { useAuthServices } from '../../../app/auth-services.context.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 
 export function verificationQueryKey(purpose: VerificationPurpose) {
   return ['verification', purpose] as const;
@@ -17,6 +17,7 @@ export function verificationQueryKey(purpose: VerificationPurpose) {
  * y las mutaciones `start` y `verify` compartidas entre registro y recuperación.
  */
 export function useVerification(purpose: VerificationPurpose) {
+  const { authService } = useAuthServices();
   const queryClient = useQueryClient();
   const queryKey = verificationQueryKey(purpose);
 
@@ -24,7 +25,7 @@ export function useVerification(purpose: VerificationPurpose) {
     queryKey,
     queryFn: async ({ signal }) => {
       try {
-        const state = await getVerification(signal);
+        const state = await authService.getVerification(signal);
         return state.purpose === purpose ? state : null;
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
@@ -41,15 +42,15 @@ export function useVerification(purpose: VerificationPurpose) {
   const startMutation = useMutation<VerificationState, ApiError, { email: string }>({
     mutationFn: ({ email }) =>
       purpose === 'registration'
-        ? startRegistration({ email, acceptedPolicyVersion: PRIVACY_POLICY_VERSION })
-        : startPasswordReset({ email }),
+        ? authService.startRegistration({ email, acceptedPolicyVersion: PRIVACY_POLICY_VERSION })
+        : authService.startPasswordReset({ email }),
     onSuccess: (nextState) => {
       queryClient.setQueryData(queryKey, nextState);
     },
   });
 
   const verifyMutation = useMutation<VerificationState, ApiError, { code: string }>({
-    mutationFn: ({ code }) => verifyEmail({ code }),
+    mutationFn: ({ code }) => authService.verifyEmail({ code }),
     onSuccess: (nextState) => {
       queryClient.setQueryData(queryKey, nextState);
     },

@@ -1,16 +1,23 @@
 import type { SessionResponse } from '@nova/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
 
-import { getLastServerContactAt, subscribeServerContact } from '../../../lib/api-client.ts';
-import { logout, refreshSession } from '../api.ts';
-import { type SessionBroadcastMessage, subscribeSessionChannel } from '../session-channel.ts';
+import { useAuthServices } from '../../../app/auth-services.context.ts';
+import {
+  computeIdleSchedulePlan,
+  deriveSessionTimings,
+  mapBroadcastLogoutReason,
+  parseSessionContactMs,
+  type SessionEndCallbackReason,
+  subscribeWindowActivity,
+} from '../idle-schedule.ts';
+import type { SessionBroadcaster } from '../services/session-broadcaster.ts';
 import { SESSION_QUERY_KEY } from './useSession.ts';
 
 export interface UseIdleTimerOptions {
   session: SessionResponse | null;
-  onSessionEnded: (reason: 'idle' | 'expirada' | 'logout') => void;
+  onSessionEnded: (reason: SessionEndCallbackReason) => void;
 }
 
 export interface UseIdleTimerResult {
@@ -21,20 +28,13 @@ export interface UseIdleTimerResult {
   logoutNow: () => Promise<void>;
 }
 
-const MAX_REFRESH_THROTTLE_MS = 60_000;
-
-function parseSessionContactMs(session: SessionResponse): number {
-  const fromClient = getLastServerContactAt();
-  if (fromClient !== null) return fromClient;
-  const parsed = Date.parse(session.session.lastActivityAt);
-  return Number.isFinite(parsed) ? parsed : Date.now();
-}
-
 /**
  * Supervisa la inactividad desde el último contacto exitoso con el servidor (research R3),
- * sincroniza pestañas con `BroadcastChannel('nova-session')` y gestiona «Seguir conectado».
+ * respeta el límite absoluto de 12 h sin mostrar aviso (spec.md) y sincroniza pestañas
+ * mediante `SessionBroadcaster`.
  */
 export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): UseIdleTimerResult {
+  const { httpClient, authService, createBroadcaster } = useAuthServices();
   const queryClient = useQueryClient();
   const location = useLocation();
   const [warningOpen, setWarningOpen] = useState(false);
@@ -47,17 +47,11 @@ export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): 
   const timedOutRef = useRef(false);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const postChannelRef = useRef<((message: SessionBroadcastMessage) => void) | null>(null);
+  const broadcasterRef = useRef<SessionBroadcaster | null>(null);
   const onSessionEndedRef = useRef(onSessionEnded);
   onSessionEndedRef.current = onSessionEnded;
 
-  const idleTimeoutMs = session ? session.session.idleTimeoutSeconds * 1000 : 0;
-  const idleWarningMs = session ? session.session.idleWarningSeconds * 1000 : 0;
-  const warningDelayMs = Math.max(0, idleTimeoutMs - idleWarningMs);
-  const refreshThrottleMs = Math.min(
-    MAX_REFRESH_THROTTLE_MS,
-    Math.max(1_000, Math.floor(warningDelayMs / 2)),
-  );
+  const timings = useMemo(() => deriveSessionTimings(session), [session]);
 
   const clearTimers = useCallback(() => {
     if (warningTimerRef.current !== null) {
@@ -70,20 +64,33 @@ export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): 
     }
   }, []);
 
+  const dismissWarning = useCallback(() => {
+    warningOpenRef.current = false;
+    setWarningOpen(false);
+  }, []);
+
+  const triggerAbsoluteExpiry = useCallback(() => {
+    if (timedOutRef.current) return;
+    timedOutRef.current = true;
+    clearTimers();
+    dismissWarning();
+    broadcasterRef.current?.publish({ type: 'logout', reason: 'expired' });
+    onSessionEndedRef.current('expirada');
+  }, [clearTimers, dismissWarning]);
+
   const triggerIdleLogout = useCallback(async () => {
     if (timedOutRef.current) return;
     timedOutRef.current = true;
     clearTimers();
-    warningOpenRef.current = false;
-    setWarningOpen(false);
+    dismissWarning();
     try {
-      await logout();
+      await authService.logout();
     } catch {
       // Cerramos el estado local aunque el servidor ya haya revocado la sesión.
     }
-    postChannelRef.current?.({ type: 'logout', reason: 'idle' });
+    broadcasterRef.current?.publish({ type: 'logout', reason: 'idle' });
     onSessionEndedRef.current('idle');
-  }, [clearTimers]);
+  }, [authService, clearTimers, dismissWarning]);
 
   const scheduleFromContact = useCallback(
     (contactMs: number) => {
@@ -92,12 +99,20 @@ export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): 
       timedOutRef.current = false;
       clearTimers();
 
-      const warningAt = contactMs + warningDelayMs;
-      const deadlineAt = contactMs + idleTimeoutMs;
-      const delay = Math.max(0, warningAt - Date.now());
+      const plan = computeIdleSchedulePlan(Date.now(), contactMs, timings);
+
+      if (plan.mode === 'absolute') {
+        if (plan.delayMs === 0) triggerAbsoluteExpiry();
+        else warningTimerRef.current = setTimeout(triggerAbsoluteExpiry, plan.delayMs);
+        return;
+      }
 
       const openWarning = () => {
-        const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+        if (Date.now() >= timings.absoluteExpiresMs) {
+          triggerAbsoluteExpiry();
+          return;
+        }
+        const remaining = Math.max(0, Math.ceil((plan.idleDeadlineAt - Date.now()) / 1000));
         if (remaining <= 0) {
           void triggerIdleLogout();
           return;
@@ -107,107 +122,114 @@ export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): 
         setSecondsLeft(remaining);
 
         countdownIntervalRef.current = setInterval(() => {
-          const left = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+          if (Date.now() >= timings.absoluteExpiresMs) {
+            triggerAbsoluteExpiry();
+            return;
+          }
+          const left = Math.max(0, Math.ceil((plan.idleDeadlineAt - Date.now()) / 1000));
           setSecondsLeft(left);
           if (left <= 0) void triggerIdleLogout();
         }, 1_000);
       };
 
-      if (delay === 0) {
-        openWarning();
-      } else {
-        warningTimerRef.current = setTimeout(openWarning, delay);
-      }
+      if (plan.warningDelayMs === 0) openWarning();
+      else warningTimerRef.current = setTimeout(openWarning, plan.warningDelayMs);
     },
-    [clearTimers, idleTimeoutMs, session, triggerIdleLogout, warningDelayMs],
+    [clearTimers, session, timings, triggerAbsoluteExpiry, triggerIdleLogout],
   );
 
   const triggerThrottledRefresh = useCallback(async () => {
     if (!session || warningOpenRef.current || refreshingRef.current) return;
-    if (Date.now() - contactAtRef.current < refreshThrottleMs) return;
+    if (Date.now() >= timings.absoluteExpiresMs) {
+      triggerAbsoluteExpiry();
+      return;
+    }
+    if (Date.now() - contactAtRef.current < timings.refreshThrottleMs) return;
 
     refreshingRef.current = true;
     try {
-      const updated = await refreshSession();
-      const now = getLastServerContactAt() ?? Date.now();
+      const updated = await authService.refreshSession();
+      const now = httpClient.lastServerContactAt ?? Date.now();
       queryClient.setQueryData(SESSION_QUERY_KEY, updated);
       scheduleFromContact(now);
-      postChannelRef.current?.({ type: 'activity', serverContactAt: now });
+      broadcasterRef.current?.publish({ type: 'activity', serverContactAt: now });
     } catch {
-      // Si la sesión venció, api-client dispara el callback SESSION_EXPIRED.
+      // Si la sesión venció, HttpClient dispara el callback SESSION_EXPIRED.
     } finally {
       refreshingRef.current = false;
     }
-  }, [queryClient, refreshThrottleMs, scheduleFromContact, session]);
+  }, [
+    authService,
+    httpClient,
+    queryClient,
+    scheduleFromContact,
+    session,
+    timings,
+    triggerAbsoluteExpiry,
+  ]);
 
   const stayConnected = useCallback(async () => {
     if (!session || refreshingRef.current) return;
     refreshingRef.current = true;
     setIsRefreshing(true);
     try {
-      const updated = await refreshSession();
-      const now = getLastServerContactAt() ?? Date.now();
+      const updated = await authService.refreshSession();
+      const now = httpClient.lastServerContactAt ?? Date.now();
       queryClient.setQueryData(SESSION_QUERY_KEY, updated);
-      warningOpenRef.current = false;
-      setWarningOpen(false);
+      dismissWarning();
       scheduleFromContact(now);
-      postChannelRef.current?.({ type: 'keepalive', serverContactAt: now });
+      broadcasterRef.current?.publish({ type: 'keepalive', serverContactAt: now });
     } catch {
       clearTimers();
-      warningOpenRef.current = false;
-      setWarningOpen(false);
+      dismissWarning();
       onSessionEndedRef.current('expirada');
     } finally {
       refreshingRef.current = false;
       setIsRefreshing(false);
     }
-  }, [clearTimers, queryClient, scheduleFromContact, session]);
+  }, [
+    authService,
+    clearTimers,
+    dismissWarning,
+    httpClient,
+    queryClient,
+    scheduleFromContact,
+    session,
+  ]);
 
   const logoutNow = useCallback(async () => {
     clearTimers();
-    warningOpenRef.current = false;
-    setWarningOpen(false);
+    dismissWarning();
     try {
-      await logout();
+      await authService.logout();
     } catch {
       // Limpiamos sesión local incluso si hay error de red.
     }
-    postChannelRef.current?.({ type: 'logout', reason: 'logout' });
+    broadcasterRef.current?.publish({ type: 'logout', reason: 'logout' });
     onSessionEndedRef.current('logout');
-  }, [clearTimers]);
+  }, [authService, clearTimers, dismissWarning]);
 
   useEffect(() => {
     if (!session) {
       clearTimers();
-      warningOpenRef.current = false;
-      setWarningOpen(false);
+      dismissWarning();
       return;
     }
-
-    scheduleFromContact(parseSessionContactMs(session));
-    const unsubscribe = subscribeServerContact((timestamp) => {
+    scheduleFromContact(parseSessionContactMs(httpClient.lastServerContactAt, session));
+    const unsubscribe = httpClient.subscribeServerContact((timestamp) => {
       if (!warningOpenRef.current) scheduleFromContact(timestamp);
     });
-
     return () => {
       unsubscribe();
       clearTimers();
     };
-  }, [clearTimers, scheduleFromContact, session]);
+  }, [clearTimers, dismissWarning, httpClient, scheduleFromContact, session]);
 
   useEffect(() => {
     if (!session) return;
-    const handleActivity = () => {
+    return subscribeWindowActivity(() => {
       void triggerThrottledRefresh();
-    };
-    window.addEventListener('pointerdown', handleActivity, { passive: true });
-    window.addEventListener('keydown', handleActivity, { passive: true });
-    window.addEventListener('scroll', handleActivity, { passive: true });
-    return () => {
-      window.removeEventListener('pointerdown', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('scroll', handleActivity);
-    };
+    });
   }, [session, triggerThrottledRefresh]);
 
   useEffect(() => {
@@ -217,7 +239,10 @@ export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): 
 
   useEffect(() => {
     if (!session) return;
-    const subscription = subscribeSessionChannel((msg) => {
+    const broadcaster = createBroadcaster();
+    broadcasterRef.current = broadcaster;
+
+    const unsubscribe = broadcaster.subscribe((msg) => {
       if (msg.type === 'activity') {
         if (typeof msg.serverContactAt === 'number') {
           const next = Math.max(contactAtRef.current, msg.serverContactAt);
@@ -229,26 +254,29 @@ export function useIdleTimer({ session, onSessionEnded }: UseIdleTimerOptions): 
       }
 
       if (msg.type === 'keepalive') {
-        const next = Math.max(contactAtRef.current, msg.serverContactAt ?? Date.now());
-        warningOpenRef.current = false;
-        setWarningOpen(false);
-        scheduleFromContact(next);
+        dismissWarning();
+        scheduleFromContact(Math.max(contactAtRef.current, msg.serverContactAt ?? Date.now()));
         return;
       }
 
       clearTimers();
-      warningOpenRef.current = false;
-      setWarningOpen(false);
-      onSessionEndedRef.current(msg.reason === 'idle' ? 'idle' : 'logout');
+      dismissWarning();
+      onSessionEndedRef.current(mapBroadcastLogoutReason(msg.reason));
     });
 
-    if (!subscription) return;
-    postChannelRef.current = subscription.post;
     return () => {
-      subscription.close();
-      postChannelRef.current = null;
+      unsubscribe();
+      broadcaster.dispose();
+      if (broadcasterRef.current === broadcaster) broadcasterRef.current = null;
     };
-  }, [clearTimers, scheduleFromContact, session, triggerThrottledRefresh]);
+  }, [
+    clearTimers,
+    createBroadcaster,
+    dismissWarning,
+    scheduleFromContact,
+    session,
+    triggerThrottledRefresh,
+  ]);
 
   return { warningOpen, secondsLeft, isRefreshing, stayConnected, logoutNow };
 }

@@ -1,5 +1,6 @@
 /* Design tokens de Nova — Principio IV (estética Apple-grade, base acromática, acentos
-   semánticos, modo claro y oscuro por preferencia del sistema, transiciones ≤ 400 ms). */
+   semánticos azul hielo + violeta, modo claro y oscuro por preferencia del sistema,
+   contraste WCAG 2.1 AA ≥ 4.5:1 y transiciones estrictamente ≤ 400 ms). */
 
 :root {
   color-scheme: light dark;
@@ -9,16 +10,16 @@
   --color-bg-elevated: #ffffff;
   --color-surface: #ffffff;
   --color-surface-subtle: #eff1f5;
-  --color-surface-glass: rgba(255, 255, 255, 0.84);
+  --color-surface-glass: rgba(255, 255, 255, 0.86);
   --color-surface-glass-strong: rgba(255, 255, 255, 0.94);
 
   /* Bordes */
-  --color-border: rgba(15, 23, 42, 0.12);
-  --color-border-strong: rgba(15, 23, 42, 0.24);
-  --color-border-glass: rgba(255, 255, 255, 0.72);
+  --color-border: rgba(15, 23, 42, 0.11);
+  --color-border-strong: rgba(15, 23, 42, 0.22);
+  --color-border-glass: rgba(255, 255, 255, 0.76);
   --color-border-glass-edge: rgba(15, 23, 42, 0.08);
 
-  /* Tipografía (contraste WCAG 2.1 AA ≥ 4.5:1) */
+  /* Tipografía (contraste WCAG 2.1 AA ≥ 4.5:1 sobre bg y surface) */
   --color-text: #0b0d12;
   --color-text-secondary: #434b59;
   --color-text-muted: #586170;
@@ -28,11 +29,12 @@
   --color-brand-hover: #0052a3;
   --color-brand-active: #004282;
   --color-brand-text: #005bb5;
-  --color-brand-soft: rgba(0, 102, 204, 0.1);
+  --color-brand-soft: rgba(0, 102, 204, 0.11);
   --color-brand-ice: #0ea5e9;
   --color-brand-violet: #6d28d9;
   --color-on-brand: #ffffff;
   --color-focus-ring: #0066cc;
+  --color-focus-glow: rgba(0, 102, 204, 0.16);
 
   /* Estados semánticos */
   --color-success: #15803d;
@@ -42,6 +44,7 @@
   --color-danger: #b91c1c;
   --color-danger-bg: #fef2f2;
   --color-danger-border: rgba(185, 28, 28, 0.28);
+  --color-danger-glow: rgba(185, 28, 28, 0.15);
 
   --color-warning: #9a3412;
   --color-warning-bg: #fff7ed;
@@ -52,27 +55,28 @@
   --color-info-border: rgba(3, 105, 161, 0.28);
 
   /* Iluminación ambiental sutil detrás del vidrio */
-  --color-ambient-ice: rgba(14, 165, 233, 0.14);
-  --color-ambient-violet: rgba(109, 40, 217, 0.11);
+  --color-ambient-ice: rgba(14, 165, 233, 0.13);
+  --color-ambient-violet: rgba(109, 40, 217, 0.1);
 
   /* Radios */
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-xl: 26px;
   --radius-pill: 9999px;
 
   /* Profundidad y desenfoque */
-  --blur-glass: 20px;
+  --blur-glass: 22px;
   --blur-overlay: 12px;
   --shadow-glass:
-    0 18px 44px -16px rgba(15, 23, 42, 0.14), 0 2px 8px -2px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 20px 48px -18px rgba(15, 23, 42, 0.15), 0 2px 8px -2px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --shadow-elevated:
-    0 24px 56px -18px rgba(15, 23, 42, 0.22), 0 4px 12px -4px rgba(15, 23, 42, 0.08);
+    0 28px 60px -18px rgba(15, 23, 42, 0.24), 0 4px 12px -4px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
   --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.05);
 
-  /* Tipografía de sistema con respaldo Inter */
+  /* Tipografía de sistema Apple-grade con respaldo Inter (sin fuentes de red externas) */
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', system-ui,
     sans-serif;
@@ -81,6 +85,7 @@
   --duration-stagger: 40ms;
   --duration-micro: 80ms;
   --duration-quick: 150ms;
+  --duration-soft: 200ms;
   --duration-fast: 250ms;
   --duration-medium: 350ms;
   --duration-slow: 400ms;
@@ -93,7 +98,10 @@
   --distance-micro: 4px;
   --distance-small: 6px;
   --distance-base: 8px;
+  --distance-toast: 16px;
+  --distance-slide: 20px;
   --scale-modal: 0.96;
+  --scale-toast: 0.97;
   --blur-transition: 2px;
 }
 
@@ -103,11 +111,11 @@
     --color-bg-elevated: #11131a;
     --color-surface: #141720;
     --color-surface-subtle: #1c202c;
-    --color-surface-glass: rgba(22, 25, 35, 0.78);
-    --color-surface-glass-strong: rgba(22, 25, 35, 0.92);
+    --color-surface-glass: rgba(20, 23, 32, 0.8);
+    --color-surface-glass-strong: rgba(20, 23, 32, 0.93);
 
-    --color-border: rgba(248, 250, 252, 0.14);
-    --color-border-strong: rgba(248, 250, 252, 0.26);
+    --color-border: rgba(248, 250, 252, 0.13);
+    --color-border-strong: rgba(248, 250, 252, 0.24);
     --color-border-glass: rgba(248, 250, 252, 0.14);
     --color-border-glass-edge: rgba(248, 250, 252, 0.1);
 
@@ -119,11 +127,12 @@
     --color-brand-hover: #7dd3fc;
     --color-brand-active: #0ea5e9;
     --color-brand-text: #7dd3fc;
-    --color-brand-soft: rgba(56, 189, 248, 0.14);
+    --color-brand-soft: rgba(56, 189, 248, 0.15);
     --color-brand-ice: #38bdf8;
     --color-brand-violet: #a78bfa;
     --color-on-brand: #05131f;
     --color-focus-ring: #7dd3fc;
+    --color-focus-glow: rgba(56, 189, 248, 0.22);
 
     --color-success: #86efac;
     --color-success-bg: rgba(20, 83, 45, 0.36);
@@ -132,6 +141,7 @@
     --color-danger: #fca5a5;
     --color-danger-bg: rgba(127, 29, 29, 0.38);
     --color-danger-border: rgba(252, 165, 165, 0.3);
+    --color-danger-glow: rgba(252, 165, 165, 0.2);
 
     --color-warning: #fdba74;
     --color-warning-bg: rgba(124, 45, 18, 0.4);
@@ -146,9 +156,11 @@
 
     --shadow-glass:
       0 24px 56px -16px rgba(0, 0, 0, 0.65), 0 4px 14px -4px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    --shadow-elevated: 0 28px 64px -16px rgba(0, 0, 0, 0.72), 0 6px 18px -6px rgba(0, 0, 0, 0.5);
-    --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.3);
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --shadow-elevated:
+      0 28px 64px -16px rgba(0, 0, 0, 0.72), 0 6px 18px -6px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.32);
   }
 }
 

@@ -8,13 +8,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, type Ref, useId, useState } from 'react';
 import { Link } from 'react-router';
 
+import { useAuthServices } from '../../../app/auth-services.context.ts';
 import { Alert } from '../../../components/Alert.tsx';
 import { Button } from '../../../components/Button.tsx';
 import { PasswordField } from '../../../components/PasswordField.tsx';
 import { TextField } from '../../../components/TextField.tsx';
-import { ApiError } from '../../../lib/api-client.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 import { REGISTER_MESSAGES, VALIDATION_MESSAGES } from '../../../lib/messages.ts';
-import { completeRegistration } from '../api.ts';
 import { PasswordRules } from '../components/PasswordRules.tsx';
 import { SESSION_QUERY_KEY } from '../hooks/useSession.ts';
 
@@ -26,6 +26,7 @@ export interface ProfileStepProps {
 }
 
 export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: ProfileStepProps) {
+  const { authService } = useAuthServices();
   const queryClient = useQueryClient();
   const rulesId = useId();
   const [fullName, setFullName] = useState('');
@@ -37,9 +38,10 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
   const [serverViolations, setServerViolations] = useState<PasswordRuleViolation[]>([]);
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
 
   const mutation = useMutation<SessionResponse, ApiError, { fullName: string; password: string }>({
-    mutationFn: completeRegistration,
+    mutationFn: (input) => authService.completeRegistration(input),
     onSuccess: (session) => {
       queryClient.setQueryData(SESSION_QUERY_KEY, session);
       onCompleted(session);
@@ -68,6 +70,7 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
     const passwordViolations = validatePasswordRules(password, email);
 
     if (nameErr || passwordViolations.length > 0) {
+      setShakeKey((prev) => prev + 1);
       return;
     }
 
@@ -84,6 +87,7 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
       if (error.code === 'PASSWORD_WEAK') {
         setServerViolations(error.details?.reasons ?? []);
         setServerPasswordError(error.message);
+        setShakeKey((prev) => prev + 1);
         return;
       }
 
@@ -99,6 +103,7 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
         if (!error.details.fields.fullName && !error.details.fields.password) {
           setFormError(error.message);
         }
+        setShakeKey((prev) => prev + 1);
         return;
       }
 
@@ -112,11 +117,13 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
         <h1
           ref={headingRef}
           tabIndex={-1}
-          className="text-2xl font-semibold tracking-[-0.02em] text-text focus:outline-none"
+          className="text-2xl font-semibold tracking-[-0.025em] text-text focus:outline-none"
         >
           {REGISTER_MESSAGES.step3Title}
         </h1>
-        <p className="text-sm text-text-secondary">{REGISTER_MESSAGES.step3Subtitle}</p>
+        <p className="text-sm leading-relaxed text-text-secondary">
+          {REGISTER_MESSAGES.step3Subtitle}
+        </p>
       </div>
 
       {formError && (
@@ -145,6 +152,7 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
         value={fullName}
         disabled={mutation.isPending}
         error={displayedNameError}
+        shakeKey={shakeKey}
         onChange={(event) => {
           setFullName(event.target.value);
           setServerNameError(undefined);
@@ -161,6 +169,7 @@ export function ProfileStep({ email, headingRef, onCompleted, onFlowExpired }: P
           value={password}
           disabled={mutation.isPending}
           error={serverPasswordError}
+          shakeKey={shakeKey}
           aria-describedby={rulesId}
           onChange={(event) => {
             setPassword(event.target.value);

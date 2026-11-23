@@ -69,7 +69,7 @@ export function InactivityDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[var(--blur-overlay)]">
+    <div className="t-modal-backdrop is-open fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[var(--blur-overlay)]">
       <div
         ref={dialogRef}
         role="dialog"
@@ -77,13 +77,13 @@ export function InactivityDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         onKeyDown={handleKeyDown}
-        className="nova-glass nova-animate-modal w-full max-w-sm rounded-[var(--radius-xl)] p-6 space-y-5"
+        className="nova-glass t-modal is-open w-full max-w-sm space-y-5 rounded-[var(--radius-xl)] p-6"
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3.5">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-warning-border bg-warning-bg text-warning">
             <Clock aria-hidden="true" className="h-5 w-5" />
           </div>
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <h2 id={titleId} className="text-lg font-semibold tracking-[-0.02em] text-text">
               {INACTIVITY_MESSAGES.title}
             </h2>
@@ -99,7 +99,7 @@ export function InactivityDialog({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2.5 sm:flex-row-reverse">
+        <div className="flex flex-col gap-2.5 border-t border-border pt-4 sm:flex-row-reverse">
           <Button
             ref={primaryButtonRef}
             variant="primary"

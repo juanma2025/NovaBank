@@ -28,6 +28,7 @@ export function CodeInput({
   errorKey = 0,
 }: CodeInputProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const gridRef = useRef<HTMLDivElement>(null);
   const lastSubmittedRef = useRef<string | null>(null);
   const [shaking, setShaking] = useState(false);
   const groupId = useId();
@@ -35,8 +36,11 @@ export function CodeInput({
 
   useEffect(() => {
     if (errorKey <= 0) return;
+    setShaking(false);
+    // Reflow para reiniciar `t-shake` sin desmontar los inputs (preserva el foco del teclado).
+    void gridRef.current?.offsetWidth;
     setShaking(true);
-    const timer = setTimeout(() => setShaking(false), 350);
+    const timer = setTimeout(() => setShaking(false), 260);
     return () => clearTimeout(timer);
   }, [errorKey]);
 
@@ -128,7 +132,10 @@ export function CodeInput({
         {VERIFICATION_MESSAGES.codeLabel}
       </legend>
 
-      <div className={`grid grid-cols-6 gap-1 sm:gap-2 ${shaking ? 'nova-animate-shake' : ''}`}>
+      <div
+        ref={gridRef}
+        className={`t-input-wrap grid grid-cols-6 gap-1 sm:gap-2 ${shaking ? 'is-shaking' : ''}`}
+      >
         {SLOTS.map((index) => (
           <input
             key={index}
@@ -148,9 +155,9 @@ export function CodeInput({
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPaste={handlePaste}
             onFocus={(event) => event.currentTarget.select()}
-            className={`h-12 min-h-11 w-full min-w-0 rounded-[var(--radius-md)] border bg-surface text-center text-lg font-semibold tabular-nums text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`t-input h-12 min-h-11 w-full min-w-0 rounded-[var(--radius-md)] border bg-surface text-center text-lg font-semibold text-text tabular-nums shadow-[var(--shadow-control)] disabled:cursor-not-allowed disabled:opacity-60 ${
               error
-                ? 'border-danger focus-visible:outline-danger'
+                ? 'is-error border-danger focus-visible:outline-danger'
                 : 'border-border-strong hover:border-text-muted focus-visible:border-brand'
             }`}
           />
@@ -162,7 +169,7 @@ export function CodeInput({
           id={errorId}
           role="alert"
           aria-live="assertive"
-          className="mt-2.5 flex items-start gap-1.5 text-sm text-danger"
+          className="t-error-msg mt-2.5 flex items-start gap-1.5 text-sm text-danger"
         >
           <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>

@@ -1,0 +1,213 @@
+/* Transiciones del Dashboard Principal (`transitions-dev`, ≤ 400 ms, prefers-reduced-motion). */
+
+/* 36-number-subtle-change — Cambio sutil de dígitos de saldo (tope constitucional: 400 ms) */
+.t-subtle-number {
+  --subtle-dur: var(--duration-slow);
+  --subtle-distance: 0.14em;
+  --subtle-blur: 0.042em;
+  --subtle-ease: var(--ease-smooth-out);
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.t-subtle-slot {
+  position: relative;
+  display: inline-block;
+}
+
+.t-subtle-new {
+  display: inline-block;
+}
+
+.t-subtle-old {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.t-subtle-number.is-animating .t-subtle-new {
+  animation: t-subtle-in var(--subtle-dur) var(--subtle-ease) both;
+}
+
+.t-subtle-number.is-animating .t-subtle-old {
+  animation: t-subtle-out var(--subtle-dur) var(--subtle-ease) both;
+}
+
+@keyframes t-subtle-in {
+  from {
+    transform: translateY(calc(var(--subtle-distance) * var(--subtle-dir, 1)));
+    opacity: 0;
+    filter: blur(var(--subtle-blur));
+  }
+}
+
+@keyframes t-subtle-out {
+  to {
+    transform: translateY(calc(var(--subtle-distance) * var(--subtle-dir, 1) * -1));
+    opacity: 0;
+    filter: blur(var(--subtle-blur));
+  }
+}
+
+/* 34-text-swap-soft — Cross-blur suave para ocultar/mostrar saldo y montos (200 ms / 250 ms) */
+.t-text-soft {
+  --text-soft-dur: var(--duration-soft);
+  --text-soft-blur: var(--blur-transition);
+  --text-soft-ease: var(--ease-in-out);
+  --text-soft-resize-dur: var(--duration-fast);
+  --text-soft-resize-ease: var(--ease-smooth-out);
+  display: inline-grid;
+  justify-items: var(--text-soft-align, start);
+  transition: width var(--text-soft-resize-dur) var(--text-soft-resize-ease);
+}
+
+.t-text-soft > span {
+  grid-area: 1 / 1;
+  white-space: pre;
+  transition:
+    filter var(--text-soft-dur) var(--text-soft-ease),
+    opacity var(--text-soft-dur) var(--text-soft-ease);
+}
+
+@keyframes t-text-soft-in {
+  from {
+    opacity: 0;
+    filter: blur(var(--text-soft-blur));
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.t-text-soft-enter {
+  animation: t-text-soft-in var(--text-soft-dur) var(--text-soft-ease) both;
+}
+
+.t-text-soft-new {
+  opacity: 0;
+  filter: blur(var(--text-soft-blur));
+}
+
+.t-text-soft.is-swapping .t-text-soft-old {
+  opacity: 0;
+  filter: blur(var(--text-soft-blur));
+}
+
+.t-text-soft.is-swapping .t-text-soft-new {
+  opacity: 1;
+  filter: blur(0);
+}
+
+/* 16-tabs-sliding — Pastilla deslizante en la navegación del App Shell (250 ms) */
+.t-tabs {
+  --tabs-dur: var(--duration-fast);
+  --tabs-ease: var(--ease-smooth-out);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.t-tab {
+  position: relative;
+  z-index: 1;
+  transition: color var(--tabs-dur) var(--tabs-ease);
+}
+
+.t-tabs-pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  background-color: var(--color-brand-soft);
+  border-radius: var(--radius-pill);
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 07-panel-reveal — Entrada de paneles en el Dashboard (400 ms / 350 ms) */
+.t-panel-slide {
+  --panel-open-dur: var(--duration-slow);
+  --panel-close-dur: var(--duration-medium);
+  --panel-translate-y: var(--distance-base);
+  --panel-blur: var(--blur-transition);
+  --panel-ease: var(--ease-smooth-out);
+  transform: translateY(var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity var(--panel-close-dur) var(--panel-ease),
+    filter var(--panel-close-dur) var(--panel-ease);
+}
+
+.t-panel-slide[data-open='true'] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity var(--panel-open-dur) var(--panel-ease),
+    filter var(--panel-open-dur) var(--panel-ease);
+}
+
+/* 22-toast — Confirmación flotante tras recarga (350 ms apertura / 250 ms cierre) */
+.t-toast {
+  --toast-open: var(--duration-medium);
+  --toast-close: var(--duration-fast);
+  --toast-distance: var(--distance-toast);
+  --toast-blur: var(--blur-transition);
+  --toast-scale: var(--scale-toast);
+  --toast-ease: var(--ease-smooth-out);
+  opacity: 0;
+  transform: translateY(var(--toast-distance)) scale(var(--toast-scale));
+  filter: blur(var(--toast-blur));
+  pointer-events: none;
+  transition:
+    opacity var(--toast-close) var(--toast-ease),
+    transform var(--toast-close) var(--toast-ease),
+    filter var(--toast-close) var(--toast-ease);
+}
+
+.t-toast.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    opacity var(--toast-open) var(--toast-ease),
+    transform var(--toast-open) var(--toast-ease),
+    filter var(--toast-open) var(--toast-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-subtle-number .t-subtle-new {
+    animation: none !important;
+  }
+
+  .t-subtle-number .t-subtle-old {
+    display: none;
+  }
+
+  .t-text-soft,
+  .t-text-soft > span,
+  .t-text-soft-enter,
+  .t-tabs-pill,
+  .t-tab,
+  .t-panel-slide,
+  .t-toast {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}

@@ -61,6 +61,7 @@ function makeSession(
   nowMs: number,
   idleTimeoutSeconds = 900,
   idleWarningSeconds = 60,
+  absoluteExpiresMs = nowMs + 12 * 60 * 60 * 1000,
 ): SessionResponse {
   return {
     user: {
@@ -72,7 +73,7 @@ function makeSession(
       idleTimeoutSeconds,
       idleWarningSeconds,
       lastActivityAt: new Date(nowMs).toISOString(),
-      absoluteExpiresAt: new Date(nowMs + 12 * 60 * 60 * 1000).toISOString(),
+      absoluteExpiresAt: new Date(absoluteExpiresMs).toISOString(),
     },
   };
 }
@@ -242,6 +243,35 @@ describe('useIdleTimer e InactivityDialog (US2)', () => {
       peer.postMessage({ type: 'logout', reason: 'logout' });
     });
     expect(screen.getByTestId('location').textContent).toBe('/ingresar');
+
+    peer.close();
+  });
+
+  it('cierra directo como expirada sin mostrar el aviso cuando el límite absoluto de 12 h vence antes que el idle', async () => {
+    const start = Date.now();
+    const peer = new MockBroadcastChannel('nova-session');
+    const receivedMessages: unknown[] = [];
+    peer.addEventListener('message', (event) => {
+      receivedMessages.push(event.data);
+    });
+
+    // El límite absoluto vence en 120 s (< idle de 900 s y < aviso de 840 s).
+    renderWithSession(makeSession(start, 900, 60, start + 120_000));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(119_000);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('location').textContent).toBe('/inicio');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('location').textContent).toBe(
+      '/ingresar?motivo=expirada&redirect=%2Finicio',
+    );
+    expect(receivedMessages).toContainEqual({ type: 'logout', reason: 'expired' });
 
     peer.close();
   });

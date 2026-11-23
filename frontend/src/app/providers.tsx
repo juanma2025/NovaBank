@@ -10,8 +10,13 @@ import { NovaMark } from '../components/NovaMark.tsx';
 import { Spinner } from '../components/Spinner.tsx';
 import { useIdleTimer } from '../features/auth/hooks/useIdleTimer.ts';
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/hooks/useSession.ts';
-import { resetLastServerContactAt, setOnSessionExpired } from '../lib/api-client.ts';
 import { APP_MESSAGES } from '../lib/messages.ts';
+import {
+  type AuthServices,
+  AuthServicesContext,
+  createDefaultAuthServices,
+  useAuthServices,
+} from './auth-services.context.ts';
 
 const InactivityDialog = lazy(() =>
   import('../features/auth/components/InactivityDialog.tsx').then((mod) => ({
@@ -36,11 +41,22 @@ export function createAppQueryClient(): QueryClient {
 export interface AppProvidersProps {
   children: ReactNode;
   queryClient?: QueryClient;
+  services?: Partial<AuthServices>;
 }
 
-export function AppProviders({ children, queryClient: externalClient }: AppProvidersProps) {
+export function AppProviders({
+  children,
+  queryClient: externalClient,
+  services: externalServices,
+}: AppProvidersProps) {
   const [internalClient] = useState(() => externalClient ?? createAppQueryClient());
-  return <QueryClientProvider client={internalClient}>{children}</QueryClientProvider>;
+  const [resolvedServices] = useState(() => createDefaultAuthServices(externalServices));
+
+  return (
+    <AuthServicesContext.Provider value={resolvedServices}>
+      <QueryClientProvider client={internalClient}>{children}</QueryClientProvider>
+    </AuthServicesContext.Provider>
+  );
 }
 
 function buildExpiredLoginUrl(
@@ -60,10 +76,11 @@ export interface SessionProviderProps {
 }
 
 /**
- * Conecta `SESSION_EXPIRED` del cliente HTTP, el temporizador de inactividad (`useIdleTimer`)
+ * Conecta `SESSION_EXPIRED` de `HttpClient`, el temporizador de inactividad (`useIdleTimer`)
  * y el aviso modal (`InactivityDialog`) con la caché de TanStack Query y la navegación.
  */
 export function SessionProvider({ children }: SessionProviderProps) {
+  const { httpClient } = useAuthServices();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,7 +88,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   const handleSessionTermination = useCallback(
     (reason: 'idle' | 'expirada' | 'logout') => {
-      resetLastServerContactAt();
+      httpClient.resetLastServerContactAt();
       queryClient.clear();
       queryClient.setQueryData(SESSION_QUERY_KEY, null);
       if (reason === 'logout') {
@@ -81,18 +98,18 @@ export function SessionProvider({ children }: SessionProviderProps) {
       const currentPath = `${location.pathname}${location.search}`;
       void navigate(buildExpiredLoginUrl(reason, currentPath), { replace: true });
     },
-    [location.pathname, location.search, navigate, queryClient],
+    [httpClient, location.pathname, location.search, navigate, queryClient],
   );
 
   useEffect(() => {
-    setOnSessionExpired((reason) => {
+    httpClient.setOnSessionExpired((reason) => {
       handleSessionTermination(reason === 'idle' ? 'idle' : 'expirada');
     });
 
     return () => {
-      setOnSessionExpired(null);
+      httpClient.setOnSessionExpired(null);
     };
-  }, [handleSessionTermination]);
+  }, [handleSessionTermination, httpClient]);
 
   const idle = useIdleTimer({
     session: session ?? null,

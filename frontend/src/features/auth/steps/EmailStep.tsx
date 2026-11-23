@@ -9,7 +9,7 @@ import { type FormEvent, type Ref, useState } from 'react';
 import { Alert, type AlertVariant } from '../../../components/Alert.tsx';
 import { Button } from '../../../components/Button.tsx';
 import { TextField } from '../../../components/TextField.tsx';
-import { ApiError } from '../../../lib/api-client.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 import {
   LOGIN_MESSAGES,
   REGISTER_MESSAGES,
@@ -44,6 +44,7 @@ export function EmailStep({
   const [consentError, setConsentError] = useState<string | undefined>(undefined);
   const [serverEmailError, setServerEmailError] = useState<string | undefined>(undefined);
   const [formError, setFormError] = useState<string | undefined>(undefined);
+  const [shakeKey, setShakeKey] = useState(0);
 
   function validateEmailField(raw: string): string | undefined {
     if (raw.trim().length === 0) return VALIDATION_MESSAGES.emailRequired;
@@ -65,6 +66,7 @@ export function EmailStep({
     setConsentError(missingConsent ? VALIDATION_MESSAGES.consentRequired : undefined);
 
     if (emailErr || missingConsent) {
+      if (emailErr) setShakeKey((prev) => prev + 1);
       return;
     }
 
@@ -76,10 +78,12 @@ export function EmailStep({
       if (error instanceof ApiError) {
         if (error.code === 'DOMAIN_NOT_ALLOWED') {
           setServerEmailError(error.message);
+          setShakeKey((prev) => prev + 1);
           return;
         }
         if (error.code === 'VALIDATION_ERROR' && error.details?.fields?.email) {
           setServerEmailError(error.details.fields.email);
+          setShakeKey((prev) => prev + 1);
           return;
         }
         setFormError(error.message);
@@ -100,11 +104,11 @@ export function EmailStep({
         <h1
           ref={headingRef}
           tabIndex={-1}
-          className="text-2xl font-semibold tracking-[-0.02em] text-text focus:outline-none"
+          className="text-2xl font-semibold tracking-[-0.025em] text-text focus:outline-none"
         >
           {title}
         </h1>
-        <p className="text-sm text-text-secondary">{subtitle}</p>
+        <p className="text-sm leading-relaxed text-text-secondary">{subtitle}</p>
       </div>
 
       {banner && <Alert variant={banner.variant}>{banner.message}</Alert>}
@@ -120,6 +124,7 @@ export function EmailStep({
         value={email}
         disabled={isSubmitting}
         error={displayedEmailError}
+        shakeKey={shakeKey}
         onChange={(event) => {
           setEmail(event.target.value);
           setServerEmailError(undefined);

@@ -60,13 +60,15 @@ export function PasswordRules({
             data-status={status}
             className={`flex items-start gap-2 transition-colors duration-[var(--duration-quick)] ${colorClass}`}
           >
-            {status === 'valid' ? (
-              <Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-            ) : status === 'invalid' ? (
-              <X aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-            ) : (
-              <Circle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-60" />
-            )}
+            <span
+              aria-hidden="true"
+              className="t-icon-swap mt-0.5 h-4 w-4 shrink-0"
+              data-state={status}
+            >
+              <Circle className="t-icon h-3.5 w-3.5 opacity-60" data-slot="idle" />
+              <Check className="t-icon h-4 w-4" data-slot="valid" />
+              <X className="t-icon h-4 w-4" data-slot="invalid" />
+            </span>
             <span>
               {status !== 'idle' && (
                 <span className="sr-only">{PASSWORD_RULE_STATUS_SR[status]}</span>

@@ -1,0 +1,4 @@
+/* Punto de entrada de transiciones CSS puras `t-*` (transitions-dev, ≤ 400 ms). */
+@import './transitions-flow.css';
+@import './transitions-controls.css';
+@import './transitions-dashboard.css';
