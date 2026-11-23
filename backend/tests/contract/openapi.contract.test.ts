@@ -89,6 +89,19 @@ describe('contrato OpenAPI de la spec 001', () => {
     expect(operations(generated).length).toBeGreaterThan(0);
   });
 
+  it('están todas las operaciones del contrato: ninguna falta ni sobra (T080)', () => {
+    // GET /openapi.json sirve el propio documento y no forma parte del contrato.
+    const generatedKeys = operations(generated)
+      .map((o) => o.key)
+      .filter((key) => key !== 'GET /openapi.json')
+      .sort();
+    const contractKeys = operations(contract)
+      .map((o) => o.key)
+      .sort();
+    expect(contractKeys).toHaveLength(12);
+    expect(generatedKeys).toEqual(contractKeys);
+  });
+
   it('cada operación generada existe en el contrato con el mismo operationId', () => {
     for (const { key, path, method, op } of operations(generated)) {
       const expected = contract.paths[path]?.[method];

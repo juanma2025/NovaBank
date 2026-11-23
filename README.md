@@ -9,9 +9,9 @@ compañeros, pagar con una tarjeta virtual, ahorrar para metas y controlar los g
 
 ## Estado
 
-En fase de especificación. Todavía no hay código: cada funcionalidad se define primero como spec
-y luego se implementa (Spec-Driven Development con
-[GitHub Spec Kit](https://github.com/github/spec-kit)).
+Spec 001 (registro, inicio de sesión y recuperación) en implementación: el backend de las cuatro
+historias está en `main`. Cada funcionalidad se define primero como spec y luego se implementa
+(Spec-Driven Development con [GitHub Spec Kit](https://github.com/github/spec-kit)).
 
 ## Documentos clave
 
@@ -50,12 +50,38 @@ enmiende para incluirla.
 
 ## Primeros pasos
 
-1. Instala los prerrequisitos de la [guía](GUIA_COMANDOS_SDD.md#1-prerrequisitos-una-vez-por-computador).
+1. Instala los prerrequisitos de la [guía](GUIA_COMANDOS_SDD.md#1-prerrequisitos-una-vez-por-computador):
+   Node.js 24, Docker Desktop (con WSL 2) y Git.
 2. Clona el repositorio y abre la carpeta en Claude Code o Antigravity.
-3. Toma la siguiente spec pendiente de la hoja de ruta y sigue el proceso de la guía.
+3. Prepara el entorno (una vez):
 
-Las instrucciones para levantar la aplicación (`docker compose up`, `npm install`,
-`npm run dev`) se agregarán cuando se implemente la spec 001.
+   ```powershell
+   Copy-Item .env.example .env   # completa JWT_ACCESS_SECRET y CODE_HMAC_SECRET (ver comentarios)
+   npm install
+   docker compose up -d          # PostgreSQL 17 (puerto 5433) y Mailpit (http://localhost:8025)
+   npm run db:migrate
+   ```
+
+4. Levanta la aplicación:
+
+   | Quién | Terminal 1 | Terminal 2 |
+   | :--- | :--- | :--- |
+   | Backend | `npm run dev:backend` (API en http://localhost:3000) | — |
+   | Frontend | `npm run dev:backend` | `npm run dev:frontend` (app en http://localhost:5173) |
+
+5. Verifica antes de abrir un PR: `npm run lint`, `npm run typecheck`, `npm run format:check`,
+   `npm test` y `npm run build`.
+
+Los correos de desarrollo llegan a Mailpit (http://localhost:8025), nunca a buzones reales. La
+validación completa por historia está en el
+[quickstart de la spec 001](specs/001-auth-onboarding/quickstart.md).
+
+> Si las pruebas del backend fallan con errores de conexión a la base de datos, revisa que Docker
+> Desktop esté abierto y ejecuta `docker compose up -d`.
+
+## Despliegue
+
+La demo se publica en Render + Neon + Brevo. Ver [docs/despliegue.md](docs/despliegue.md).
 
 ## Equipo
 
