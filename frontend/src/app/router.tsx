@@ -7,7 +7,6 @@ import { APP_MESSAGES } from '../lib/messages.ts';
 import { PublicOnly } from './PublicOnly.tsx';
 import { RequireAuth } from './RequireAuth.tsx';
 
-const LandingPage = lazy(() => import('../features/landing/pages/LandingPage.tsx'));
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage.tsx'));
 const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage.tsx'));
 const PasswordResetPage = lazy(() => import('../features/auth/pages/PasswordResetPage.tsx'));
@@ -23,18 +22,17 @@ function PageFallback() {
   );
 }
 
-function RootRoute() {
+function RootRedirect() {
   const { data: session } = useSession();
-  if (session) return <Navigate to="/inicio" replace />;
-  return <LandingPage />;
+  return <Navigate to={session ? '/inicio' : '/ingresar'} replace />;
 }
 
-/** Rutas SPA con carga diferida (`React.lazy`). */
+/** Rutas SPA con carga diferida (plan.md · Rutas). */
 export function AppRoutes() {
   return (
     <Suspense fallback={<PageFallback />}>
       <Routes>
-        <Route path="/" element={<RootRoute />} />
+        <Route path="/" element={<RootRedirect />} />
 
         <Route element={<PublicOnly />}>
           <Route path="/ingresar" element={<LoginPage />} />

@@ -5,7 +5,6 @@ import { Link } from 'react-router';
 import { APP_MESSAGES, AUTH_EDITORIAL_MESSAGES } from '../lib/messages.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { NovaMark } from './NovaMark.tsx';
-import { ThemeToggle } from './ThemeToggle.tsx';
 
 export interface AuthLayoutProps {
   children: ReactNode;
@@ -26,15 +25,14 @@ export function AuthLayout({
     return (
       <div className="nova-canvas flex min-h-dvh flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
         <div className={`w-full ${maxWidthClass} space-y-6`}>
-          <header className="flex items-center justify-between gap-3">
+          <header className="flex justify-center">
             <Link
               to="/"
-              className="inline-flex min-h-11 items-center gap-2.5 rounded-[var(--radius-md)] pr-2 text-xl font-semibold tracking-[-0.02em] text-text transition-opacity duration-[var(--duration-quick)] hover:opacity-85"
+              className="inline-flex min-h-11 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-xl font-semibold tracking-[-0.02em] text-text transition-opacity duration-[var(--duration-quick)] hover:opacity-85"
             >
               <NovaMark className="h-8 w-8 shrink-0" />
               <span>{APP_MESSAGES.brandName}</span>
             </Link>
-            <ThemeToggle />
           </header>
 
           <main>
@@ -58,12 +56,9 @@ export function AuthLayout({
           <span>{APP_MESSAGES.brandName}</span>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <span className="hidden text-xs font-medium text-text-muted sm:inline">
-            {APP_MESSAGES.brandTagline}
-          </span>
-          <ThemeToggle />
-        </div>
+        <span className="hidden text-xs font-medium text-text-muted sm:inline">
+          {APP_MESSAGES.brandTagline}
+        </span>
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
