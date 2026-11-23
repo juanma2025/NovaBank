@@ -54,6 +54,13 @@ const EnvSchema = z
     TRANSFER_MAX_AMOUNT: z.coerce.number().int().min(1).default(500_000),
     TRANSFER_DAILY_LIMIT: z.coerce.number().int().min(1).default(1_000_000),
     TRANSFER_REAUTH_THRESHOLD: z.coerce.number().int().min(1).default(200_000),
+    // Spec 004: clave de cifrado de tarjetas (research R3) y límites de pago (research R10).
+    CARD_ENCRYPTION_KEY: z
+      .string()
+      .regex(/^[0-9a-fA-F]{64}$/, 'debe tener 64 caracteres hexadecimales (32 bytes)'),
+    CARD_PAYMENT_MIN_AMOUNT: z.coerce.number().int().min(1).default(1000),
+    CARD_PAYMENT_MAX_AMOUNT: z.coerce.number().int().min(1).default(500_000),
+    CARD_PAYMENT_DAILY_LIMIT: z.coerce.number().int().min(1).default(1_000_000),
   })
   .superRefine((env, ctx) => {
     const overrides = [
@@ -88,6 +95,17 @@ const EnvSchema = z
           'debe cumplirse TRANSFER_MIN_AMOUNT ≤ TRANSFER_REAUTH_THRESHOLD ≤ TRANSFER_MAX_AMOUNT ≤ TRANSFER_DAILY_LIMIT',
       });
     }
+    if (!(
+      env.CARD_PAYMENT_MIN_AMOUNT <= env.CARD_PAYMENT_MAX_AMOUNT &&
+      env.CARD_PAYMENT_MAX_AMOUNT <= env.CARD_PAYMENT_DAILY_LIMIT
+    )) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CARD_PAYMENT_MAX_AMOUNT'],
+        message:
+          'debe cumplirse CARD_PAYMENT_MIN_AMOUNT ≤ CARD_PAYMENT_MAX_AMOUNT ≤ CARD_PAYMENT_DAILY_LIMIT',
+      });
+    }
     const timeout = env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS;
     const warning = env.SESSION_IDLE_WARNING_SECONDS_OVERRIDE ?? SESSION_IDLE_WARNING_SECONDS;
     if (warning >= timeout) {
@@ -105,6 +123,7 @@ export interface AppConfig extends Env {
   session: { idleTimeoutSeconds: number; idleWarningSeconds: number };
   topups: { minAmount: number; maxAmount: number; dailyLimit: number };
   transfers: { minAmount: number; maxAmount: number; dailyLimit: number; reauthThreshold: number };
+  cardPayments: { minAmount: number; maxAmount: number; dailyLimit: number };
 }
 
 export class EnvValidationError extends Error {
@@ -143,6 +162,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       maxAmount: env.TRANSFER_MAX_AMOUNT,
       dailyLimit: env.TRANSFER_DAILY_LIMIT,
       reauthThreshold: env.TRANSFER_REAUTH_THRESHOLD,
+    },
+    cardPayments: {
+      minAmount: env.CARD_PAYMENT_MIN_AMOUNT,
+      maxAmount: env.CARD_PAYMENT_MAX_AMOUNT,
+      dailyLimit: env.CARD_PAYMENT_DAILY_LIMIT,
     },
     session: {
       idleTimeoutSeconds: env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS,

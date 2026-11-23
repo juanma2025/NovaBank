@@ -30,6 +30,7 @@ function toView(account: Account): AccountView {
  */
 export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
   let systemTopupsId: string | null = null;
+  let systemMerchantsId: string | null = null;
 
   /** Cuenta del estudiante; la crea si no existe (FR-001, research R6). */
   async function ensureForUser(db: Db, userId: string): Promise<AccountView> {
@@ -83,6 +84,15 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
     return system.id;
   }
 
+  /** Spec 004: igual que `system_topups`, nunca se bloquea ni tiene saldo materializado. */
+  async function getSystemMerchantsAccountId(db: Db): Promise<string> {
+    if (systemMerchantsId) return systemMerchantsId;
+    const system = await repo.findSystemMerchants(db);
+    if (!system) throw new Error('falta la cuenta system_merchants (migración cards)');
+    systemMerchantsId = system.id;
+    return system.id;
+  }
+
   return {
     ensureForUser,
     lockForUpdate,
@@ -90,6 +100,7 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
     findStudentAccountById,
     applyBalanceDelta,
     getSystemTopupsAccountId,
+    getSystemMerchantsAccountId,
   };
 }
 

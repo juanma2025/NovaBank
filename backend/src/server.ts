@@ -35,6 +35,9 @@ function start(): void {
   const maintenance = new Maintenance(clock, logger);
   registerAuthJobs(worker, maintenance, { prisma, verification: auth.verification });
   banking.idempotency.registerCleanup(maintenance, prisma);
+  maintenance.registerCleanup('cards:card_payment_declines', (now) =>
+    banking.payments.deleteOldDeclines(now),
+  );
   maintenance.registerCleanup('rate_limit_hits', (now) =>
     PgRateLimitStore.cleanupExpired(prisma, now),
   );
