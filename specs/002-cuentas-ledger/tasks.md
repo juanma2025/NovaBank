@@ -227,7 +227,7 @@ simulada +$50.000»; un doble envío no duplica.
 
 ### [FE]
 
-- [ ] T031 [P] [US2] [FE] Crear `frontend/tests/TopupPage.test.tsx` y `frontend/tests/AmountInput.test.tsx`. Deben comprobar:
+- [X] T031 [P] [US2] [FE] Crear `frontend/tests/TopupPage.test.tsx` y `frontend/tests/AmountInput.test.tsx`. Deben comprobar:
   - formato mientras se escribe;
   - el rango con los límites del servidor;
   - los montos sugeridos;
@@ -236,11 +236,11 @@ simulada +$50.000»; un doble envío no duplica.
   - un reintento tras un error de red **reutiliza la misma** `Idempotency-Key`;
   - un intento nuevo usa otra clave;
   - los errores de tope y de rango.
-- [ ] T032 [P] [US2] [FE] Crear en `frontend/src/features/topups/components/`:
+- [X] T032 [P] [US2] [FE] Crear en `frontend/src/features/topups/components/`:
   - `AmountInput.tsx`: `parseCOPInput`, `inputMode="numeric"` y error accesible;
   - `SuggestedAmounts.tsx`: `SUGGESTED_TOPUP_AMOUNTS`;
   - `TopupConfirmDialog.tsx`: monto y aviso de dinero de demostración; diálogo accesible con foco atrapado.
-- [ ] T033 [US2] [FE] Crear:
+- [X] T033 [US2] [FE] Crear:
   - `frontend/src/features/topups/hooks/useTopupLimits.ts`;
   - `frontend/src/features/topups/hooks/useCreateTopup.ts`: genera la clave con `crypto.randomUUID()` al confirmar y la reutiliza en los reintentos del mismo intento;
   - `frontend/src/features/topups/pages/TopupPage.tsx`: estados de plan.md («Estados por vista»).
