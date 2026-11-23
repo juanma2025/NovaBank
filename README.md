@@ -71,6 +71,16 @@ enmiende para incluirla.
 
 5. Verifica antes de abrir un PR: `npm run lint`, `npm run typecheck`, `npm run format:check`,
    `npm test` y `npm run build`.
+6. Pruebas de extremo a extremo (Playwright, en `e2e/`):
+
+   ```powershell
+   npx playwright install chromium   # una vez por computador
+   npm run build                     # las pruebas usan el backend y el frontend compilados
+   npm run test:e2e                  # arranca su propio servidor en http://localhost:3100
+   ```
+
+   El servidor de E2E usa la base `nova_e2e` y no lee tu `.env`. Si existe `frontend/dist`, también
+   sirve el frontend en el mismo origen. `npm run e2e:ui -w e2e` abre el modo visual de Playwright.
 
 Los correos de desarrollo llegan a Mailpit (http://localhost:8025), nunca a buzones reales. La
 validación completa por historia está en el

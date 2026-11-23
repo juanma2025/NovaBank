@@ -96,7 +96,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 ### [E2E] Workspace de pruebas extremo a extremo
 
-- [ ] T011 [P] [E2E] Crear el workspace `e2e/`:
+- [X] T011 [P] [E2E] Crear el workspace `e2e/`:
   - `e2e/package.json` (`@playwright/test`; el script se llama `e2e`, no `test`, para que `npm test` no ejecute Playwright; la raíz lo invoca con `npm run test:e2e`);
   - `e2e/playwright.config.ts`: Chromium, más un proyecto móvil a 360 px. `webServer` arranca el backend compilado con `SERVE_FRONTEND=true` en `http://localhost:3000` (un solo origen, research R14), con `DATABASE_URL` a `nova_e2e` (migraciones aplicadas antes de arrancar), `STUDENT_EMAIL_DOMAINS=nova-test.edu.co`, `SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE=20` y `SESSION_IDLE_WARNING_SECONDS_OVERRIDE=8`.
 
