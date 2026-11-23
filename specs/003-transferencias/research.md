@@ -58,6 +58,8 @@ está permitido).
 - **Bloqueo**: `auth` reutiliza su tabla `login_attempts` con la clave de origen
   `sha256('reauth:' + userId)` y la regla de 5 fallos en 15 minutos, que da 15 minutos de bloqueo
   (429 `REAUTH_LOCKED` con `retryAfterSeconds`). Un acierto borra esos fallos.
+- Los fallos también cuentan para la regla global del login de la spec 001; ver data-model.md,
+  LoginAttempt.
 - La contraseña **no** entra en el hash de idempotencia, nunca se guarda en la respuesta y no aparece
   en los logs: la redacción de `pino` ya cubre `password`.
 
@@ -94,19 +96,28 @@ cuenta y no se produce un *deadlock* (SC-005).
 ## R7. Flujo de `POST /transfers`
 
 1. Validar el cuerpo y `Idempotency-Key`.
-2. Si `amount > umbral`: `auth.reauth.verify`, fuera de la transacción (R4).
-3. **Transacción**:
+2. Rango → `TRANSFER_AMOUNT_OUT_OF_RANGE`. Se valida antes de la contraseña porque no depende de
+   datos guardados: así un monto inválido no gasta un intento de reautenticación.
+3. Si `amount > umbral`: `auth.reauth.verify`, fuera de la transacción (R4).
+4. **Transacción**:
    1. cuenta propia (`ensureForUser`);
    2. verificar que `recipientId` sea una cuenta de estudiante distinta de la propia
       (`TRANSFER_TO_SELF` / `RECIPIENT_NOT_FOUND`);
    3. `lockManyForUpdate`;
    4. `idempotency.begin` (scope `transfers.create`; el hash cubre `{ recipientId, amount, note }`);
-   5. rango → `TRANSFER_AMOUNT_OUT_OF_RANGE`;
-   6. tope diario de lo **enviado** desde el inicio del día en Bogotá → `TRANSFER_DAILY_LIMIT`;
-   7. saldo → `INSUFFICIENT_FUNDS` con `details.availableBalance`;
-   8. `ledger.post` con −monto al emisor y +monto al destinatario, cada asiento con su descripción;
-   9. auditoría `TRANSFER_COMPLETED`;
+   5. tope diario de lo **enviado** desde el inicio del día en Bogotá → `TRANSFER_DAILY_LIMIT`;
+   6. saldo → `INSUFFICIENT_FUNDS` con `details.availableBalance`;
+   7. `ledger.post` con −monto al emisor y +monto al destinatario, cada asiento con su descripción;
+   8. auditoría `TRANSFER_COMPLETED`;
+   9. paso opcional `inTransaction` de quien orquesta la transferencia (agregado en la spec 007,
+      research R2);
    10. `idempotency.complete`.
+5. Tras confirmar, y solo si no fue una repetición idempotente: evento `spending.recorded` (agregado en
+   la spec 006, research R2).
+
+Como el rango se valida antes de la idempotencia, si cambia el máximo configurado, repetir una
+transferencia que ya no cabe en el nuevo rango responde 422 en vez de la respuesta guardada. En la
+práctica no ocurre: la clave dura 24 horas y los límites no cambian en ese tiempo.
 
 ## R8. Cambios en contratos y esquemas existentes
 

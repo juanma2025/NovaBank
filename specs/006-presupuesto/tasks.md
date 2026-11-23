@@ -144,6 +144,10 @@ resumen muestra Comida con $5.000 de $20.000 (25 %).
 - [ ] T025 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/presupuesto` y del aviso del inicio (SC-005). Registrar el resultado en `specs/006-presupuesto/checklists/accessibility.md`.
 - [ ] T026 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
+### Ajustes del análisis de consistencia (A1)
+
+- [ ] T027 [BE] Agregar a `backend/tests/integration/budgets.test.ts` una prueba de SC-006: con topes en las 7 categorías, 20 pagos con tarjeta y transferencias seguidos; el percentil 95 de sus tiempos de respuesta es menor a 1 s.
+
 ---
 
 ## Dependencies & Execution Order
