@@ -73,12 +73,12 @@ Structure» en [plan.md](plan.md).
 
 ### [BE] Base de datos y servicios base
 
-- [ ] T008 [BE] Agregar a `db/prisma/schema.prisma` los enums `account_kind`, `account_status`, `ledger_transaction_type`, `ledger_transaction_status` y el valor `TOPUP_COMPLETED` en `audit_event_type`, y los modelos con nombres `snake_case`, índices y relaciones de data-model.md:
+- [X] T008 [BE] Agregar a `db/prisma/schema.prisma` los enums `account_kind`, `account_status`, `ledger_transaction_type`, `ledger_transaction_status` y el valor `TOPUP_COMPLETED` en `audit_event_type`, y los modelos con nombres `snake_case`, índices y relaciones de data-model.md:
   - `Account.kind`, `Account.user_id`, `Account.currency`, `Account.balance`, `Account.status`, `Account.created_at`;
   - `LedgerTransaction.type`, `LedgerTransaction.status`, `LedgerTransaction.account_id`, `LedgerTransaction.amount`, `LedgerTransaction.description`, `LedgerTransaction.reversal_of`, `LedgerTransaction.request_id`, `LedgerTransaction.created_at`, `LedgerTransaction.completed_at`;
   - `LedgerEntry.transaction_id`, `LedgerEntry.account_id`, `LedgerEntry.amount`, `LedgerEntry.created_at`;
   - `IdempotencyKey.user_id`, `IdempotencyKey.scope`, `IdempotencyKey.key`, `IdempotencyKey.request_hash`, `IdempotencyKey.response_status`, `IdempotencyKey.response_body`, `IdempotencyKey.created_at`, `IdempotencyKey.expires_at`.
-- [ ] T009 [BE] Generar la migración `db/prisma/migrations/<timestamp>_accounts_ledger/migration.sql` y agregarle a mano (research R2, R3):
+- [X] T009 [BE] Generar la migración `db/prisma/migrations/<timestamp>_accounts_ledger/migration.sql` y agregarle a mano (research R2, R3):
   - los `CHECK` de data-model.md:
     - `Account.currency` = 'COP';
     - `Account.balance` ≥ 0 si `kind = student`;
@@ -91,23 +91,25 @@ Structure» en [plan.md](plan.md).
   - el trigger de `ledger_transactions`: solo cambian `LedgerTransaction.status` y `LedgerTransaction.completed_at`, y solo desde `pending` hacia `completed`, `failed` o `reversed`.
 
   Aplicarla a `nova`, `nova_test` y `nova_e2e`.
-- [ ] T010 [P] [BE] Agregar a `backend/src/config/env.ts` `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT`, con sus valores por defecto y la regla `min ≤ max ≤ tope` (research R7). Sumar al `test.env` de `backend/vitest.config.ts` valores de prueba bajos (ej. 1000 / 50000 / 100000) para ejercitar el tope diario.
-- [ ] T011 [P] [BE] Crear `backend/src/lib/money.ts`: `toSafeNumber(bigint)`, que lanza un error si `!Number.isSafeInteger` (Principio I). Prueba en `backend/tests/unit/money.test.ts`.
-- [ ] T012 [P] [BE] Crear `backend/src/lib/bogota-day.ts`: `startOfBogotaDay(now)`, el inicio del día calendario en `America/Bogota` con `Intl.DateTimeFormat`, sin librerías. Prueba en `backend/tests/unit/bogota-day.test.ts`, con casos a las 23:59 y 00:00 de Bogotá y en UTC.
-- [ ] T013 [BE] Crear `backend/src/lib/idempotency/idempotency.repository.ts` e `idempotency.service.ts` (research R5):
+- [X] T010 [P] [BE] Agregar a `backend/src/config/env.ts` `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT`, con sus valores por defecto y la regla `min ≤ max ≤ tope` (research R7). Sumar al `test.env` de `backend/vitest.config.ts` valores de prueba bajos (ej. 1000 / 50000 / 100000) para ejercitar el tope diario.
+- [X] T011 [P] [BE] Crear `backend/src/lib/money.ts`: `toSafeNumber(bigint)`, que lanza un error si `!Number.isSafeInteger` (Principio I). Prueba en `backend/tests/unit/money.test.ts`.
+- [X] T012 [P] [BE] Crear `backend/src/lib/bogota-day.ts`: `startOfBogotaDay(now)`, el inicio del día calendario en `America/Bogota` con `Intl.DateTimeFormat`, sin librerías. Prueba en `backend/tests/unit/bogota-day.test.ts`, con casos a las 23:59 y 00:00 de Bogotá y en UTC.
+
+  **Ajuste al implementar**: sus pruebas quedaron en `backend/tests/unit/money.test.ts`, junto con las de `toSafeNumber`.
+- [X] T013 [BE] Crear `backend/src/lib/idempotency/idempotency.repository.ts` e `idempotency.service.ts` (research R5):
   - `begin(tx, { userId, scope, key, body })`:
     - `INSERT … ON CONFLICT DO NOTHING RETURNING` sobre data-model.md `IdempotencyKey.user_id`, `IdempotencyKey.scope` e `IdempotencyKey.key`, con `IdempotencyKey.request_hash` = SHA-256 del cuerpo canónico (claves ordenadas) e `IdempotencyKey.expires_at` = +24 h;
     - devuelve `{ kind: 'new' }`, `{ kind: 'replay', status, body }` o lanza `IDEMPOTENCY_KEY_REUSED`;
   - `complete(tx, id, status, body)` guarda `IdempotencyKey.response_status` e `IdempotencyKey.response_body`;
   - `registerCleanup(maintenance)` borra las claves vencidas (`IdempotencyKey.created_at`, `IdempotencyKey.expires_at`).
-- [ ] T014 [BE] Crear el módulo `backend/src/modules/accounts/` con `accounts.repository.ts` y `accounts.service.ts` (research R1, R3, R4, R6):
+- [X] T014 [BE] Crear el módulo `backend/src/modules/accounts/` con `accounts.repository.ts` y `accounts.service.ts` (research R1, R3, R4, R6):
   - `ensureForUser(db, userId)`: `INSERT … ON CONFLICT (user_id) DO NOTHING` y lectura;
   - `lockForUpdate(tx, accountId)`: `SELECT … FOR UPDATE`;
   - `applyBalanceDelta(tx, accountId, delta)`: solo para `kind = student`, respetando el `CHECK` de data-model.md `Account.balance`;
   - `getSystemTopupsAccount(db)`.
 
   Conversión con `toSafeNumber`.
-- [ ] T015 [BE] Crear el módulo `backend/src/modules/ledger/` con `ledger.repository.ts` y `ledger.service.ts` (research R2, R8):
+- [X] T015 [BE] Crear el módulo `backend/src/modules/ledger/` con `ledger.repository.ts` y `ledger.service.ts` (research R2, R8):
   - `post(tx, { type, accountId, amount, description, lines, requestId })`:
     - inserta la operación `pending` (data-model.md `LedgerTransaction.status`) y sus asientos;
     - llama a `accounts.applyBalanceDelta` para las cuentas de estudiantes (nunca toca la tabla `accounts`);
@@ -115,15 +117,17 @@ Structure» en [plan.md](plan.md).
   - `listMovements(db, accountId, { cursor, limit })`: orden `(created_at DESC, id DESC)` y cursor opaco base64url;
   - `recentMovements(db, accountId, 5)`;
   - `sumTopupsSince(db, accountId, since)`.
-- [ ] T016 [BE] Crear `backend/tests/helpers/users.ts` con `createUserWithSession(t)`, que crea un usuario y devuelve un `TestAgent` con sesión, para las pruebas de la 002.
-- [ ] T017 [BE] Crear `backend/tests/integration/ledger-invariants.test.ts` (reglas de dominio 2 y 3, SC-003). Debe comprobar:
+
+  **Ajuste al implementar**: la composición de `accounts`, `ledger`, `topups` e idempotencia vive en `backend/src/modules/banking.module.ts`, que `app.ts` usa para montar los routers.
+- [X] T016 [BE] Crear `backend/tests/helpers/users.ts` con `createUserWithSession(t)`, que crea un usuario y devuelve un `TestAgent` con sesión, para las pruebas de la 002.
+- [X] T017 [BE] Crear `backend/tests/integration/ledger-invariants.test.ts` (reglas de dominio 2 y 3, SC-003). Debe comprobar:
   - insertar asientos que no suman cero falla al confirmar la transacción;
   - una operación con un solo asiento falla;
   - `UPDATE`, `DELETE` y `TRUNCATE` sobre `ledger_entries` fallan;
   - `completed → pending` falla en `ledger_transactions`;
   - un saldo de estudiante negativo falla por el `CHECK`;
   - tras varias recargas, la suma de todos los asientos es 0 y cada `balance` coincide con la suma de sus asientos.
-- [ ] T018 [BE] Generalizar `backend/tests/contract/openapi.contract.test.ts` (research R10):
+- [X] T018 [BE] Generalizar `backend/tests/contract/openapi.contract.test.ts` (research R10):
   - lee todos los `specs/*/contracts/*.json`;
   - compara cada operación generada con la del contrato que la define;
   - exige la unión exacta de operaciones (salvo `GET /openapi.json`).
@@ -151,14 +155,14 @@ Structure» en [plan.md](plan.md).
 
 ### [BE]
 
-- [ ] T022 [P] [US1] [BE] Crear `backend/tests/integration/accounts.test.ts`. Debe comprobar:
+- [X] T022 [P] [US1] [BE] Crear `backend/tests/integration/accounts.test.ts`. Debe comprobar:
   - `GET /api/v1/accounts/me` crea la cuenta con saldo 0 y `recentMovements` vacío (FR-001);
   - dos solicitudes simultáneas crean una sola cuenta;
   - un usuario existente sin cuenta la obtiene al primer acceso;
   - los movimientos recientes vienen ordenados y son máximo 5;
   - un estudiante nunca recibe datos de otro (FR-004);
   - sin sesión: 401.
-- [ ] T023 [US1] [BE] Crear `backend/src/modules/accounts/accounts.controller.ts` y `accounts.routes.ts` con `GET /api/v1/accounts/me` (`ensureForUser` más `ledger.recentMovements`; respuesta `AccountSummarySchema`), montarlo en `backend/src/app.ts` con `require-auth` y registrar la operación `getMyAccount` en `backend/src/openapi/registry.ts`.
+- [X] T023 [US1] [BE] Crear `backend/src/modules/accounts/accounts.controller.ts` y `accounts.routes.ts` con `GET /api/v1/accounts/me` (`ensureForUser` más `ledger.recentMovements`; respuesta `AccountSummarySchema`), montarlo en `backend/src/app.ts` con `require-auth` y registrar la operación `getMyAccount` en `backend/src/openapi/registry.ts`.
 
 ### [FE]
 
@@ -193,7 +197,7 @@ simulada +$50.000»; un doble envío no duplica.
 
 ### [BE]
 
-- [ ] T028 [P] [US2] [BE] Crear `backend/tests/integration/topups.test.ts`. Debe comprobar:
+- [X] T028 [P] [US2] [BE] Crear `backend/tests/integration/topups.test.ts`. Debe comprobar:
   - una recarga válida actualiza el saldo y crea el movimiento `completed` (FR-005, FR-008);
   - fuera de rango: 422 `TOPUP_AMOUNT_OUT_OF_RANGE` con `minAmount`/`maxAmount`;
   - tope diario: 422 `TOPUP_DAILY_LIMIT` con `remainingToday`, que se reinicia en el día siguiente de Bogotá (reloj falso);
@@ -207,7 +211,7 @@ simulada +$50.000»; un doble envío no duplica.
   - si falla a mitad (error forzado después de los asientos), no queda nada (FR-008);
   - se audita `TOPUP_COMPLETED` (FR-021);
   - `GET /topups/limits` devuelve los límites y lo que queda hoy.
-- [ ] T029 [US2] [BE] Crear `backend/src/modules/topups/topups.service.ts` con el flujo de plan.md («Flujo de `POST /topups`»), todo en una transacción:
+- [X] T029 [US2] [BE] Crear `backend/src/modules/topups/topups.service.ts` con el flujo de plan.md («Flujo de `POST /topups`»), todo en una transacción:
   - `ensureForUser` → `lockForUpdate` → `idempotency.begin`;
   - rango y tope con `startOfBogotaDay` y `ledger.sumTopupsSince`;
   - `ledger.post` con los asientos +monto al estudiante y −monto a la cuenta del sistema (data-model.md `LedgerEntry.amount`) y la descripción «Recarga simulada» (data-model.md `LedgerTransaction.description`);
@@ -215,7 +219,7 @@ simulada +$50.000»; un doble envío no duplica.
   - `idempotency.complete`.
 
   Agregar también `limits(userId)`.
-- [ ] T030 [US2] [BE] Crear `backend/src/modules/topups/topups.controller.ts` y `topups.routes.ts`:
+- [X] T030 [US2] [BE] Crear `backend/src/modules/topups/topups.controller.ts` y `topups.routes.ts`:
   - `GET /api/v1/topups/limits`;
   - `POST /api/v1/topups`, que valida `Idempotency-Key` (8–100) y el cuerpo con Zod y responde 201 (o la respuesta guardada).
 
@@ -260,14 +264,14 @@ siguientes sin repetir.
 
 ### [BE]
 
-- [ ] T035 [P] [US3] [BE] Crear `backend/tests/integration/movements.test.ts`. Debe comprobar:
+- [X] T035 [P] [US3] [BE] Crear `backend/tests/integration/movements.test.ts`. Debe comprobar:
   - la primera página de 20 en orden;
   - `nextCursor` trae la siguiente sin repetir ni saltar;
   - una recarga nueva entre páginas no desplaza el resultado (FR-020);
   - la última página trae `nextCursor` null;
   - un cursor inválido: 400;
   - aislamiento entre estudiantes.
-- [ ] T036 [US3] [BE] Agregar `GET /api/v1/accounts/me/movements` (`MovementsQuerySchema` → `ledger.listMovements`; respuesta `MovementsPageSchema`) en `backend/src/modules/accounts/accounts.controller.ts` y `accounts.routes.ts`, y registrar `listMyMovements` en `backend/src/openapi/registry.ts`.
+- [X] T036 [US3] [BE] Agregar `GET /api/v1/accounts/me/movements` (`MovementsQuerySchema` → `ledger.listMovements`; respuesta `MovementsPageSchema`) en `backend/src/modules/accounts/accounts.controller.ts` y `accounts.routes.ts`, y registrar `listMyMovements` en `backend/src/openapi/registry.ts`.
 
 ### [FE]
 
@@ -282,7 +286,7 @@ siguientes sin repetir.
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T040 [P] [BE] Agregar `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT` a la tabla de variables de `docs/despliegue.md`.
+- [X] T040 [P] [BE] Agregar `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT` a la tabla de variables de `docs/despliegue.md`.
 - [ ] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Medir además que el saldo aparece en menos de 2 s después de iniciar sesión (SC-001). Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
 - [ ] T042 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) (secciones 2–4, incluidas las consultas del libro contable) con todo integrado en `main`, antes de `/speckit-converge`.
 

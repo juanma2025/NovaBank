@@ -20,7 +20,13 @@ export function createTestApp(
   const clock = new FakeClock();
   const mail = new MemoryMailProvider();
   const logger = options.logger ?? createLogger('silent');
-  const { app, auth } = createApp({ config, prisma, logger, clock, rateLimits: false });
+  const { app, auth, banking } = createApp({
+    config,
+    prisma,
+    logger,
+    clock,
+    rateLimits: false,
+  });
   const worker = new OutboxWorker(prisma, mail, clock, logger);
   const maintenance = new Maintenance(clock, logger);
   registerAuthJobs(worker, maintenance, { prisma, verification: auth.verification });
@@ -28,6 +34,7 @@ export function createTestApp(
   return {
     app,
     auth,
+    banking,
     config,
     prisma,
     clock,
