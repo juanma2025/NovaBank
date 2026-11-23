@@ -5,7 +5,9 @@ import { BalanceVisibilityStore } from '../features/accounts/services/balance-vi
 import { TopupService } from '../features/accounts/services/topup-service.ts';
 import { AuthService } from '../features/auth/services/auth-service.ts';
 import { SessionBroadcaster } from '../features/auth/services/session-broadcaster.ts';
+import { CardService } from '../features/cards/services/card-service.ts';
 import { ProfileService } from '../features/profile/services/profile-service.ts';
+import { StoreService } from '../features/store/services/store-service.ts';
 import { TransferService } from '../features/transfers/services/transfer-service.ts';
 import { httpClient, type HttpClient } from '../lib/api-client.ts';
 import { themeController, type ThemeController } from '../lib/theme-controller.ts';
@@ -17,6 +19,8 @@ export interface AuthServices {
   topupService: TopupService;
   transferService: TransferService;
   profileService: ProfileService;
+  cardService: CardService;
+  storeService: StoreService;
   balanceVisibilityStore: BalanceVisibilityStore;
   themeController: ThemeController;
   createBroadcaster: () => SessionBroadcaster;
@@ -29,6 +33,8 @@ export function createDefaultAuthServices(overrides?: Partial<AuthServices>): Au
   const topupService = overrides?.topupService ?? new TopupService(client);
   const transferService = overrides?.transferService ?? new TransferService(client);
   const profileService = overrides?.profileService ?? new ProfileService(client);
+  const cardService = overrides?.cardService ?? new CardService(client);
+  const storeService = overrides?.storeService ?? new StoreService(client);
   const balanceVisibilityStore = overrides?.balanceVisibilityStore ?? new BalanceVisibilityStore();
   const resolvedTheme = overrides?.themeController ?? themeController;
   const createBroadcaster = overrides?.createBroadcaster ?? (() => new SessionBroadcaster());
@@ -39,6 +45,8 @@ export function createDefaultAuthServices(overrides?: Partial<AuthServices>): Au
     topupService,
     transferService,
     profileService,
+    cardService,
+    storeService,
     balanceVisibilityStore,
     themeController: resolvedTheme,
     createBroadcaster,
