@@ -1,6 +1,6 @@
-/* Transiciones de la Landing Page (`transitions-dev`, tope constitucional ≤ 400 ms). */
+/* Transiciones de la experiencia pública (`transitions-dev`, tope constitucional ≤ 400 ms). */
 
-/* 18-texts-reveal — Entrada escalonada del titular y subtítulo del Hero (≤ 400 ms) */
+/* 18-texts-reveal — Entrada escalonada del titular y subtítulo (≤ 400 ms) */
 @keyframes t-stagger-in {
   from {
     opacity: 0;
@@ -33,57 +33,7 @@
   animation-delay: calc(var(--stagger-step) * 2);
 }
 
-/* 19-card-tilt — Inclinación 3D sutil con reflejo en escritorio (≤ 400 ms; sin efecto en táctil) */
-.t-tilt {
-  --tilt-perspective: 1000px;
-  --tilt-return: var(--duration-slow);
-  --tilt-follow: var(--duration-quick);
-  --tilt-ease: var(--ease-smooth-out);
-  --tilt-glare-opacity: 0.24;
-  --tilt-glare-fade: var(--duration-fast);
-  position: relative;
-}
-
-.t-tilt-card {
-  position: relative;
-  overflow: hidden;
-  transform: perspective(var(--tilt-perspective)) rotateX(var(--tilt-rx, 0deg))
-    rotateY(var(--tilt-ry, 0deg));
-  transform-style: preserve-3d;
-  transition: transform var(--tilt-return) var(--tilt-ease);
-  will-change: transform;
-}
-
-.t-tilt-card.is-tilting {
-  transition: transform var(--tilt-follow) var(--tilt-ease);
-}
-
-.t-tilt-glare {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  mix-blend-mode: screen;
-  background:
-    radial-gradient(
-      circle 110px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),
-      rgba(255, 255, 255, 0.36),
-      rgba(255, 255, 255, 0.05) 54%,
-      rgba(255, 255, 255, 0) 84%
-    ),
-    radial-gradient(
-      circle 240px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),
-      rgba(255, 255, 255, 0.14),
-      rgba(255, 255, 255, 0) 80%
-    );
-  transition: opacity var(--tilt-glare-fade) var(--tilt-ease);
-}
-
-.t-tilt.is-hover .t-tilt-glare {
-  opacity: var(--tilt-glare-opacity);
-}
-
-/* 24-learn-more-hover — Microinteracción de flecha en enlaces secundarios (350 ms) */
+/* 24-learn-more-hover — Microinteracción de flecha en enlaces a subpáginas (350 ms) */
 .t-learn {
   --learn-shift: 2px;
   --learn-spread: 8deg;
@@ -116,32 +66,11 @@
   transform: rotate(calc(var(--learn-spread) * -1));
 }
 
-/* Desactiva tilt 3D en dispositivos táctiles (sin hover o puntero grueso) */
-@media (hover: none), (pointer: coarse) {
-  .t-tilt-card {
-    transform: none !important;
-    transition: none !important;
-  }
-
-  .t-tilt-glare {
-    display: none;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .t-stagger.is-shown .t-stagger-line {
     animation: none !important;
     transform: none !important;
     filter: none !important;
-  }
-
-  .t-tilt-card {
-    transform: none !important;
-    transition: none !important;
-  }
-
-  .t-tilt-glare {
-    display: none;
   }
 
   .t-learn-chevron,

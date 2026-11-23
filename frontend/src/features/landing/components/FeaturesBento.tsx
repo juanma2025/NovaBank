@@ -1,21 +1,16 @@
 import { formatCOP } from '@nova/shared';
 import { ArrowLeftRight, Coins, CreditCard, EyeOff, PiggyBank, Users, Wallet } from 'lucide-react';
 
-import { TiltCard } from '../../../components/TiltCard.tsx';
+import { GlassCard } from '../../../components/GlassCard.tsx';
 import { LANDING_MESSAGES } from '../../../lib/messages.ts';
 
-/** Bento Grid adaptativo de características reales de Nova (1 col desde 360 px → 6 cols en lg). */
+/** Cuadrícula escaneable de capacidades de Nova (informativa, sin acciones falsas). */
 export function FeaturesBento() {
   const { cards } = LANDING_MESSAGES.features;
 
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-6">
-      {/* 1. Cuenta en COP y libro contable */}
-      <TiltCard
-        className="t-surface-enter md:col-span-2 lg:col-span-4"
-        maxTiltDeg={4}
-        cardClassName="flex h-full flex-col justify-between gap-6 p-6"
-      >
+      <GlassCard className="flex h-full flex-col justify-between gap-6 p-6 md:col-span-2 lg:col-span-4">
         <div className="space-y-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-border bg-brand-soft text-brand-text">
             <Wallet aria-hidden="true" className="h-5 w-5" />
@@ -37,14 +32,9 @@ export function FeaturesBento() {
             <span>{cards.copAccount.chipPrimary}</span>
           </span>
         </div>
-      </TiltCard>
+      </GlassCard>
 
-      {/* 2. Transferencias entre compañeros */}
-      <TiltCard
-        className="t-surface-enter lg:col-span-2"
-        maxTiltDeg={4}
-        cardClassName="flex h-full flex-col justify-between gap-6 p-6"
-      >
+      <GlassCard className="flex h-full flex-col justify-between gap-6 p-6 lg:col-span-2">
         <div className="space-y-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-border bg-brand-soft text-brand-text">
             <ArrowLeftRight aria-hidden="true" className="h-5 w-5" />
@@ -65,14 +55,9 @@ export function FeaturesBento() {
             {cards.transfers.chipDomain}
           </span>
         </div>
-      </TiltCard>
+      </GlassCard>
 
-      {/* 3. Tarjeta virtual simulada */}
-      <TiltCard
-        className="t-surface-enter lg:col-span-3"
-        maxTiltDeg={4}
-        cardClassName="flex h-full flex-col justify-between gap-6 p-6"
-      >
+      <GlassCard className="flex h-full flex-col justify-between gap-6 p-6 lg:col-span-3">
         <div className="space-y-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-border bg-brand-soft text-brand-text">
             <CreditCard aria-hidden="true" className="h-5 w-5" />
@@ -91,14 +76,9 @@ export function FeaturesBento() {
             {cards.virtualCard.chipStatus}
           </span>
         </div>
-      </TiltCard>
+      </GlassCard>
 
-      {/* 4. Metas de ahorro y presupuestos */}
-      <TiltCard
-        className="t-surface-enter lg:col-span-3"
-        maxTiltDeg={4}
-        cardClassName="flex h-full flex-col justify-between gap-6 p-6"
-      >
+      <GlassCard className="flex h-full flex-col justify-between gap-6 p-6 lg:col-span-3">
         <div className="space-y-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-border bg-success-bg text-success">
             <PiggyBank aria-hidden="true" className="h-5 w-5" />
@@ -125,14 +105,9 @@ export function FeaturesBento() {
             <div className="h-full w-[68%] rounded-[var(--radius-pill)] bg-brand" />
           </div>
         </div>
-      </TiltCard>
+      </GlassCard>
 
-      {/* 5. Gastos compartidos */}
-      <TiltCard
-        className="t-surface-enter lg:col-span-3"
-        maxTiltDeg={4}
-        cardClassName="flex h-full flex-col justify-between gap-6 p-6"
-      >
+      <GlassCard className="flex h-full flex-col justify-between gap-6 p-6 lg:col-span-3">
         <div className="space-y-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-border bg-brand-soft text-brand-text">
             <Users aria-hidden="true" className="h-5 w-5" />
@@ -149,14 +124,10 @@ export function FeaturesBento() {
             {cards.splits.splitCount}
           </span>
         </div>
-      </TiltCard>
+      </GlassCard>
 
-      {/* 6. Wallet cripto — Patrón «Muy pronto» (Principio IV, solo informativa) */}
-      <TiltCard
-        className="t-surface-enter lg:col-span-3"
-        maxTiltDeg={4}
-        cardClassName="flex h-full flex-col justify-between gap-5 p-6"
-      >
+      {/* Patrón «Muy pronto» (Principio IV): estrictamente informativa, cero acciones */}
+      <GlassCard className="flex h-full flex-col justify-between gap-5 p-6 lg:col-span-3">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-border bg-brand-violet/12 text-brand-violet">
@@ -171,7 +142,7 @@ export function FeaturesBento() {
           </h3>
           <p className="text-sm leading-relaxed text-text-secondary">{cards.crypto.description}</p>
         </div>
-      </TiltCard>
+      </GlassCard>
     </div>
   );
 }

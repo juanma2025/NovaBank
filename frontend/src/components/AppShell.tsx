@@ -106,7 +106,7 @@ export function AppShell({ children }: AppShellProps) {
       </header>
 
       {/* Menú lateral escritorio (≥ 1024 px) */}
-      <aside className="nova-glass sticky top-0 hidden h-dvh flex-col justify-between border-y-0 border-l-0 p-5 lg:flex">
+      <aside className="nova-glass-sidebar sticky top-0 hidden h-dvh flex-col justify-between p-5 lg:flex">
         <div className="space-y-8">
           <div className="flex items-start justify-between gap-2 px-2">
             <div className="space-y-1">

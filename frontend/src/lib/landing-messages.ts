@@ -1,4 +1,4 @@
-/** Textos en español (es-CO) para el selector de tema y la Landing Page pública de Nova. */
+/** Textos en español (es-CO) para el selector de tema y la experiencia pública multipágina de Nova. */
 
 export const THEME_MESSAGES = {
   switchToDark: 'Cambiar a modo oscuro',
@@ -8,20 +8,25 @@ export const THEME_MESSAGES = {
 export const LANDING_MESSAGES = {
   nav: {
     ariaLabel: 'Navegación principal',
-    whatIs: 'Qué es',
+    home: 'Inicio',
     features: 'Características',
-    forStudents: 'Para estudiantes',
+    students: 'Estudiantes',
     login: 'Iniciar sesión',
     register: 'Crear cuenta',
   },
-  hero: {
-    headline: 'La banca universitaria pensada para tu día a día en Colombia.',
+  home: {
+    headline: 'Tu banca universitaria en pesos colombianos.',
     subtitle:
-      'Administra tu cuenta estudiantil en pesos colombianos (COP) exactos, mueve dinero con tus compañeros y aprende finanzas digitales en un entorno académico rápido, claro y seguro.',
-    primaryCta: 'Crear cuenta',
-    secondaryCta: 'Iniciar sesión',
-    previewCaption:
-      'Vista previa ilustrativa · Entorno académico con dinero 100 % simulado en pesos colombianos (COP).',
+      'Administra tu cuenta estudiantil en COP exactos con libro contable inmutable, diseñada para tu día a día en la universidad.',
+    gateways: {
+      featuresTitle: 'Características',
+      featuresSummary: 'Cuenta en COP, transferencias, tarjeta virtual, metas y más.',
+      featuresAction: 'Ver características',
+      studentsTitle: 'Estudiantes',
+      studentsSummary: 'Correo institucional, sesiones seguras y Ley 1581 de 2012.',
+      studentsAction: 'Ver cómo funciona',
+    },
+    previewCaption: 'Vista previa ilustrativa · Dinero 100 % simulado en pesos colombianos (COP).',
     previewBalanceLabel: 'Saldo disponible',
     previewCurrency: 'COP',
     previewAccountTag: 'Cuenta verificada',
@@ -34,14 +39,14 @@ export const LANDING_MESSAGES = {
     previewMovementCampus: 'Cafetería Campus',
     previewMovementPeer: 'Transferencia · Laura M.',
   },
-  whatIs: {
+  features: {
     title: 'Qué hace Nova',
-    description:
-      'Nova es una banca virtual diseñada exclusivamente para estudiantes universitarios en Colombia. Cada operación queda registrada en un libro contable de doble entrada inmutable en pesos enteros, sin decimales, sin comisiones ocultas y con seguridad desde el primer acceso.',
+    subtitle:
+      'Una banca virtual académica con libro contable de doble entrada en pesos enteros (COP), diseñada con claridad modular para la vida universitaria.',
     highlights: [
       {
         metric: 'COP exacto',
-        label: 'Pesos enteros sin errores de redondeo ni punto flotante.',
+        label: 'Pesos enteros sin redondeos ni errores de punto flotante.',
       },
       {
         metric: 'Doble entrada',
@@ -52,30 +57,28 @@ export const LANDING_MESSAGES = {
         label: 'Dinero de demostración para probar flujos reales sin riesgo bancario.',
       },
     ],
-  },
-  features: {
-    title: 'Todo lo que construye tu experiencia bancaria',
-    subtitle:
-      'Una hoja de ruta modular diseñada con la claridad de las mejores apps financieras, adaptada a la vida universitaria.',
+    roadmapTitle: 'Capacidades de la plataforma',
+    roadmapSubtitle:
+      'Recorre los módulos que componen la experiencia Nova. Las funciones próximas se muestran solo de forma informativa.',
     cards: {
       copAccount: {
         title: 'Cuenta en COP exactos y libro contable',
         description:
-          'Consulta tu saldo en pesos enteros, ocúltalo con un toque en lugares públicos, recarga con dinero de demostración y revisa tu historial completo.',
+          'Consulta tu saldo en pesos enteros, ocúltalo con un toque en espacios públicos, realiza recargas simuladas y revisa cada movimiento.',
         chipPrimary: 'Saldo ocultable',
         chipSecondary: 'Recarga simulada',
       },
       transfers: {
         title: 'Transferencias entre compañeros',
         description:
-          'Envía dinero al instante usando el correo institucional o alias de otro estudiante verificado, con confirmación explícita y nota opcional.',
+          'Envía dinero usando el correo institucional o alias de otro estudiante verificado, con confirmación explícita y nota opcional.',
         chipAlias: '@ana.perez',
         chipDomain: 'ucc.edu.co',
       },
       virtualCard: {
         title: 'Tarjeta virtual simulada',
         description:
-          'Emite tarjetas virtuales, congélalas o descongélalas al instante y revela número completo o CVV únicamente tras reautenticación.',
+          'Emite tarjetas virtuales, congélalas al instante y revela número completo o CVV únicamente tras reautenticación.',
         chipStatus: 'Congelamiento inmediato',
         chipDigits: '•••• 4821',
       },
@@ -89,7 +92,7 @@ export const LANDING_MESSAGES = {
       splits: {
         title: 'Gastos compartidos',
         description:
-          'Divide salidas, copias o proyectos del grupo en partes claras para que cada compañero pague su aporte con total transparencia.',
+          'Divide salidas, copias o proyectos del grupo en partes claras para que cada compañero pague su aporte con transparencia.',
         splitLabel: 'Proyecto Ingeniería Web',
         splitCount: '3 integrantes',
       },
@@ -97,11 +100,12 @@ export const LANDING_MESSAGES = {
         title: 'Wallet cripto',
         badge: 'Muy pronto',
         description:
-          'En una próxima fase podrás explorar criptoactivos y conversiones a COP desde Nova. Por ahora es solo una vista informativa de nuestra hoja de ruta.',
+          'En una próxima fase podrás explorar criptoactivos y conversiones a COP desde Nova. Por ahora es una vista estrictamente informativa.',
       },
     },
+    nextRouteLabel: 'Conoce la seguridad y acceso para estudiantes',
   },
-  audience: {
+  students: {
     title: 'Diseñada para estudiantes universitarios en Colombia',
     subtitle:
       'El acceso es exclusivo para estudiantes con correo institucional verificado (como @ucc.edu.co en esta demo académica), garantizando un entorno confiable entre pares.',
@@ -112,29 +116,23 @@ export const LANDING_MESSAGES = {
           'Activación mediante código de 6 dígitos de un solo uso, con vigencia de 15 minutos e intentos limitados.',
       },
       {
-        title: 'Privacidad Ley 1581 de 2012',
-        description:
-          'Consentimiento explícito de tratamiento de datos personales y consulta transparente en cualquier momento.',
-        linkLabel: 'Leer política de datos',
-      },
-      {
         title: 'Sesiones seguras con cookies HttpOnly',
         description:
-          'Tokens rotativos protegidos del acceso desde scripts, cierre por inactividad de 15 min y límite máximo de 12 horas.',
+          'Cookies protegidas contra scripts con atributo SameSite=Strict, cierre por inactividad de 15 minutos y límite máximo de 12 horas.',
+      },
+      {
+        title: 'Privacidad Ley 1581 de 2012',
+        description:
+          'Consentimiento explícito de tratamiento de datos personales y consulta pública disponible en cualquier momento.',
+        linkLabel: 'Leer política de datos',
       },
       {
         title: 'Simulación académica honesta',
         description:
-          'Proyecto demostrativo de Ingeniería Web: no custodia fondos reales ni se conecta a redes bancarias ni pasarelas externas.',
+          'Proyecto demostrativo de Ingeniería Web: utiliza dinero 100 % simulado en COP y no custodia fondos reales ni se conecta a redes bancarias.',
       },
     ],
-  },
-  closing: {
-    title: 'Empieza con tu correo institucional en minutos',
-    description:
-      'Verifica tu cuenta estudiantil, prueba una recarga de demostración en COP y recorre la experiencia completa de Nova.',
-    primaryCta: 'Crear cuenta',
-    secondaryCta: 'Iniciar sesión',
+    nextRouteLabel: 'Explora las características de Nova',
   },
   footer: {
     privacy: 'Privacidad',

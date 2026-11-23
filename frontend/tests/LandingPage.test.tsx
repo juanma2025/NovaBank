@@ -1,5 +1,5 @@
 import type { SessionResponse } from '@nova/shared';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,13 +30,34 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe('LandingPage y selector de tema (/)', () => {
+function assertUniqueAuthButtonsInHeader() {
+  const header = screen.getByRole('banner');
+  const main = screen.getByRole('main');
+  const footer = screen.getByRole('contentinfo');
+
+  const allLogin = screen.getAllByRole('link', { name: /^iniciar sesión$/i });
+  const allRegister = screen.getAllByRole('link', { name: /^crear cuenta$/i });
+  expect(allLogin).toHaveLength(1);
+  expect(allRegister).toHaveLength(1);
+  expect(allLogin[0]?.getAttribute('href')).toBe('/ingresar');
+  expect(allRegister[0]?.getAttribute('href')).toBe('/registro');
+
+  expect(within(header).getByRole('link', { name: /^iniciar sesión$/i })).toBeTruthy();
+  expect(within(header).getByRole('link', { name: /^crear cuenta$/i })).toBeTruthy();
+  expect(within(main).queryByRole('link', { name: /^iniciar sesión$/i })).toBeNull();
+  expect(within(main).queryByRole('link', { name: /^crear cuenta$/i })).toBeNull();
+  expect(within(footer).queryByRole('link', { name: /^iniciar sesión$/i })).toBeNull();
+  expect(within(footer).queryByRole('link', { name: /^crear cuenta$/i })).toBeNull();
+}
+
+describe('Experiencia pública multipágina y selector de tema', () => {
   beforeEach(() => {
     window.localStorage.clear();
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('renderiza la Landing Page en / sin sesión con landmarks, accesos, características, público objetivo y «Muy pronto»', async () => {
+  it('renderiza / minimalista y navega por el navbar a /caracteristicas y /estudiantes con botones únicos en el navbar', async () => {
+    const user = userEvent.setup();
     const queryClient = createAppQueryClient();
     queryClient.setQueryData(SESSION_QUERY_KEY, null);
     const controller = new ThemeController({ targetElement: document.documentElement });
@@ -49,48 +70,70 @@ describe('LandingPage y selector de tema (/)', () => {
       </AppProviders>,
     );
 
+    // Portada minimalista en /
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: /la banca universitaria pensada para tu día a día/i,
+        name: /tu banca universitaria en pesos colombianos/i,
       }),
     ).toBeTruthy();
 
-    // Landmarks semánticos WCAG
     expect(screen.getByRole('banner')).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: /navegación principal/i })).toBeTruthy();
     expect(screen.getByRole('main')).toBeTruthy();
     expect(screen.getByRole('contentinfo')).toBeTruthy();
+    expect(screen.getByText(/vista previa ilustrativa/i)).toBeTruthy();
+    expect(screen.getByText(/proyecto académico de ingeniería web/i)).toBeTruthy();
+    expect(
+      within(screen.getByRole('contentinfo')).getByRole('link', { name: /privacidad/i }),
+    ).toBeTruthy();
 
-    // Accesos visibles a /ingresar y /registro
-    const loginLinks = screen.getAllByRole('link', { name: /iniciar sesión/i });
-    const registerLinks = screen.getAllByRole('link', { name: /crear cuenta/i });
-    expect(loginLinks.length).toBeGreaterThanOrEqual(2);
-    expect(registerLinks.length).toBeGreaterThanOrEqual(2);
-    expect(loginLinks.every((el) => el.getAttribute('href') === '/ingresar')).toBe(true);
-    expect(registerLinks.every((el) => el.getAttribute('href') === '/registro')).toBe(true);
+    assertUniqueAuthButtonsInHeader();
 
-    // Secciones de valor, Bento Grid, público objetivo y patrón «Muy pronto»
-    expect(screen.getByRole('heading', { name: /qué hace nova/i })).toBeTruthy();
+    // Navegación a /caracteristicas desde el navbar
+    const nav = screen.getByRole('navigation', { name: /navegación principal/i });
+    await user.click(within(nav).getByRole('link', { name: /^características$/i }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: /qué hace nova/i })).toBeTruthy();
     expect(screen.getByText(/cuenta en cop exactos y libro contable/i)).toBeTruthy();
     expect(screen.getByText(/transferencias entre compañeros/i)).toBeTruthy();
     expect(screen.getByText(/tarjeta virtual simulada/i)).toBeTruthy();
     expect(screen.getByText(/metas de ahorro y presupuestos/i)).toBeTruthy();
     expect(screen.getByText(/gastos compartidos/i)).toBeTruthy();
-    expect(screen.getByText(/wallet cripto/i)).toBeTruthy();
-    expect(screen.getByText(/muy pronto/i)).toBeTruthy();
+
+    // Patrón «Muy pronto» sin acciones interactivas en Wallet cripto
+    const cryptoHeading = screen.getByRole('heading', { name: /wallet cripto/i });
+    const cryptoCard = cryptoHeading.closest('.nova-glass');
+    expect(cryptoCard).not.toBeNull();
+    if (cryptoCard instanceof HTMLElement) {
+      expect(within(cryptoCard).getByText(/muy pronto/i)).toBeTruthy();
+      expect(within(cryptoCard).queryByRole('button')).toBeNull();
+      expect(within(cryptoCard).queryByRole('link')).toBeNull();
+    }
+
+    assertUniqueAuthButtonsInHeader();
+
+    // Navegación a /estudiantes desde el navbar
+    const navOnFeatures = screen.getByRole('navigation', { name: /navegación principal/i });
+    await user.click(within(navOnFeatures).getByRole('link', { name: /^estudiantes$/i }));
+
     expect(
-      screen.getByRole('heading', {
+      await screen.findByRole('heading', {
+        level: 1,
         name: /diseñada para estudiantes universitarios en colombia/i,
       }),
     ).toBeTruthy();
+    expect(screen.getByText(/verificación por correo institucional/i)).toBeTruthy();
+    expect(screen.getByText(/sesiones seguras con cookies httponly/i)).toBeTruthy();
     expect(screen.getByRole('link', { name: /leer política de datos/i }).getAttribute('href')).toBe(
       '/privacidad',
     );
 
+    assertUniqueAuthButtonsInHeader();
     controller.dispose();
   });
 
-  it('permite alternar entre modo claro y oscuro con ThemeToggle actualizando data-theme y ARIA', async () => {
+  it('alterna tema claro y oscuro con ThemeToggle actualizando data-theme, ARIA y localStorage', async () => {
     const user = userEvent.setup();
     const queryClient = createAppQueryClient();
     queryClient.setQueryData(SESSION_QUERY_KEY, null);
@@ -121,7 +164,7 @@ describe('LandingPage y selector de tema (/)', () => {
     controller.dispose();
   });
 
-  it('redirige automáticamente de / a /inicio cuando ya existe sesión activa', async () => {
+  it('redirige automáticamente de / a /inicio cuando existe sesión activa y expone ThemeToggle en AppShell', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       jsonResponse({
         id: '33333333-3333-4333-8333-333333333333',
@@ -145,5 +188,8 @@ describe('LandingPage y selector de tema (/)', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Hola, Ana' })).toBeTruthy();
     });
+    expect(
+      screen.getAllByRole('button', { name: /cambiar a modo (oscuro|claro)/i }).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });
