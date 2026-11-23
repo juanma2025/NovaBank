@@ -51,6 +51,7 @@ enum AuditEventType {
   SESSION_ENDED
   PASSWORD_RESET_REQUESTED
   PASSWORD_RESET_COMPLETED
+  TOPUP_COMPLETED
 
   @@map("audit_event_type")
 }
@@ -77,17 +78,19 @@ enum OutboxStatus {
 
 /// data-model.md · User (spec: «Estudiante»)
 model User {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email             String    @unique @db.VarChar(254)
-  fullName          String    @map("full_name") @db.VarChar(100)
-  passwordHash      String    @map("password_hash")
-  passwordChangedAt DateTime  @map("password_changed_at") @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String   @unique @db.VarChar(254)
+  fullName          String   @map("full_name") @db.VarChar(100)
+  passwordHash      String   @map("password_hash")
+  passwordChangedAt DateTime @map("password_changed_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  consent     DataConsent?
-  sessions    Session[]
-  auditEvents AuditEvent[]
+  consent         DataConsent?
+  sessions        Session[]
+  auditEvents     AuditEvent[]
+  account         Account?
+  idempotencyKeys IdempotencyKey[]
 
   @@map("users")
 }
@@ -211,4 +214,112 @@ model RateLimitHit {
   resetAt DateTime @map("reset_at") @db.Timestamptz(6)
 
   @@map("rate_limit_hits")
+}
+
+// =============================================================================
+// Spec 002 — cuentas, libro contable e idempotencia (specs/002-cuentas-ledger/data-model.md)
+// =============================================================================
+
+enum AccountKind {
+  student
+  system_topups
+
+  @@map("account_kind")
+}
+
+enum AccountStatus {
+  active
+
+  @@map("account_status")
+}
+
+enum LedgerTransactionType {
+  topup
+
+  @@map("ledger_transaction_type")
+}
+
+enum LedgerTransactionStatus {
+  pending
+  completed
+  failed
+  reversed
+
+  @@map("ledger_transaction_status")
+}
+
+/// data-model.md · Account (spec: «Cuenta» y «Cuenta del sistema»). Dueño: módulo accounts.
+model Account {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind      AccountKind
+  userId    String?       @unique @map("user_id") @db.Uuid
+  currency  String        @default("COP") @db.Char(3)
+  /// Materializado solo para kind = student (research R3).
+  balance   BigInt        @default(0)
+  status    AccountStatus @default(active)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user         User?               @relation(fields: [userId], references: [id])
+  entries      LedgerEntry[]
+  transactions LedgerTransaction[]
+
+  @@map("accounts")
+}
+
+/// data-model.md · LedgerTransaction (spec: «Operación»). Dueño: módulo ledger.
+model LedgerTransaction {
+  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type        LedgerTransactionType
+  status      LedgerTransactionStatus
+  accountId   String                  @map("account_id") @db.Uuid
+  amount      BigInt
+  description String                  @db.VarChar(140)
+  reversalOf  String?                 @map("reversal_of") @db.Uuid
+  requestId   String                  @map("request_id") @db.Uuid
+  createdAt   DateTime                @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime?               @map("completed_at") @db.Timestamptz(6)
+
+  account   Account             @relation(fields: [accountId], references: [id])
+  reversed  LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
+  reversals LedgerTransaction[] @relation("Reversal")
+  entries   LedgerEntry[]
+
+  @@index([accountId, type, createdAt])
+  @@map("ledger_transactions")
+}
+
+/// data-model.md · LedgerEntry (spec: «Asiento contable»). Inmutable por triggers.
+model LedgerEntry {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId String   @map("transaction_id") @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  /// Positivo acredita, negativo debita.
+  amount        BigInt
+  createdAt     DateTime @map("created_at") @db.Timestamptz(6)
+
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+  account     Account           @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([transactionId])
+  @@map("ledger_entries")
+}
+
+/// data-model.md · IdempotencyKey. Dueño: lib/idempotency.
+model IdempotencyKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  scope          String   @db.VarChar(40)
+  key            String   @db.VarChar(100)
+  requestHash    String   @map("request_hash") @db.Char(64)
+  responseStatus Int?     @map("response_status") @db.SmallInt
+  responseBody   Json?    @map("response_body")
+  createdAt      DateTime @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }
