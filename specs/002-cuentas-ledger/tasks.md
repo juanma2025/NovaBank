@@ -41,30 +41,32 @@ Structure» en [plan.md](plan.md).
 
 ### [SH] Contrato en código — se integra con la rama de definición
 
-- [ ] T001 [P] [SH] Crear `shared/src/money.ts` con utilidades de dinero puras (research R9):
+- [X] T001 [P] [SH] Crear `shared/src/money.ts` con utilidades de dinero puras (research R9):
   - `MoneyAmountSchema`: entero, ≥ 1 y ≤ `Number.MAX_SAFE_INTEGER`;
   - `SignedMoneySchema`: entero seguro, distinto de 0;
   - `formatCOP(amount)`: `Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })`;
   - `parseCOPInput(text)`: acepta «50000», «50.000» y «$50.000» (con espacios); devuelve el entero o `null` si hay decimales, negativos, letras o desborda.
 
   Pruebas en `shared/src/money.test.ts`.
-- [ ] T002 [P] [SH] Agregar a `shared/src/constants.ts`: `SUGGESTED_TOPUP_AMOUNTS = [20_000, 50_000, 100_000]`, `IDEMPOTENCY_HEADER = 'Idempotency-Key'`, `MOVEMENTS_PAGE_SIZE = 20` y `RECENT_MOVEMENTS = 5`.
-- [ ] T003 [SH] En `shared/src/errors.ts`:
+- [X] T002 [P] [SH] Agregar a `shared/src/constants.ts`: `SUGGESTED_TOPUP_AMOUNTS = [20_000, 50_000, 100_000]`, `IDEMPOTENCY_HEADER = 'Idempotency-Key'`, `MOVEMENTS_PAGE_SIZE = 20` y `RECENT_MOVEMENTS = 5`.
+- [X] T003 [SH] En `shared/src/errors.ts`:
   - agregar a `ERROR_CODES` los códigos `TOPUP_AMOUNT_OUT_OF_RANGE`, `TOPUP_DAILY_LIMIT` e `IDEMPOTENCY_KEY_REUSED`;
   - agregar a `ErrorDetailsSchema` `minAmount`, `maxAmount` y `remainingToday` (opcionales), según `ErrorResponse` de [contracts/accounts.openapi.json](contracts/accounts.openapi.json).
-- [ ] T004 [SH] Crear `shared/src/accounts.schemas.ts`, cada esquema igual a su `components.schemas` del contrato de la 002:
+
+  **Ajuste al implementar**: como `ERROR_MESSAGES` y `ERROR_STATUS` del backend están tipados con todos los códigos, se agregaron sus 3 entradas (`backend/src/lib/error-messages.ts`, `backend/src/lib/errors.ts`) en la rama de definición para que el CI siga en verde. Lo mismo hará falta en `frontend/src/lib/messages.ts` si el frontend llega a `main` antes que esta definición.
+- [X] T004 [SH] Crear `shared/src/accounts.schemas.ts`, cada esquema igual a su `components.schemas` del contrato de la 002:
   - `MovementTypeSchema`, `LedgerTransactionStatusSchema`, `MovementSchema`;
   - `AccountSummarySchema`, `MovementsPageSchema`;
   - `MovementsQuerySchema`: `cursor` opcional de hasta 200 caracteres y `limit` de 1 a 20, por defecto 20, con coerción desde query string;
   - `TopupLimitsSchema`, `CreateTopupRequestSchema` (estricto) y `TopupResultSchema`.
 
   Exportar los tipos con `z.infer` y reexportar todo en `shared/src/index.ts`, junto con `money.ts`.
-- [ ] T005 [P] [SH] Pruebas en `shared/src/accounts.schemas.test.ts`: los ejemplos del contrato son válidos, `CreateTopupRequest` rechaza campos extra y decimales, y `MovementsQuery` aplica el valor por defecto y los límites.
-- [ ] T006 [SH] Generalizar `shared/src/contract.test.ts` a todas las specs (research R10):
+- [X] T005 [P] [SH] Pruebas en `shared/src/accounts.schemas.test.ts`: los ejemplos del contrato son válidos, `CreateTopupRequest` rechaza campos extra y decimales, y `MovementsQuery` aplica el valor por defecto y los límites.
+- [X] T006 [SH] Generalizar `shared/src/contract.test.ts` a todas las specs (research R10):
   - lee todos los `specs/*/contracts/*.json`;
   - comprueba que `ERROR_CODES` es exactamente la unión de sus `ErrorCode`;
   - comprueba que los enums de `details` son los del contrato que los define.
-- [ ] T007 [P] [SH] Agregar a `.env.example` `TOPUP_MIN_AMOUNT=1000`, `TOPUP_MAX_AMOUNT=500000` y `TOPUP_DAILY_LIMIT=2000000`, con un comentario cada una (plan, «Nuevas variables de entorno»).
+- [X] T007 [P] [SH] Agregar a `.env.example` `TOPUP_MIN_AMOUNT=1000`, `TOPUP_MAX_AMOUNT=500000` y `TOPUP_DAILY_LIMIT=2000000`, con un comentario cada una (plan, «Nuevas variables de entorno»).
 
 **Checkpoint de definición**: PR de `002-cuentas-ledger` → `main`. Al integrarlo, el contrato de la
 002 queda congelado.

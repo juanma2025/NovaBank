@@ -27,4 +27,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   RATE_LIMITED: 'Hiciste demasiadas solicitudes. Intenta más tarde.',
   NOT_FOUND: 'No encontramos lo que buscas.',
   INTERNAL_ERROR: 'Ocurrió un error inesperado. Intenta de nuevo en unos minutos.',
+  // Spec 002
+  TOPUP_AMOUNT_OUT_OF_RANGE: 'El monto está fuera del rango permitido para recargar.',
+  TOPUP_DAILY_LIMIT: 'Superas el tope diario de recargas.',
+  IDEMPOTENCY_KEY_REUSED: 'Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.',
 };
