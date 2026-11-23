@@ -27,26 +27,26 @@ description: "Task list for 005-metas-ahorro"
 
 ### [SH] Contrato en código — rama de definición
 
-- [ ] T001 [P] [SH] Crear `shared/src/savings.ts`:
+- [X] T001 [P] [SH] Crear `shared/src/savings.ts`:
   - `MAX_ACTIVE_GOALS = 5`, `GOAL_NAME_MAX_LENGTH = 40`, `SAVINGS_TARGET_MIN = 1000`, `SAVINGS_TARGET_MAX = 100_000_000` y `GOAL_DATE_MAX_YEARS = 10`;
   - `goalProgress({ balance, targetAmount, targetDate }, today)` → `{ percent (0–100), remaining, completed, overdue, suggestedMonthly }` (research R8; spec, edge cases «Ahorro sugerido por mes» y «Fecha límite»).
 
   Pruebas en `shared/src/savings.test.ts`: 0 %, 8 % redondeado hacia abajo, 100 % con saldo mayor al objetivo, sin fecha, fecha vencida y meses restantes con mínimo 1.
-- [ ] T002 [SH] Agregar `savings_deposit` y `savings_withdrawal` a `MovementTypeSchema` en `shared/src/accounts.schemas.ts` (research R9).
-- [ ] T003 [SH] Agregar a `shared/src/errors.ts` los códigos `GOAL_LIMIT_REACHED`, `GOAL_CLOSED`, `SAVINGS_AMOUNT_OUT_OF_RANGE` y `SAVINGS_DAILY_LIMIT`.
+- [X] T002 [SH] Agregar `savings_deposit` y `savings_withdrawal` a `MovementTypeSchema` en `shared/src/accounts.schemas.ts` (research R9).
+- [X] T003 [SH] Agregar a `shared/src/errors.ts` los códigos `GOAL_LIMIT_REACHED`, `GOAL_CLOSED`, `SAVINGS_AMOUNT_OUT_OF_RANGE` y `SAVINGS_DAILY_LIMIT`.
 
   Agregar sus mensajes y estados HTTP en `backend/src/lib/error-messages.ts` y `backend/src/lib/errors.ts`: 409 `GOAL_CLOSED`; 422 los demás.
-- [ ] T004 [SH] Crear `shared/src/savings.schemas.ts`, cada esquema igual a [contracts/savings.openapi.json](contracts/savings.openapi.json):
+- [X] T004 [SH] Crear `shared/src/savings.schemas.ts`, cada esquema igual a [contracts/savings.openapi.json](contracts/savings.openapi.json):
   - `GoalStatusSchema`, `GoalSchema`, `GoalListSchema`;
   - `CreateGoalRequestSchema` y `UpdateGoalRequestSchema` (estrictos; nombre recortado; fecha `AAAA-MM-DD` válida o `null`; `UpdateGoalRequestSchema` exige al menos un campo);
   - `SavingsAmountRequestSchema`, `SavingsMovementResultSchema`, `CloseGoalResultSchema`;
   - `SavingsLimitsSchema`, `GoalMovementsQuerySchema`.
 
   Reexportar `savings.ts` y `savings.schemas.ts` en `shared/src/index.ts`.
-- [ ] T005 [P] [SH] Pruebas:
+- [X] T005 [P] [SH] Pruebas:
   - en `shared/src/savings.schemas.test.ts`: nombre recortado y límites; objetivo fuera de rango; fecha `2026-02-30` inválida; `targetDate: null`; actualización vacía rechazada; campos extra;
   - en `shared/src/contract.test.ts`: `Movement` es igual en los contratos de la 002 a la 005, y los ejemplos del contrato de la 005 son válidos.
-- [ ] T006 [P] [SH] Agregar a `.env.example` `SAVINGS_MIN_AMOUNT=1000`, `SAVINGS_MAX_AMOUNT=2000000` y `SAVINGS_DAILY_LIMIT=5000000`, y las 8 operaciones de la 005 a `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
+- [X] T006 [P] [SH] Agregar a `.env.example` `SAVINGS_MIN_AMOUNT=1000`, `SAVINGS_MAX_AMOUNT=2000000` y `SAVINGS_DAILY_LIMIT=5000000`, y las 8 operaciones de la 005 a `PENDING_BACKEND` en `backend/tests/contract/openapi.contract.test.ts`.
 
 **Checkpoint de definición**: PR → `main`. Ambos aprueban también el cambio de `Movement`.
 

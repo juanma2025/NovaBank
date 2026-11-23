@@ -34,6 +34,7 @@ import {
   CreateCardPaymentRequestSchema,
 } from './cards.schemas.js';
 import { partialName } from './names.js';
+import { CreateGoalRequestSchema, GoalSchema } from './savings.schemas.js';
 import {
   CreateTransferRequestSchema,
   RecipientPreviewSchema,
@@ -82,6 +83,7 @@ const auth = contractFile('auth.openapi.json');
 const accounts = contractFile('accounts.openapi.json');
 const transfers = contractFile('transfers.openapi.json');
 const cards = contractFile('cards.openapi.json');
+const savings = contractFile('savings.openapi.json');
 
 describe('contratos: códigos y enums', () => {
   it('hay al menos un contrato por spec', () => {
@@ -216,6 +218,31 @@ describe('contratos: tarjetas y tienda de la 004', () => {
         cardNumber: req?.cardNumber?.examples?.[0],
         expiry: req?.expiry?.examples?.[0],
         cvv: req?.cvv?.examples?.[0],
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe('contratos: metas de ahorro de la 005', () => {
+  it('Movement es igual en los contratos de la 002 a la 005', () => {
+    for (const contract of [transfers, cards, savings]) {
+      expect(schema(contract, 'Movement'), contract.file).toEqual(schema(accounts, 'Movement'));
+    }
+  });
+
+  it('Goal tiene los campos del contrato', () => {
+    expect(Object.keys(GoalSchema.shape).sort()).toEqual(
+      [...(schema(savings, 'Goal').required ?? [])].sort(),
+    );
+  });
+
+  it('los ejemplos del contrato son válidos', () => {
+    const props = schema(savings, 'CreateGoalRequest').properties;
+    expect(
+      CreateGoalRequestSchema.safeParse({
+        name: props?.name?.examples?.[0],
+        targetAmount: props?.targetAmount?.examples?.[0],
+        targetDate: null,
       }).success,
     ).toBe(true);
   });

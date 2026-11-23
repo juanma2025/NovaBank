@@ -49,4 +49,9 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   CARD_PAYMENTS_LOCKED: 'Demasiados pagos rechazados. Espera unos minutos.',
   PAYMENT_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
   PAYMENT_DAILY_LIMIT: 'Superas el tope diario de pagos con tarjeta.',
+  // Spec 005
+  GOAL_LIMIT_REACHED: 'Alcanzaste el máximo de 5 metas activas. Cierra una para crear otra.',
+  GOAL_CLOSED: 'Esta meta está cerrada.',
+  SAVINGS_AMOUNT_OUT_OF_RANGE: 'El monto está fuera de los límites permitidos.',
+  SAVINGS_DAILY_LIMIT: 'Superas el tope diario de movimientos entre tu cuenta y tus metas.',
 };
