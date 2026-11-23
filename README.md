@@ -39,7 +39,7 @@ Al cerrar cada etapa, actualiza su columna: `Pendiente` → `En curso` → `List
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 001 | `001-auth-onboarding` | Registro con correo institucional, verificación por código, aceptación de Habeas Data, login, sesión y cierre de sesión. Incluye la base del proyecto (estructura, Docker Compose, CI). | — | Listo | Listo | En curso |
 | 002 | `002-cuentas-ledger` | Cuenta en COP, libro contable de doble entrada, recarga simulada, pantalla de inicio con saldo y movimientos, tarjeta «Muy pronto» de cripto. | 001 | Listo | Listo | Pendiente |
-| 003 | `003-transferencias` | Envíos entre estudiantes verificados por correo o alias, idempotencia y límites. | 002 | Listo | Pendiente | Pendiente |
+| 003 | `003-transferencias` | Envíos entre estudiantes verificados por correo o alias, idempotencia y límites. | 002 | Listo | Listo | Pendiente |
 | 004 | `004-tarjeta-virtual` | Emitir, congelar, ver datos con reautenticación y pagos simulados. | 002 | Pendiente | Pendiente | Pendiente |
 | 005 | `005-metas-ahorro` | Crear metas, aportar y retirar. | 002 | Pendiente | Pendiente | Pendiente |
 | 006 | `006-presupuesto` | Presupuesto mensual por categorías con alertas. | 002 | Pendiente | Pendiente | Pendiente |

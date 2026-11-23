@@ -60,7 +60,13 @@ export function createApp(deps: AppDeps): NovaApp {
   const auth = createAuthModule({ config, prisma, clock, audit, logger }, limiters);
   const banking = createBankingModules(
     { config, prisma, clock, audit, logger },
-    { requireAuth: createRequireAuth(auth.sessions), topupsLimiter: limiters.topups },
+    {
+      requireAuth: createRequireAuth(auth.sessions),
+      topupsLimiter: limiters.topups,
+      recipientLookupLimiter: limiters.recipientLookup,
+      transfersLimiter: limiters.transfers,
+    },
+    { directory: auth.directory, reauth: auth.reauth },
   );
   const openApiDocument = buildOpenApiDocument();
 
@@ -74,6 +80,8 @@ export function createApp(deps: AppDeps): NovaApp {
   api.use('/auth', auth.router);
   api.use('/accounts', banking.accountsRouter);
   api.use('/topups', banking.topupsRouter);
+  api.use('/profile', banking.profileRouter);
+  api.use('/transfers', banking.transfersRouter);
   api.use(apiNotFound);
   app.use('/api/v1', api);
   app.use('/api', apiNotFound);

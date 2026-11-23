@@ -52,6 +52,8 @@ enum AuditEventType {
   PASSWORD_RESET_REQUESTED
   PASSWORD_RESET_COMPLETED
   TOPUP_COMPLETED
+  TRANSFER_COMPLETED
+  ALIAS_CHANGED
 
   @@map("audit_event_type")
 }
@@ -91,6 +93,7 @@ model User {
   auditEvents     AuditEvent[]
   account         Account?
   idempotencyKeys IdempotencyKey[]
+  profile         Profile?
 
   @@map("users")
 }
@@ -235,6 +238,7 @@ enum AccountStatus {
 
 enum LedgerTransactionType {
   topup
+  transfer
 
   @@map("ledger_transaction_type")
 }
@@ -259,30 +263,37 @@ model Account {
   status    AccountStatus @default(active)
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  user         User?               @relation(fields: [userId], references: [id])
-  entries      LedgerEntry[]
-  transactions LedgerTransaction[]
+  user                     User?               @relation(fields: [userId], references: [id])
+  entries                  LedgerEntry[]
+  transactions             LedgerTransaction[]
+  /// Transferencias recibidas (spec 003).
+  counterpartyTransactions LedgerTransaction[] @relation("Counterparty")
 
   @@map("accounts")
 }
 
 /// data-model.md · LedgerTransaction (spec: «Operación»). Dueño: módulo ledger.
 model LedgerTransaction {
-  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type        LedgerTransactionType
-  status      LedgerTransactionStatus
-  accountId   String                  @map("account_id") @db.Uuid
-  amount      BigInt
-  description String                  @db.VarChar(140)
-  reversalOf  String?                 @map("reversal_of") @db.Uuid
-  requestId   String                  @map("request_id") @db.Uuid
-  createdAt   DateTime                @map("created_at") @db.Timestamptz(6)
-  completedAt DateTime?               @map("completed_at") @db.Timestamptz(6)
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                  LedgerTransactionType
+  status                LedgerTransactionStatus
+  accountId             String                  @map("account_id") @db.Uuid
+  amount                BigInt
+  description           String                  @db.VarChar(140)
+  /// Spec 003: cuenta del destinatario; obligatoria si type = transfer (CHECK en la migración).
+  counterpartyAccountId String?                 @map("counterparty_account_id") @db.Uuid
+  /// Spec 003: nota opcional de la transferencia.
+  note                  String?                 @db.VarChar(140)
+  reversalOf            String?                 @map("reversal_of") @db.Uuid
+  requestId             String                  @map("request_id") @db.Uuid
+  createdAt             DateTime                @map("created_at") @db.Timestamptz(6)
+  completedAt           DateTime?               @map("completed_at") @db.Timestamptz(6)
 
-  account   Account             @relation(fields: [accountId], references: [id])
-  reversed  LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
-  reversals LedgerTransaction[] @relation("Reversal")
-  entries   LedgerEntry[]
+  account      Account             @relation(fields: [accountId], references: [id])
+  counterparty Account?            @relation("Counterparty", fields: [counterpartyAccountId], references: [id], onDelete: Restrict)
+  reversed     LedgerTransaction?  @relation("Reversal", fields: [reversalOf], references: [id])
+  reversals    LedgerTransaction[] @relation("Reversal")
+  entries      LedgerEntry[]
 
   @@index([accountId, type, createdAt])
   @@map("ledger_transactions")
@@ -295,6 +306,8 @@ model LedgerEntry {
   accountId     String   @map("account_id") @db.Uuid
   /// Positivo acredita, negativo debita.
   amount        BigInt
+  /// Spec 003: descripción desde la cuenta del asiento («Transferencia a Ana P. G.»).
+  description   String?  @db.VarChar(140)
   createdAt     DateTime @map("created_at") @db.Timestamptz(6)
 
   transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
@@ -322,4 +335,16 @@ model IdempotencyKey {
   @@unique([userId, scope, key])
   @@index([expiresAt])
   @@map("idempotency_keys")
+}
+
+/// Spec 003 · alias del estudiante. Dueño: módulo profile (research R2).
+model Profile {
+  userId    String   @id @map("user_id") @db.Uuid
+  /// Normalizado (minúsculas, sin @); el CHECK de formato está en la migración.
+  alias     String?  @unique @db.VarChar(20)
+  updatedAt DateTime @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
 }

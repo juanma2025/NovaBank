@@ -123,6 +123,64 @@ describe('inmutabilidad y estados (FR-006, FR-007)', () => {
   });
 });
 
+describe('transferencias en el libro (spec 003, data-model.md)', () => {
+  function insertTransfer(counterpartyAccountId: string | null) {
+    return t.prisma.ledgerTransaction.create({
+      data: {
+        type: 'transfer',
+        status: 'pending',
+        accountId: studentId,
+        counterpartyAccountId,
+        amount: 1000n,
+        description: 'Prueba',
+        requestId: randomUUID(),
+        createdAt: new Date(),
+      },
+    });
+  }
+
+  it('una transferencia exige contraparte distinta de la cuenta de origen', async () => {
+    await expect(insertTransfer(null)).rejects.toThrow();
+    await expect(insertTransfer(studentId)).rejects.toThrow();
+  });
+
+  it('contraparte y nota no pueden cambiar al completar la operación', async () => {
+    const { userId } = await createUserWithSession(t, 'contraparte');
+    const other = (await t.banking.accounts.ensureForUser(t.prisma, userId)).id;
+    const op = await t.prisma.$transaction(async (tx) => {
+      const created = await tx.ledgerTransaction.create({
+        data: {
+          type: 'transfer',
+          status: 'pending',
+          accountId: studentId,
+          counterpartyAccountId: other,
+          note: 'original',
+          amount: 1n,
+          description: 'Prueba',
+          requestId: randomUUID(),
+          createdAt: new Date(),
+        },
+      });
+      await tx.ledgerEntry.createMany({
+        data: [
+          { transactionId: created.id, accountId: studentId, amount: -1n, createdAt: new Date() },
+          { transactionId: created.id, accountId: other, amount: 1n, createdAt: new Date() },
+        ],
+      });
+      return created;
+    });
+    for (const change of [{ note: 'cambiada' }, { counterpartyAccountId: systemId }]) {
+      await expect(
+        t.prisma.ledgerTransaction.update({
+          where: { id: op.id },
+          data: { status: 'completed', ...change },
+        }),
+        JSON.stringify(change),
+      ).rejects.toThrow(/solo status y completed_at/);
+    }
+  });
+});
+
 describe('saldo nunca negativo (regla de dominio 3)', () => {
   it('el CHECK rechaza un saldo de estudiante negativo', async () => {
     await expect(

@@ -49,6 +49,11 @@ const EnvSchema = z
     TOPUP_MIN_AMOUNT: z.coerce.number().int().min(1).default(1000),
     TOPUP_MAX_AMOUNT: z.coerce.number().int().min(1).default(500_000),
     TOPUP_DAILY_LIMIT: z.coerce.number().int().min(1).default(2_000_000),
+    // Spec 003: límites de transferencia en pesos enteros (research R9).
+    TRANSFER_MIN_AMOUNT: z.coerce.number().int().min(1).default(1000),
+    TRANSFER_MAX_AMOUNT: z.coerce.number().int().min(1).default(500_000),
+    TRANSFER_DAILY_LIMIT: z.coerce.number().int().min(1).default(1_000_000),
+    TRANSFER_REAUTH_THRESHOLD: z.coerce.number().int().min(1).default(200_000),
   })
   .superRefine((env, ctx) => {
     const overrides = [
@@ -71,6 +76,18 @@ const EnvSchema = z
         message: 'debe cumplirse TOPUP_MIN_AMOUNT ≤ TOPUP_MAX_AMOUNT ≤ TOPUP_DAILY_LIMIT',
       });
     }
+    if (!(
+      env.TRANSFER_MIN_AMOUNT <= env.TRANSFER_REAUTH_THRESHOLD &&
+      env.TRANSFER_REAUTH_THRESHOLD <= env.TRANSFER_MAX_AMOUNT &&
+      env.TRANSFER_MAX_AMOUNT <= env.TRANSFER_DAILY_LIMIT
+    )) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TRANSFER_REAUTH_THRESHOLD'],
+        message:
+          'debe cumplirse TRANSFER_MIN_AMOUNT ≤ TRANSFER_REAUTH_THRESHOLD ≤ TRANSFER_MAX_AMOUNT ≤ TRANSFER_DAILY_LIMIT',
+      });
+    }
     const timeout = env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS;
     const warning = env.SESSION_IDLE_WARNING_SECONDS_OVERRIDE ?? SESSION_IDLE_WARNING_SECONDS;
     if (warning >= timeout) {
@@ -87,6 +104,7 @@ export type Env = z.infer<typeof EnvSchema>;
 export interface AppConfig extends Env {
   session: { idleTimeoutSeconds: number; idleWarningSeconds: number };
   topups: { minAmount: number; maxAmount: number; dailyLimit: number };
+  transfers: { minAmount: number; maxAmount: number; dailyLimit: number; reauthThreshold: number };
 }
 
 export class EnvValidationError extends Error {
@@ -119,6 +137,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       minAmount: env.TOPUP_MIN_AMOUNT,
       maxAmount: env.TOPUP_MAX_AMOUNT,
       dailyLimit: env.TOPUP_DAILY_LIMIT,
+    },
+    transfers: {
+      minAmount: env.TRANSFER_MIN_AMOUNT,
+      maxAmount: env.TRANSFER_MAX_AMOUNT,
+      dailyLimit: env.TRANSFER_DAILY_LIMIT,
+      reauthThreshold: env.TRANSFER_REAUTH_THRESHOLD,
     },
     session: {
       idleTimeoutSeconds: env.SESSION_IDLE_TIMEOUT_SECONDS_OVERRIDE ?? SESSION_IDLE_TIMEOUT_SECONDS,

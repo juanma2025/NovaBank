@@ -89,16 +89,9 @@ const contractOps = new Map(contracts.flatMap((c) => operations(c)).map((o) => [
 /**
  * Operaciones con contrato aprobado cuyo backend aún no existe (la rama de definición congela el
  * contrato antes que el código). Cada tarea [BE] que implementa una la quita de aquí: si se
- * implementa sin quitarla, la prueba falla. Spec 003: T016 (transfers) y T023 (profile).
+ * implementa sin quitarla, la prueba falla.
  */
-const PENDING_BACKEND = new Set([
-  'GET /transfers/recipient',
-  'GET /transfers/limits',
-  'POST /transfers',
-  'GET /profile/me',
-  'PUT /profile/me/alias',
-  'DELETE /profile/me/alias',
-]);
+const PENDING_BACKEND = new Set<string>([]);
 
 describe('contratos OpenAPI de todas las specs', () => {
   it('hay contratos de varias specs y ninguna operación está definida dos veces', () => {

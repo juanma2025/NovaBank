@@ -26,6 +26,22 @@ export const accountsRepository = {
     return rows[0] ? db.account.findUnique({ where: { id } }) : null;
   },
 
+  /**
+   * Bloquea varias filas en orden ascendente de id (spec 003, research R6): dos transferencias
+   * cruzadas bloquean primero la misma cuenta y no se produce un deadlock.
+   */
+  async lockManyById(db: Db, ids: string[]): Promise<Account[]> {
+    const sorted = [...new Set(ids)].sort();
+    for (const id of sorted) {
+      await db.$queryRaw`SELECT id FROM accounts WHERE id = ${id}::uuid FOR UPDATE`;
+    }
+    return db.account.findMany({ where: { id: { in: sorted } } });
+  },
+
+  findStudentById(db: Db, id: string): Promise<Account | null> {
+    return db.account.findFirst({ where: { id, kind: 'student' } });
+  },
+
   /** Ajusta el saldo materializado, solo en cuentas de estudiantes (research R3). */
   async incrementStudentBalance(db: Db, id: string, delta: bigint): Promise<void> {
     await db.account.updateMany({

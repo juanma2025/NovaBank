@@ -14,8 +14,15 @@ export interface PostInput {
   accountId: string;
   amount: number;
   description: string;
-  /** Asientos con signo; deben sumar cero (la base lo exige al confirmar). */
-  lines: { accountId: string; amount: number }[];
+  /** Spec 003: cuenta del destinatario de una transferencia. */
+  counterpartyAccountId?: string;
+  /** Spec 003: nota opcional de la transferencia. */
+  note?: string | null;
+  /**
+   * Asientos con signo; deben sumar cero (la base lo exige al confirmar). `description` es el texto
+   * visto desde la cuenta del asiento (spec 003, research R5).
+   */
+  lines: { accountId: string; amount: number; description?: string }[];
   requestId: string;
 }
 
@@ -24,9 +31,9 @@ function toMovement(entry: EntryWithTransaction): Movement {
     id: entry.id,
     transactionId: entry.transactionId,
     type: entry.transaction.type,
-    description: entry.transaction.description,
-    // Provisional hasta T010 (spec 003): la columna `note` llega con la migración del backend.
-    note: null,
+    // La del asiento si existe (transferencias); si no, la de la operación (data-model.md, Movement).
+    description: entry.description ?? entry.transaction.description,
+    note: entry.transaction.note,
     amount: toSafeNumber(entry.amount),
     status: entry.transaction.status,
     createdAt: entry.createdAt.toISOString(),
@@ -74,6 +81,8 @@ export function createLedgerService(
       accountId: input.accountId,
       amount: BigInt(input.amount),
       description: input.description,
+      counterpartyAccountId: input.counterpartyAccountId ?? null,
+      note: input.note ?? null,
       requestId: input.requestId,
       createdAt: now,
     });
@@ -83,6 +92,7 @@ export function createLedgerService(
         transactionId: transaction.id,
         accountId: line.accountId,
         amount: BigInt(line.amount),
+        description: line.description ?? null,
         createdAt: now,
       })),
     );

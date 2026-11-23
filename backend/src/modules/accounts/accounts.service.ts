@@ -49,6 +49,25 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
   }
 
   /**
+   * Bloquea varias cuentas en orden de id (spec 003, research R6) y las devuelve en el orden pedido.
+   * Las ids deben ser distintas y existir.
+   */
+  async function lockManyForUpdate(tx: Db, accountIds: string[]): Promise<AccountView[]> {
+    const locked = await repo.lockManyById(tx, accountIds);
+    return accountIds.map((id) => {
+      const account = locked.find((a) => a.id === id);
+      if (!account) throw new Error(`cuenta inexistente: ${id}`);
+      return toView(account);
+    });
+  }
+
+  /** Cuenta de estudiante por id, o null si no existe o no es de estudiante (spec 003). */
+  async function findStudentAccountById(db: Db, accountId: string): Promise<AccountView | null> {
+    const account = await repo.findStudentById(db, accountId);
+    return account ? toView(account) : null;
+  }
+
+  /**
    * Aplica un cambio al saldo materializado. Solo afecta cuentas de estudiantes; el CHECK de la
    * base rechaza un saldo negativo (data-model.md `Account.balance`).
    */
@@ -64,7 +83,14 @@ export function createAccountsService(ctx: Pick<ModuleContext, 'clock'>) {
     return system.id;
   }
 
-  return { ensureForUser, lockForUpdate, applyBalanceDelta, getSystemTopupsAccountId };
+  return {
+    ensureForUser,
+    lockForUpdate,
+    lockManyForUpdate,
+    findStudentAccountById,
+    applyBalanceDelta,
+    getSystemTopupsAccountId,
+  };
 }
 
 export type AccountsService = ReturnType<typeof createAccountsService>;

@@ -1,12 +1,9 @@
-import { CreateTopupRequestSchema, IDEMPOTENCY_HEADER } from '@nova/shared';
+import { CreateTopupRequestSchema } from '@nova/shared';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
 
-import { appError } from '../../lib/errors.js';
+import { readIdempotencyKey } from '../../lib/idempotency/idempotency-key.js';
 import { authUserId } from '../accounts/accounts.controller.js';
 import type { TopupsService } from './topups.service.js';
-
-const IdempotencyKeySchema = z.string().min(8).max(100);
 
 /** Controlador de recargas (spec 002, US2). */
 export function createTopupsController(deps: { topups: TopupsService }) {
@@ -18,14 +15,11 @@ export function createTopupsController(deps: { topups: TopupsService }) {
 
     /** POST /topups (operación createTopup): exige Idempotency-Key (regla de dominio 4). */
     async createTopup(req: Request, res: Response): Promise<void> {
-      const key = IdempotencyKeySchema.safeParse(req.get(IDEMPOTENCY_HEADER));
-      if (!key.success) {
-        throw appError('VALIDATION_ERROR', { fields: { [IDEMPOTENCY_HEADER]: 'required' } });
-      }
+      const idempotencyKey = readIdempotencyKey(req);
       const { amount } = CreateTopupRequestSchema.parse(req.body);
       const outcome = await deps.topups.create({
         userId: authUserId(req),
-        idempotencyKey: key.data,
+        idempotencyKey,
         amount,
         requestId: req.requestId,
       });
