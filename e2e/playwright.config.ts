@@ -24,7 +24,7 @@ const DATABASE_URL =
 
 /** Entorno completo y explícito: no depende del `.env` de quien ejecuta las pruebas. */
 const serverEnv: Record<string, string> = {
-  NODE_ENV: 'development',
+  NODE_ENV: 'test',
   PORT: String(PORT),
   APP_ORIGIN: BASE_URL,
   LOG_LEVEL: 'warn',
