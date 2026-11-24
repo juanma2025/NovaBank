@@ -129,13 +129,13 @@ descongela, y queda auditado.
 
 ### [FE]
 
-- [ ] T016 [P] [US1] [FE] Crear `frontend/tests/CardsPage.test.tsx`: lista vacía, emitir con nombre, congelar/descongelar y `CARD_LIMIT_REACHED`.
-- [ ] T017 [P] [US1] [FE] Crear `frontend/src/features/cards/components/VirtualCard.tsx` (vidrio esmerilado, «•••• 1234», vencimiento, titular, estado con texto y no solo color) y `CardNicknameDialog.tsx`.
-- [ ] T018 [US1] [FE] Crear `frontend/src/features/cards/api.ts`, los hooks (`useCards`, `useIssueCard`, `useSetCardFrozen`), `frontend/src/features/cards/pages/CardsPage.tsx`, la ruta `/tarjetas` y el acceso «Tarjetas» en `HomePage`.
+- [X] T016 [P] [US1] [FE] Crear `frontend/tests/CardsPage.test.tsx`: lista vacía, emitir con nombre, congelar/descongelar y `CARD_LIMIT_REACHED`.
+- [X] T017 [P] [US1] [FE] Crear `frontend/src/features/cards/components/VirtualCard.tsx` (vidrio esmerilado, «•••• 1234», vencimiento, titular, estado con texto y no solo color) y `CardNicknameDialog.tsx`.
+- [X] T018 [US1] [FE] Crear `frontend/src/features/cards/api.ts`, los hooks (`useCards`, `useIssueCard`, `useSetCardFrozen`), `frontend/src/features/cards/pages/CardsPage.tsx`, la ruta `/tarjetas` y el acceso «Tarjetas» en `HomePage`.
 
 ### [E2E]
 
-- [ ] T019 [US1] [E2E] Crear `e2e/cards.spec.ts` con emitir, congelar y descongelar, comprobando lo visible.
+- [X] T019 [US1] [E2E] Crear `e2e/cards.spec.ts` con emitir, congelar y descongelar, comprobando lo visible.
 
 ---
 
@@ -154,13 +154,13 @@ descongela, y queda auditado.
 
 ### [FE]
 
-- [ ] T022 [P] [US2] [FE] Crear `frontend/tests/RevealCardDialog.test.tsx`:
+- [X] T022 [P] [US2] [FE] Crear `frontend/tests/RevealCardDialog.test.tsx`:
   - contraseña → datos visibles;
   - se ocultan a los 60 s y al desmontar;
   - «Copiar número»;
   - `REAUTH_FAILED` y `REAUTH_LOCKED`;
   - los datos no quedan en la caché de TanStack Query.
-- [ ] T023 [US2] [FE] Crear `frontend/src/features/cards/components/RevealCardDialog.tsx` y `frontend/src/features/cards/pages/CardDetailPage.tsx` (tarjeta y «Ver datos»), con la ruta `/tarjetas/:id`.
+- [X] T023 [US2] [FE] Crear `frontend/src/features/cards/components/RevealCardDialog.tsx` y `frontend/src/features/cards/pages/CardDetailPage.tsx` (tarjeta y «Ver datos»), con la ruta `/tarjetas/:id`.
 
 ---
 
@@ -186,12 +186,12 @@ descongela, y queda auditado.
 
 ### [FE]
 
-- [ ] T027 [P] [US3] [FE] Crear `frontend/tests/StorePage.test.tsx`:
+- [X] T027 [P] [US3] [FE] Crear `frontend/tests/StorePage.test.tsx`:
   - elegir comercio → monto → datos;
   - validación Luhn y MM/AA mientras se escribe;
   - `CARD_DECLINED`, `CARD_NOT_ACTIVE`, `INSUFFICIENT_FUNDS` y `CARD_PAYMENTS_LOCKED`;
   - el reintento usa la misma `Idempotency-Key`.
-- [ ] T028 [US3] [FE] Crear:
+- [X] T028 [US3] [FE] Crear:
   - `frontend/src/features/store/` (api, hooks, `StorePage.tsx`) y la ruta `/tienda`, con acceso desde `HomePage`;
   - la lista de pagos en `CardDetailPage`;
   - en `MovementItem` (spec 002), el tipo `card_payment`.
@@ -200,7 +200,7 @@ descongela, y queda auditado.
 
 ### [E2E]
 
-- [ ] T029 [US3] [E2E] Ampliar `e2e/cards.spec.ts`: recargar, emitir, ver datos con la contraseña, pagar en la tienda con esos datos y comprobar el saldo; congelar la tarjeta y comprobar que el mismo pago se rechaza (flujo crítico de la constitución).
+- [X] T029 [US3] [E2E] Ampliar `e2e/cards.spec.ts`: recargar, emitir, ver datos con la contraseña, pagar en la tienda con esos datos y comprobar el saldo; congelar la tarjeta y comprobar que el mismo pago se rechaza (flujo crítico de la constitución).
 
 ---
 
@@ -218,20 +218,20 @@ descongela, y queda auditado.
 
 ### [FE]
 
-- [ ] T032 [P] [US4] [FE] Crear `frontend/tests/CardDetailPage.test.tsx`: renombrar, cancelar con confirmación, una cancelada sin acciones y la lista con canceladas atenuadas.
-- [ ] T033 [US4] [FE] Agregar a `CardDetailPage` las acciones de renombrar y cancelar (diálogo de confirmación accesible), y en `CardsPage` el orden (vigentes primero) y el aviso del máximo.
+- [X] T032 [P] [US4] [FE] Crear `frontend/tests/CardDetailPage.test.tsx`: renombrar, cancelar con confirmación, una cancelada sin acciones y la lista con canceladas atenuadas.
+- [X] T033 [US4] [FE] Agregar a `CardDetailPage` las acciones de renombrar y cancelar (diálogo de confirmación accesible), y en `CardsPage` el orden (vigentes primero) y el aviso del máximo.
 
 ---
 
 ## Phase 6: Polish
 
-- [ ] T034 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/tarjetas`, `/tarjetas/:id` y `/tienda` (SC-006). Registrar el resultado en `specs/004-tarjeta-virtual/checklists/accessibility.md`.
-- [ ] T035 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
+- [X] T034 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/tarjetas`, `/tarjetas/:id` y `/tienda` (SC-006). Registrar el resultado en `specs/004-tarjeta-virtual/checklists/accessibility.md`.
+- [X] T035 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
 ### Ajustes del análisis de consistencia (U1)
 
 - [X] T036 [BE] En `backend/src/modules/cards/payments.service.ts`, rechazar con `CARD_NOT_ACTIVE` una tarjeta cuyo mes de vencimiento ya terminó en hora de Bogotá (FR-013, research R6), dentro de la transacción y después de la idempotencia. Prueba en `backend/tests/integration/store-payments.test.ts`: el último día del mes de vencimiento paga; al mes siguiente se rechaza sin mover dinero.
-- [ ] T037 [FE] En `frontend/src/features/cards/components/VirtualCard.tsx`, mostrar «Vencida» (texto, no solo color) cuando `expMonth`/`expYear` ya pasaron en hora de Bogotá, con su prueba en `frontend/tests/CardsPage.test.tsx`.
+- [X] T037 [FE] En `frontend/src/features/cards/components/VirtualCard.tsx`, mostrar «Vencida» (texto, no solo color) cuando `expMonth`/`expYear` ya pasaron en hora de Bogotá, con su prueba en `frontend/tests/CardsPage.test.tsx`.
 
 ---
 

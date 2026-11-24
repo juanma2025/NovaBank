@@ -96,6 +96,25 @@ export async function tryLoginStudent(
   return res.status() === 200;
 }
 
+/**
+ * Reutiliza una cuenta verificada si ya existe en `nova_e2e` o la registra una sola vez.
+ * Mantiene la suite E2E completa (escritorio + móvil 360 px) muy por debajo del límite de registro.
+ */
+export async function ensureVerifiedStudent(page: Page, creds: StudentCredentials): Promise<void> {
+  const loggedIn = await tryLoginStudent(page, creds.email, creds.password ?? DEFAULT_PASSWORD);
+  if (!loggedIn) {
+    await registerVerifiedStudent(page, creds);
+  }
+}
+
+/** Consulta el saldo actual de la cuenta autenticada en `page`. */
+export async function getMyBalance(page: Page): Promise<number> {
+  const res = await page.request.get('/api/v1/accounts/me');
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { balance: number };
+  return body.balance;
+}
+
 /** Aplica una recarga simulada directamente por la API con `Idempotency-Key` única. */
 export async function seedTopup(page: Page, amount: number): Promise<void> {
   const res = await page.request.post('/api/v1/topups', {

@@ -19,6 +19,9 @@ const TopupPage = lazy(() => import('../features/topups/pages/TopupPage.tsx'));
 const MovementsPage = lazy(() => import('../features/movements/pages/MovementsPage.tsx'));
 const SendPage = lazy(() => import('../features/transfers/pages/SendPage.tsx'));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage.tsx'));
+const CardsPage = lazy(() => import('../features/cards/pages/CardsPage.tsx'));
+const CardDetailPage = lazy(() => import('../features/cards/pages/CardDetailPage.tsx'));
+const StorePage = lazy(() => import('../features/store/pages/StorePage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {
@@ -58,6 +61,9 @@ export function AppRoutes() {
           <Route path="/movimientos" element={<MovementsPage />} />
           <Route path="/enviar" element={<SendPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
+          <Route path="/tarjetas" element={<CardsPage />} />
+          <Route path="/tarjetas/:id" element={<CardDetailPage />} />
+          <Route path="/tienda" element={<StorePage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

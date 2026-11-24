@@ -3,6 +3,7 @@ import { type ErrorCode, type ErrorDetails, formatCOP } from '@nova/shared';
 export * from './landing-messages.ts';
 export * from './messages-auth.ts';
 export * from './messages-banking.ts';
+export * from './messages-cards.ts';
 export * from './messages-transfers.ts';
 
 /** Catálogo único de errores de la API en español (es-CO). */
@@ -139,6 +140,22 @@ export function formatApiErrorMessage(
   }
   if (code === 'REAUTH_LOCKED' && details?.retryAfterSeconds !== undefined) {
     return `Demasiados intentos con la contraseña. Intenta de nuevo en ${formatMinutesRemaining(details.retryAfterSeconds)}.`;
+  }
+  if (
+    code === 'PAYMENT_AMOUNT_OUT_OF_RANGE' &&
+    details?.minAmount !== undefined &&
+    details?.maxAmount !== undefined
+  ) {
+    return `El monto debe estar entre ${formatCOP(details.minAmount)} y ${formatCOP(details.maxAmount)}.`;
+  }
+  if (code === 'PAYMENT_DAILY_LIMIT' && details?.remainingToday !== undefined) {
+    if (details.remainingToday <= 0) {
+      return 'Ya alcanzaste tu tope diario de pagos con tarjeta. Vuelve mañana para continuar.';
+    }
+    return `Superas el tope diario. Puedes pagar hasta ${formatCOP(details.remainingToday)} hoy.`;
+  }
+  if (code === 'CARD_PAYMENTS_LOCKED' && details?.retryAfterSeconds !== undefined) {
+    return `Demasiados pagos rechazados. Intenta de nuevo en ${formatMinutesRemaining(details.retryAfterSeconds)}.`;
   }
   return ERROR_MESSAGES[code] ?? fallbackMessage ?? ERROR_MESSAGES.INTERNAL_ERROR;
 }
