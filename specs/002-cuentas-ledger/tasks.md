@@ -134,9 +134,9 @@ Structure» en [plan.md](plan.md).
 
 ### [FE] Base del frontend
 
-- [ ] T019 [P] [FE] Crear `frontend/src/features/accounts/api.ts` (una función por operación del contrato de la 002; `createTopup` envía la cabecera `IDEMPOTENCY_HEADER`) y los hooks `frontend/src/features/accounts/hooks/useAccount.ts` (`['account']`) y `useMovements.ts` (`useInfiniteQuery` con `['movements']`).
-- [ ] T020 [P] [FE] Agregar a `frontend/src/lib/messages.ts` los textos de inicio, recarga e historial, los avisos de «dinero de demostración» y los mensajes de `TOPUP_AMOUNT_OUT_OF_RANGE`, `TOPUP_DAILY_LIMIT` e `IDEMPOTENCY_KEY_REUSED`.
-- [ ] T021 [P] [FE] Crear en `frontend/src/features/home/components/`:
+- [X] T019 [P] [FE] Crear `frontend/src/features/accounts/api.ts` (una función por operación del contrato de la 002; `createTopup` envía la cabecera `IDEMPOTENCY_HEADER`) y los hooks `frontend/src/features/accounts/hooks/useAccount.ts` (`['account']`) y `useMovements.ts` (`useInfiniteQuery` con `['movements']`).
+- [X] T020 [P] [FE] Agregar a `frontend/src/lib/messages.ts` los textos de inicio, recarga e historial, los avisos de «dinero de demostración» y los mensajes de `TOPUP_AMOUNT_OUT_OF_RANGE`, `TOPUP_DAILY_LIMIT` e `IDEMPOTENCY_KEY_REUSED`.
+- [X] T021 [P] [FE] Crear en `frontend/src/features/home/components/`:
   - `MovementItem.tsx`: descripción, fecha en `America/Bogota`, monto con `formatCOP`, signo y color (verde «+»), estado si no es `completed`, y «••••••» si el saldo está oculto;
   - `MovementList.tsx`;
   - `EmptyMovements.tsx`: con el botón «Recargar».
@@ -166,22 +166,22 @@ Structure» en [plan.md](plan.md).
 
 ### [FE]
 
-- [ ] T024 [P] [US1] [FE] Crear `frontend/tests/HomePage.test.tsx`. Debe comprobar:
+- [X] T024 [P] [US1] [FE] Crear `frontend/tests/HomePage.test.tsx`. Debe comprobar:
   - el estado de carga;
   - el estado vacío con «Recargar»;
   - la lista con signo y color;
   - ocultar y mostrar el saldo, que persiste en `localStorage` y sigue funcionando si `localStorage` falla;
   - la tarjeta «Muy pronto» abre un mensaje sin llamar a la API;
   - el error con «Reintentar».
-- [ ] T025 [P] [US1] [FE] Crear `frontend/src/features/home/components/BalanceCard.tsx` (saldo con `formatCOP`; botón con `aria-pressed` que guarda `localStorage['nova:hide-balance']` dentro de `try/catch`, research R11) y `frontend/src/features/home/components/ComingSoonCard.tsx` (tarjeta de vidrio «Wallet cripto · Muy pronto» con un diálogo informativo).
-- [ ] T026 [US1] [FE] Crear `frontend/src/features/home/pages/HomePage.tsx`:
+- [X] T025 [P] [US1] [FE] Crear `frontend/src/features/home/components/BalanceCard.tsx` (saldo con `formatCOP`; botón con `aria-pressed` que guarda `localStorage['nova:hide-balance']` dentro de `try/catch`, research R11) y `frontend/src/features/home/components/ComingSoonCard.tsx` (tarjeta de vidrio «Wallet cripto · Muy pronto» con un diálogo informativo).
+- [X] T026 [US1] [FE] Crear `frontend/src/features/home/pages/HomePage.tsx`:
   - saludo con el primer nombre, `BalanceCard`, `MovementList` (5), «Ver todos», «Recargar» y `ComingSoonCard`;
   - en `frontend/src/app/router.tsx`, `/inicio` usa `HomePage` y **se elimina** `WelcomePage` de la spec 001 (FR-015);
   - actualizar las pruebas de la spec 001 que esperaban `WelcomePage` o el texto «Hola, …» al terminar el registro o el login (`frontend/tests/RegisterPage.test.tsx`, `LoginPage.test.tsx`) y los E2E de la 001 que la verifiquen.
 
 ### [E2E]
 
-- [ ] T027 [US1] [E2E] Crear `e2e/home.spec.ts`: un usuario nuevo ve «$0», el estado vacío y la tarjeta «Muy pronto»; ocultar el saldo persiste al recargar la página. También en el proyecto de 360 px.
+- [X] T027 [US1] [E2E] Crear `e2e/home.spec.ts`: un usuario nuevo ve «$0», el estado vacío y la tarjeta «Muy pronto»; ocultar el saldo persiste al recargar la página. También en el proyecto de 360 px.
 
 **Checkpoint**: US1 funciona y se puede demostrar por sí sola.
 
@@ -227,7 +227,7 @@ simulada +$50.000»; un doble envío no duplica.
 
 ### [FE]
 
-- [ ] T031 [P] [US2] [FE] Crear `frontend/tests/TopupPage.test.tsx` y `frontend/tests/AmountInput.test.tsx`. Deben comprobar:
+- [X] T031 [P] [US2] [FE] Crear `frontend/tests/TopupPage.test.tsx` y `frontend/tests/AmountInput.test.tsx`. Deben comprobar:
   - formato mientras se escribe;
   - el rango con los límites del servidor;
   - los montos sugeridos;
@@ -236,11 +236,11 @@ simulada +$50.000»; un doble envío no duplica.
   - un reintento tras un error de red **reutiliza la misma** `Idempotency-Key`;
   - un intento nuevo usa otra clave;
   - los errores de tope y de rango.
-- [ ] T032 [P] [US2] [FE] Crear en `frontend/src/features/topups/components/`:
+- [X] T032 [P] [US2] [FE] Crear en `frontend/src/features/topups/components/`:
   - `AmountInput.tsx`: `parseCOPInput`, `inputMode="numeric"` y error accesible;
   - `SuggestedAmounts.tsx`: `SUGGESTED_TOPUP_AMOUNTS`;
   - `TopupConfirmDialog.tsx`: monto y aviso de dinero de demostración; diálogo accesible con foco atrapado.
-- [ ] T033 [US2] [FE] Crear:
+- [X] T033 [US2] [FE] Crear:
   - `frontend/src/features/topups/hooks/useTopupLimits.ts`;
   - `frontend/src/features/topups/hooks/useCreateTopup.ts`: genera la clave con `crypto.randomUUID()` al confirmar y la reutiliza en los reintentos del mismo intento;
   - `frontend/src/features/topups/pages/TopupPage.tsx`: estados de plan.md («Estados por vista»).
@@ -249,7 +249,7 @@ simulada +$50.000»; un doble envío no duplica.
 
 ### [E2E]
 
-- [ ] T034 [US2] [E2E] Crear `e2e/topups.spec.ts`: recargar $50.000 → saldo y movimiento; un monto fuera de rango muestra el aviso; un doble clic en «Confirmar» aplica una sola recarga.
+- [X] T034 [US2] [E2E] Crear `e2e/topups.spec.ts`: recargar $50.000 → saldo y movimiento; un monto fuera de rango muestra el aviso; un doble clic en «Confirmar» aplica una sola recarga.
 
 **Checkpoint**: US1 y US2 funcionan por su cuenta.
 
@@ -275,20 +275,20 @@ siguientes sin repetir.
 
 ### [FE]
 
-- [ ] T037 [P] [US3] [FE] Crear `frontend/tests/MovementsPage.test.tsx`: primera página, «Cargar más», estado vacío y error sin perder las páginas cargadas.
-- [ ] T038 [US3] [FE] Crear `frontend/src/features/movements/pages/MovementsPage.tsx` con `useMovements` y «Cargar más»; agregar la ruta `/movimientos` en `frontend/src/app/router.tsx` y conectar «Ver todos» de `HomePage`.
+- [X] T037 [P] [US3] [FE] Crear `frontend/tests/MovementsPage.test.tsx`: primera página, «Cargar más», estado vacío y error sin perder las páginas cargadas.
+- [X] T038 [US3] [FE] Crear `frontend/src/features/movements/pages/MovementsPage.tsx` con `useMovements` y «Cargar más»; agregar la ruta `/movimientos` en `frontend/src/app/router.tsx` y conectar «Ver todos» de `HomePage`.
 
 ### [E2E]
 
-- [ ] T039 [US3] [E2E] Crear `e2e/movements.spec.ts`: con más de 20 recargas (sembradas por la API), «Ver todos» y «Cargar más» sin repetidos.
+- [X] T039 [US3] [E2E] Crear `e2e/movements.spec.ts`: con más de 20 recargas (sembradas por la API), «Ver todos» y «Cargar más» sin repetidos.
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
 - [X] T040 [P] [BE] Agregar `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT` a la tabla de variables de `docs/despliegue.md`.
-- [ ] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Medir además que el saldo aparece en menos de 2 s después de iniciar sesión (SC-001). Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
-- [ ] T042 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) (secciones 2–4, incluidas las consultas del libro contable) con todo integrado en `main`, antes de `/speckit-converge`.
+- [X] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Medir además que el saldo aparece en menos de 2 s después de iniciar sesión (SC-001). Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
+- [X] T042 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) (secciones 2–4, incluidas las consultas del libro contable) con todo integrado en `main`, antes de `/speckit-converge`.
 
 ---
 

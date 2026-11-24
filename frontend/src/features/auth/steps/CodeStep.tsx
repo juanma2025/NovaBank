@@ -3,7 +3,7 @@ import { type FormEvent, type Ref, useState } from 'react';
 
 import { Alert } from '../../../components/Alert.tsx';
 import { Button } from '../../../components/Button.tsx';
-import { ApiError } from '../../../lib/api-client.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 import {
   REGISTER_MESSAGES,
   RESET_MESSAGES,
@@ -95,11 +95,11 @@ export function CodeStep({
         <h1
           ref={headingRef}
           tabIndex={-1}
-          className="text-2xl font-semibold tracking-[-0.02em] text-text focus:outline-none"
+          className="text-2xl font-semibold tracking-[-0.025em] text-text focus:outline-none"
         >
           {title}
         </h1>
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm leading-relaxed text-text-secondary">
           {subtitle} <strong className="font-semibold text-text">{state.maskedEmail}</strong>.
         </p>
       </div>
@@ -130,7 +130,7 @@ export function CodeStep({
         {VERIFICATION_MESSAGES.verifySubmit}
       </Button>
 
-      <div className="flex flex-col items-center gap-2 pt-1">
+      <div className="flex flex-col items-center gap-2 border-t border-border pt-4">
         <ResendButton
           resendAvailableAt={state.resendAvailableAt}
           prominent={highlightResend}

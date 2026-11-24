@@ -1,11 +1,28 @@
 @import 'tailwindcss';
 @import './tokens.css';
+@import './transitions.css';
+
+@property --nova-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes nova-border-orbit {
+  from {
+    --nova-border-angle: 0deg;
+  }
+  to {
+    --nova-border-angle: 360deg;
+  }
+}
 
 @layer base {
   html {
     font-family: var(--font-sans);
     background-color: var(--color-bg);
     color: var(--color-text);
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -40,81 +57,100 @@
   }
 }
 
-/* Fondo ambiental sutil que da profundidad real al vidrio esmerilado */
+/* Lienzo: porcelana opaca con matiz mínimo en claro; negro OLED sólido (#000000) en oscuro */
 .nova-canvas {
   background-color: var(--color-bg);
   background-image:
-    radial-gradient(48rem 32rem at 15% -6%, var(--color-ambient-ice), transparent 65%),
-    radial-gradient(42rem 30rem at 88% 104%, var(--color-ambient-violet), transparent 65%);
+    radial-gradient(50rem 32rem at 12% -8%, var(--color-ambient-ice), transparent 64%),
+    radial-gradient(44rem 30rem at 90% 106%, var(--color-ambient-violet), transparent 64%);
 }
 
-/* Superficie de vidrio esmerilado (tarjetas, barras y hojas modales) */
+/* Superficies de tarjetas:
+   - Claro: blanco humo opaco (#F4F6F9) + contorno sólido estático de marca (sin neón ni animación)
+   - Oscuro: negro carbón (#0A0A0D) + contorno iluminado azul hielo → violeta animado en CSS puro */
 .nova-glass {
+  position: relative;
   background-color: var(--color-surface-glass);
-  backdrop-filter: blur(var(--blur-glass)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(180%);
-  border: 1px solid var(--color-border-glass-edge);
+  backdrop-filter: blur(var(--blur-glass)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(160%);
+  border: 1.5px solid var(--color-border-glass-edge);
   box-shadow: var(--shadow-glass);
+}
+
+:root[data-theme='dark'] .nova-glass {
+  border-color: transparent;
+}
+
+:root[data-theme='dark'] .nova-glass::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--nova-border-angle),
+    rgba(56, 189, 248, 0.18) 0deg,
+    var(--color-brand-ice) 75deg,
+    var(--color-brand-violet) 165deg,
+    rgba(167, 139, 250, 0.2) 255deg,
+    rgba(56, 189, 248, 0.18) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: nova-border-orbit var(--duration-border-orbit) var(--ease-linear) infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .nova-glass {
+    border-color: transparent;
+  }
+
+  :root:not([data-theme='light']) .nova-glass::before {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+      from var(--nova-border-angle),
+      rgba(56, 189, 248, 0.18) 0deg,
+      var(--color-brand-ice) 75deg,
+      var(--color-brand-violet) 165deg,
+      rgba(167, 139, 250, 0.2) 255deg,
+      rgba(56, 189, 248, 0.18) 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: nova-border-orbit var(--duration-border-orbit) var(--ease-linear) infinite;
+  }
 }
 
 .nova-glass-header {
   background-color: var(--color-surface-glass-strong);
-  backdrop-filter: blur(var(--blur-glass)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  backdrop-filter: blur(var(--blur-glass)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(160%);
   border-bottom: 1px solid var(--color-border);
 }
 
-/* Microtransiciones reutilizables (≤ 400 ms, basadas en tokens transitions-dev) */
-@keyframes nova-enter {
-  from {
-    opacity: 0;
-    transform: translateY(var(--distance-base));
-    filter: blur(var(--blur-transition));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-@keyframes nova-modal-enter {
-  from {
-    opacity: 0;
-    transform: scale(var(--scale-modal));
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes nova-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(calc(var(--distance-small) * -1));
-  }
-  60% {
-    transform: translateX(var(--distance-small));
-  }
-  85% {
-    transform: translateX(calc(var(--distance-micro) * -1));
-  }
-}
-
-.nova-animate-enter {
-  animation: nova-enter var(--duration-fast) var(--ease-smooth-out) both;
-}
-
-.nova-animate-modal {
-  animation: nova-modal-enter var(--duration-fast) var(--ease-smooth-out) both;
-}
-
-.nova-animate-shake {
-  animation: nova-shake var(--duration-medium) var(--ease-smooth-out);
+.nova-glass-sidebar {
+  background-color: var(--color-surface-glass-strong);
+  backdrop-filter: blur(var(--blur-glass)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(160%);
+  border-right: 1px solid var(--color-border);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -127,11 +163,15 @@
     scroll-behavior: auto !important;
   }
 
-  .nova-animate-enter,
-  .nova-animate-modal,
-  .nova-animate-shake {
+  :root[data-theme='dark'] .nova-glass::before {
     animation: none !important;
-    filter: none !important;
-    transform: none !important;
+    background: linear-gradient(135deg, var(--color-brand-ice), var(--color-brand-violet));
+  }
+}
+
+@media (prefers-color-scheme: dark) and (prefers-reduced-motion: reduce) {
+  :root:not([data-theme='light']) .nova-glass::before {
+    animation: none !important;
+    background: linear-gradient(135deg, var(--color-brand-ice), var(--color-brand-violet));
   }
 }

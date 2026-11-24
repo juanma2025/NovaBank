@@ -24,7 +24,9 @@ export function ConsentCheckbox({
     <div className="space-y-1.5">
       <label
         htmlFor={id}
-        className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--radius-sm)] py-1 text-sm text-text-secondary select-none"
+        className={`relative flex min-h-11 items-start gap-3 rounded-[var(--radius-sm)] py-1 text-sm text-text-secondary select-none ${
+          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+        }`}
       >
         <input
           id={id}
@@ -34,8 +36,24 @@ export function ConsentCheckbox({
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={errorId}
           onChange={(event) => onChange(event.target.checked)}
-          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-border-strong accent-brand disabled:cursor-not-allowed"
+          className="peer sr-only"
         />
+        <span
+          aria-hidden="true"
+          data-checked={checked ? 'true' : 'false'}
+          data-error={error ? 'true' : undefined}
+          className="t-check mt-0.5 shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus-ring"
+        >
+          <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
+            <path
+              d="M3.2 8.4L6.5 11.7L12.8 4.8"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
         <span className="leading-relaxed">
           {REGISTER_MESSAGES.consentPrefix}
           <Link
@@ -49,7 +67,11 @@ export function ConsentCheckbox({
       </label>
 
       {error && (
-        <p id={errorId} role="alert" className="flex items-start gap-1.5 text-sm text-danger">
+        <p
+          id={errorId}
+          role="alert"
+          className="t-error-msg flex items-start gap-1.5 text-sm text-danger"
+        >
           <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </p>

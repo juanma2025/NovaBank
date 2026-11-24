@@ -7,11 +7,16 @@ import { APP_MESSAGES } from '../lib/messages.ts';
 import { PublicOnly } from './PublicOnly.tsx';
 import { RequireAuth } from './RequireAuth.tsx';
 
+const LandingPage = lazy(() => import('../features/landing/pages/LandingPage.tsx'));
+const FeaturesPage = lazy(() => import('../features/landing/pages/FeaturesPage.tsx'));
+const StudentsPage = lazy(() => import('../features/landing/pages/StudentsPage.tsx'));
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage.tsx'));
 const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage.tsx'));
 const PasswordResetPage = lazy(() => import('../features/auth/pages/PasswordResetPage.tsx'));
 const PrivacyPolicyPage = lazy(() => import('../features/legal/PrivacyPolicyPage.tsx'));
-const WelcomePage = lazy(() => import('../features/auth/pages/WelcomePage.tsx'));
+const HomePage = lazy(() => import('../features/home/pages/HomePage.tsx'));
+const TopupPage = lazy(() => import('../features/topups/pages/TopupPage.tsx'));
+const MovementsPage = lazy(() => import('../features/movements/pages/MovementsPage.tsx'));
 const NotFoundPage = lazy(() => import('../components/NotFoundPage.tsx'));
 
 function PageFallback() {
@@ -22,17 +27,20 @@ function PageFallback() {
   );
 }
 
-function RootRedirect() {
+function RootRoute() {
   const { data: session } = useSession();
-  return <Navigate to={session ? '/inicio' : '/ingresar'} replace />;
+  if (session) return <Navigate to="/inicio" replace />;
+  return <LandingPage />;
 }
 
-/** Rutas SPA con carga diferida (plan.md · Rutas). */
+/** Rutas SPA con carga diferida (`React.lazy`). */
 export function AppRoutes() {
   return (
     <Suspense fallback={<PageFallback />}>
       <Routes>
-        <Route path="/" element={<RootRedirect />} />
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/caracteristicas" element={<FeaturesPage />} />
+        <Route path="/estudiantes" element={<StudentsPage />} />
 
         <Route element={<PublicOnly />}>
           <Route path="/ingresar" element={<LoginPage />} />
@@ -43,7 +51,9 @@ export function AppRoutes() {
         <Route path="/privacidad" element={<PrivacyPolicyPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/inicio" element={<WelcomePage />} />
+          <Route path="/inicio" element={<HomePage />} />
+          <Route path="/recargar" element={<TopupPage />} />
+          <Route path="/movimientos" element={<MovementsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

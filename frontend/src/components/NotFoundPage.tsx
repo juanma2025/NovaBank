@@ -5,7 +5,7 @@ import { AuthLayout } from './AuthLayout.tsx';
 
 export default function NotFoundPage() {
   return (
-    <AuthLayout>
+    <AuthLayout layout="centered">
       <div className="space-y-5 text-center">
         <p className="text-sm font-semibold tabular-nums text-text-muted">404</p>
         <div className="space-y-2">

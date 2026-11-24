@@ -7,27 +7,29 @@ import { PRIVACY_POLICY_MESSAGES } from '../../lib/messages.ts';
 
 export default function PrivacyPolicyPage() {
   return (
-    <AuthLayout maxWidthClass="max-w-2xl">
+    <AuthLayout layout="centered" maxWidthClass="max-w-2xl">
       <article className="space-y-6">
-        <header className="space-y-3">
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold tracking-[-0.025em] text-text sm:text-[1.75rem]">
+            {PRIVACY_POLICY_MESSAGES.title}
+          </h1>
           <div className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-info-border bg-info-bg px-3 py-1 text-xs font-medium text-info">
             <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             <span className="tabular-nums">
               {PRIVACY_POLICY_MESSAGES.versionLabel(PRIVACY_POLICY_VERSION)}
             </span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-text">
-            {PRIVACY_POLICY_MESSAGES.title}
-          </h1>
           <p className="max-w-[65ch] text-sm leading-relaxed text-text-secondary">
             {PRIVACY_POLICY_MESSAGES.intro}
           </p>
-        </header>
+        </div>
 
-        <div className="space-y-5 border-t border-border pt-5">
+        <div className="divide-y divide-border border-t border-border">
           {PRIVACY_POLICY_MESSAGES.sections.map((section) => (
-            <section key={section.heading} className="space-y-1.5">
-              <h2 className="text-base font-semibold text-text">{section.heading}</h2>
+            <section key={section.heading} className="space-y-1.5 py-5 first:pt-5 last:pb-0">
+              <h2 className="text-base font-semibold tracking-[-0.01em] text-text">
+                {section.heading}
+              </h2>
               <p className="max-w-[65ch] text-sm leading-relaxed text-text-secondary">
                 {section.body}
               </p>

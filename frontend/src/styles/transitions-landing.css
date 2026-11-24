@@ -1,0 +1,81 @@
+/* Transiciones de la experiencia pública (`transitions-dev`, tope constitucional ≤ 400 ms). */
+
+/* 18-texts-reveal — Entrada escalonada del titular y subtítulo (≤ 400 ms) */
+@keyframes t-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-stagger));
+    filter: blur(var(--blur-transition));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.t-stagger {
+  --stagger-dur: var(--duration-slow);
+  --stagger-step: var(--duration-stagger);
+  --stagger-ease: var(--ease-smooth-out);
+}
+
+.t-stagger.is-shown .t-stagger-line {
+  display: block;
+  animation: t-stagger-in var(--stagger-dur) var(--stagger-ease) both;
+}
+
+.t-stagger.is-shown .t-stagger-line--2 {
+  animation-delay: var(--stagger-step);
+}
+
+.t-stagger.is-shown .t-stagger-line--3 {
+  animation-delay: calc(var(--stagger-step) * 2);
+}
+
+/* 24-learn-more-hover — Microinteracción de flecha en enlaces a subpáginas (350 ms) */
+.t-learn {
+  --learn-shift: 2px;
+  --learn-spread: 8deg;
+  --learn-dur: var(--duration-medium);
+  --learn-ease: var(--ease-smooth-out);
+}
+
+.t-learn-chevron {
+  display: inline-flex;
+  transform: translateX(0);
+  transition: transform var(--learn-dur) var(--learn-ease);
+}
+
+.t-learn-arm {
+  transform-box: view-box;
+  transform-origin: 10px 8px;
+  vector-effect: non-scaling-stroke;
+  transition: transform var(--learn-dur) var(--learn-ease);
+}
+
+.t-learn:hover .t-learn-chevron {
+  transform: translateX(var(--learn-shift));
+}
+
+.t-learn:hover .t-learn-arm-top {
+  transform: rotate(var(--learn-spread));
+}
+
+.t-learn:hover .t-learn-arm-bot {
+  transform: rotate(calc(var(--learn-spread) * -1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stagger.is-shown .t-stagger-line {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .t-learn-chevron,
+  .t-learn-arm {
+    transition: none !important;
+    transform: none !important;
+  }
+}

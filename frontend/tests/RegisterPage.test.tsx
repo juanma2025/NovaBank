@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppProviders, createAppQueryClient } from '../src/app/providers.tsx';
 import { SESSION_QUERY_KEY } from '../src/features/auth/hooks/useSession.ts';
 import RegisterPage from '../src/features/auth/pages/RegisterPage.tsx';
-import WelcomePage from '../src/features/auth/pages/WelcomePage.tsx';
+import HomePage from '../src/features/home/pages/HomePage.tsx';
 
 const REQUEST_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -54,7 +54,7 @@ function renderRegister() {
       <MemoryRouter initialEntries={['/registro']}>
         <Routes>
           <Route path="/registro" element={<RegisterPage />} />
-          <Route path="/inicio" element={<WelcomePage />} />
+          <Route path="/inicio" element={<HomePage />} />
           <Route path="/ingresar" element={<p>Pantalla ingresar</p>} />
           <Route path="/privacidad" element={<p>Política</p>} />
         </Routes>
@@ -240,7 +240,15 @@ describe('RegisterPage (US1)', () => {
           200,
         ),
       )
-      .mockResolvedValueOnce(jsonResponse(CREATED_SESSION, 201));
+      .mockResolvedValueOnce(jsonResponse(CREATED_SESSION, 201))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: '33333333-3333-4333-8333-333333333333',
+          currency: 'COP',
+          balance: 0,
+          recentMovements: [],
+        }),
+      );
 
     renderRegister();
 

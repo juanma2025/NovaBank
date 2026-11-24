@@ -1,0 +1,196 @@
+/* Transiciones de controles e íconos (`transitions-dev`, ≤ 400 ms). */
+
+/* 12-error-state-shake — Sacudida amortiguada en campos y código inválido (250 ms) */
+.t-input-wrap {
+  --shake-dur: var(--duration-fast);
+  --err-dur: var(--duration-fast);
+  position: relative;
+}
+
+.t-input {
+  transition:
+    border-color var(--duration-quick) var(--ease-smooth-out),
+    box-shadow var(--duration-quick) var(--ease-smooth-out),
+    background-color var(--duration-quick) var(--ease-smooth-out);
+}
+
+.t-input:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-focus-glow);
+}
+
+.t-input.is-error {
+  border-color: var(--color-danger);
+}
+
+.t-input.is-error:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-danger-glow);
+}
+
+@keyframes t-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  18% {
+    transform: translateX(-5px);
+  }
+  36% {
+    transform: translateX(5px);
+  }
+  54% {
+    transform: translateX(-4px);
+  }
+  72% {
+    transform: translateX(3px);
+  }
+  88% {
+    transform: translateX(-2px);
+  }
+}
+
+.t-input.is-shaking,
+.t-input-wrap.is-shaking {
+  animation: t-shake var(--shake-dur, var(--duration-fast)) var(--ease-in-out);
+}
+
+@keyframes t-error-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--distance-micro) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.t-error-msg {
+  animation: t-error-msg-in var(--err-dur, var(--duration-fast)) var(--ease-smooth-out) both;
+}
+
+/* 25-checkbox-check — Trazo SVG progresivo en ConsentCheckbox (350 ms) */
+.t-check {
+  --check-len: 18;
+  --check-box-dur: var(--duration-quick);
+  --check-draw-dur: var(--duration-medium);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--color-border-strong);
+  background-color: var(--color-surface);
+  color: var(--color-on-brand);
+  transition:
+    background-color var(--check-box-dur) var(--ease-smooth-out),
+    border-color var(--check-box-dur) var(--ease-smooth-out),
+    transform var(--check-box-dur) var(--ease-smooth-out);
+}
+
+.t-check[data-error='true'] {
+  border-color: var(--color-danger);
+}
+
+.t-check[aria-checked='true'],
+.t-check[data-checked='true'] {
+  background-color: var(--color-brand);
+  border-color: var(--color-brand);
+}
+
+.t-check svg path {
+  stroke-dasharray: var(--check-len);
+  stroke-dashoffset: var(--check-len);
+  transition: stroke-dashoffset var(--check-draw-dur) var(--ease-smooth-out);
+}
+
+.t-check[aria-checked='true'] svg path,
+.t-check[data-checked='true'] svg path {
+  stroke-dashoffset: 0;
+}
+
+/* 09-icon-swap — Intercambio suave de íconos en contraseña y reglas (250 ms) */
+.t-icon-swap {
+  --swap-dur: var(--duration-fast);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: scale(0.75) rotate(-10deg);
+  filter: blur(1.5px);
+  transition:
+    opacity var(--swap-dur) var(--ease-smooth-out),
+    transform var(--swap-dur) var(--ease-smooth-out),
+    filter var(--swap-dur) var(--ease-smooth-out);
+}
+
+.t-icon-swap[data-state='a'] .t-icon[data-slot='a'],
+.t-icon-swap[data-state='b'] .t-icon[data-slot='b'],
+.t-icon-swap[data-state='idle'] .t-icon[data-slot='idle'],
+.t-icon-swap[data-state='valid'] .t-icon[data-slot='valid'],
+.t-icon-swap[data-state='invalid'] .t-icon[data-slot='invalid'] {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  filter: blur(0);
+}
+
+/* 10-success-check — Círculo + chulo dibujado (total 400 ms: 250 ms + 150 ms) */
+@keyframes t-success-circle {
+  from {
+    stroke-dashoffset: 64;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes t-success-tick {
+  from {
+    stroke-dashoffset: 16;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.t-success-check {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.t-success-check-circle {
+  stroke-dasharray: 64;
+  stroke-dashoffset: 64;
+  animation: t-success-circle var(--duration-fast) var(--ease-smooth-out) forwards;
+}
+
+.t-success-check-tick {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  animation: t-success-tick var(--duration-fast) var(--ease-smooth-out) var(--duration-quick)
+    forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-input.is-shaking,
+  .t-input-wrap.is-shaking,
+  .t-error-msg {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .t-icon-swap .t-icon {
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .t-success-check-circle,
+  .t-success-check-tick {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

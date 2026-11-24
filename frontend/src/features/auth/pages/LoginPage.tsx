@@ -1,5 +1,5 @@
 import { LoginRequestSchema, normalizeEmail } from '@nova/shared';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { Alert } from '../../../components/Alert.tsx';
@@ -7,7 +7,7 @@ import { AuthLayout } from '../../../components/AuthLayout.tsx';
 import { Button } from '../../../components/Button.tsx';
 import { PasswordField } from '../../../components/PasswordField.tsx';
 import { TextField } from '../../../components/TextField.tsx';
-import { ApiError } from '../../../lib/api-client.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 import {
   AUTH_REASON_BANNERS,
   isAuthNoticeReason,
@@ -33,6 +33,19 @@ export default function LoginPage() {
     message: string;
   } | null>(null);
   const [dismissNotice, setDismissNotice] = useState(false);
+  const [fieldShakeKey, setFieldShakeKey] = useState(0);
+  const [credentialsShakeKey, setCredentialsShakeKey] = useState(0);
+  const [credentialsShaking, setCredentialsShaking] = useState(false);
+  const credentialsGroupRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (credentialsShakeKey <= 0) return;
+    setCredentialsShaking(false);
+    void credentialsGroupRef.current?.offsetWidth;
+    setCredentialsShaking(true);
+    const timer = setTimeout(() => setCredentialsShaking(false), 260);
+    return () => clearTimeout(timer);
+  }, [credentialsShakeKey]);
 
   const motivoParam = searchParams.get('motivo');
   const reasonBanner =
@@ -66,7 +79,10 @@ export default function LoginPage() {
 
     const emailErr = validateEmailField(email);
     const passwordErr = validatePasswordField(password);
-    if (emailErr || passwordErr) return;
+    if (emailErr || passwordErr) {
+      setFieldShakeKey((prev) => prev + 1);
+      return;
+    }
 
     try {
       await loginMutation.mutateAsync({
@@ -82,12 +98,19 @@ export default function LoginPage() {
         return;
       }
 
+      if (error.code === 'INVALID_CREDENTIALS') {
+        setFormError({ variant: 'error', message: error.message });
+        setCredentialsShakeKey((prev) => prev + 1);
+        return;
+      }
+
       if (error.code === 'VALIDATION_ERROR' && error.details?.fields) {
         if (error.details.fields.email) setServerEmailError(error.details.fields.email);
         if (error.details.fields.password) setServerPasswordError(error.details.fields.password);
         if (!error.details.fields.email && !error.details.fields.password) {
           setFormError({ variant: 'error', message: error.message });
         }
+        setFieldShakeKey((prev) => prev + 1);
         return;
       }
 
@@ -111,10 +134,10 @@ export default function LoginPage() {
     <AuthLayout footer={footer}>
       <form onSubmit={(event) => void handleSubmit(event)} noValidate className="space-y-5">
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-text">
+          <h1 className="text-2xl font-semibold tracking-[-0.025em] text-text">
             {LOGIN_MESSAGES.title}
           </h1>
-          <p className="text-sm text-text-secondary">{LOGIN_MESSAGES.subtitle}</p>
+          <p className="text-sm leading-relaxed text-text-secondary">{LOGIN_MESSAGES.subtitle}</p>
         </div>
 
         {reasonBanner && (
@@ -125,45 +148,52 @@ export default function LoginPage() {
 
         {formError && <Alert variant={formError.variant}>{formError.message}</Alert>}
 
-        <TextField
-          label={LOGIN_MESSAGES.emailLabel}
-          type="email"
-          name="email"
-          autoComplete="email"
-          inputMode="email"
-          placeholder={LOGIN_MESSAGES.emailPlaceholder}
-          value={email}
-          disabled={loginMutation.isPending}
-          error={displayedEmailError}
-          onChange={(event) => {
-            setEmail(event.target.value);
-            setServerEmailError(undefined);
-          }}
-          onBlur={() => setEmailTouched(true)}
-        />
-
-        <div className="space-y-1">
-          <PasswordField
-            label={LOGIN_MESSAGES.passwordLabel}
-            name="password"
-            autoComplete="current-password"
-            placeholder={LOGIN_MESSAGES.passwordPlaceholder}
-            value={password}
+        <div
+          ref={credentialsGroupRef}
+          className={`t-input-wrap space-y-4 ${credentialsShaking ? 'is-shaking' : ''}`}
+        >
+          <TextField
+            label={LOGIN_MESSAGES.emailLabel}
+            type="email"
+            name="email"
+            autoComplete="email"
+            inputMode="email"
+            placeholder={LOGIN_MESSAGES.emailPlaceholder}
+            value={email}
             disabled={loginMutation.isPending}
-            error={displayedPasswordError}
+            error={displayedEmailError}
+            shakeKey={fieldShakeKey}
             onChange={(event) => {
-              setPassword(event.target.value);
-              setServerPasswordError(undefined);
+              setEmail(event.target.value);
+              setServerEmailError(undefined);
             }}
-            onBlur={() => setPasswordTouched(true)}
+            onBlur={() => setEmailTouched(true)}
           />
-          <div className="flex justify-end">
-            <Link
-              to="/recuperar"
-              className="inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-1 text-sm font-medium text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
-            >
-              {LOGIN_MESSAGES.forgotPassword}
-            </Link>
+
+          <div className="space-y-1">
+            <PasswordField
+              label={LOGIN_MESSAGES.passwordLabel}
+              name="password"
+              autoComplete="current-password"
+              placeholder={LOGIN_MESSAGES.passwordPlaceholder}
+              value={password}
+              disabled={loginMutation.isPending}
+              error={displayedPasswordError}
+              shakeKey={fieldShakeKey}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setServerPasswordError(undefined);
+              }}
+              onBlur={() => setPasswordTouched(true)}
+            />
+            <div className="flex justify-end">
+              <Link
+                to="/recuperar"
+                className="inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-1 text-sm font-medium text-brand-text underline transition-opacity duration-[var(--duration-quick)] hover:opacity-80"
+              >
+                {LOGIN_MESSAGES.forgotPassword}
+              </Link>
+            </div>
           </div>
         </div>
 

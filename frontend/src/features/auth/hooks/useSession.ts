@@ -1,8 +1,8 @@
 import type { SessionResponse } from '@nova/shared';
 import { useQuery } from '@tanstack/react-query';
 
-import { ApiError } from '../../../lib/api-client.ts';
-import { getSession } from '../api.ts';
+import { useAuthServices } from '../../../app/auth-services.context.ts';
+import { ApiError } from '../../../lib/http-client.ts';
 
 export const SESSION_QUERY_KEY = ['session'] as const;
 
@@ -11,11 +11,13 @@ export const SESSION_QUERY_KEY = ['session'] as const;
  * equivale a «sin sesión» (`null`), mientras que un fallo de red o 5xx se expone como error.
  */
 export function useSession() {
+  const { authService } = useAuthServices();
+
   return useQuery<SessionResponse | null, ApiError>({
     queryKey: SESSION_QUERY_KEY,
     queryFn: async ({ signal }) => {
       try {
-        return await getSession(signal);
+        return await authService.getSession(signal);
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           return null;
