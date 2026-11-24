@@ -117,25 +117,25 @@ cada uno ve su movimiento con signo y nota.
 
 ### [FE]
 
-- [ ] T017 [P] [US1] [FE] Crear `frontend/tests/SendPage.test.tsx`:
+- [X] T017 [P] [US1] [FE] Crear `frontend/tests/SendPage.test.tsx`:
   - pasos destinatario → monto → confirmación;
   - errores de destinatario, saldo y tope;
   - contraseña pedida solo por encima del umbral;
   - `REAUTH_FAILED` y `REAUTH_LOCKED`;
   - el reintento reutiliza la misma `Idempotency-Key`.
-- [ ] T018 [P] [US1] [FE] Crear `frontend/src/features/transfers/components/RecipientField.tsx` (correo o alias, con vista previa) y `TransferConfirmDialog.tsx` (nombre parcial, correo enmascarado, monto, nota y contraseña condicional; diálogo accesible).
-- [ ] T019 [US1] [FE] Crear:
+- [X] T018 [P] [US1] [FE] Crear `frontend/src/features/transfers/components/RecipientField.tsx` (correo o alias, con vista previa) y `TransferConfirmDialog.tsx` (nombre parcial, correo enmascarado, monto, nota y contraseña condicional; diálogo accesible).
+- [X] T019 [US1] [FE] Crear:
   - `frontend/src/features/transfers/api.ts`;
   - los hooks `useRecipient`, `useTransferLimits` y `useCreateTransfer` (clave por intento);
   - `frontend/src/features/transfers/pages/SendPage.tsx`;
   - la ruta `/enviar` y el acceso «Enviar» en `HomePage`.
 
   Al terminar, invalidar `['account']` y `['movements']`.
-- [ ] T020 [US1] [FE] Actualizar `frontend/src/features/home/components/MovementItem.tsx` (spec 002) para mostrar la nota y el tipo `transfer`, con su prueba.
+- [X] T020 [US1] [FE] Actualizar `frontend/src/features/home/components/MovementItem.tsx` (spec 002) para mostrar la nota y el tipo `transfer`, con su prueba.
 
 ### [E2E]
 
-- [ ] T021 [US1] [E2E] Crear `e2e/transfers.spec.ts`: dos contextos; A recarga y le envía a B por correo; los dos saldos y movimientos son correctos; con monto alto se pide la contraseña; un doble clic aplica una sola transferencia.
+- [X] T021 [US1] [E2E] Crear `e2e/transfers.spec.ts`: dos contextos; A recarga y le envía a B por correo; los dos saldos y movimientos son correctos; con monto alto se pide la contraseña; un doble clic aplica una sola transferencia.
 
 ---
 
@@ -159,20 +159,20 @@ cada uno ve su movimiento con signo y nota.
 
 ### [FE]
 
-- [ ] T024 [P] [US2] [FE] Crear `frontend/tests/ProfilePage.test.tsx`: validación mientras se escribe, `ALIAS_TAKEN` y quitar con confirmación.
-- [ ] T025 [US2] [FE] Crear `frontend/src/features/profile/pages/ProfilePage.tsx` con su API y hooks, la ruta `/perfil` y el acceso desde el encabezado.
+- [X] T024 [P] [US2] [FE] Crear `frontend/tests/ProfilePage.test.tsx`: validación mientras se escribe, `ALIAS_TAKEN` y quitar con confirmación.
+- [X] T025 [US2] [FE] Crear `frontend/src/features/profile/pages/ProfilePage.tsx` con su API y hooks, la ruta `/perfil` y el acceso desde el encabezado.
 
 ### [E2E]
 
-- [ ] T026 [US2] [E2E] Crear `e2e/alias.spec.ts`: B asigna un alias y A le transfiere usando ese alias.
+- [X] T026 [US2] [E2E] Crear `e2e/alias.spec.ts`: B asigna un alias y A le transfiere usando ese alias.
 
 ---
 
 ## Phase 4: Polish
 
 - [X] T027 [P] [BE] Agregar las variables `TRANSFER_*` a `docs/despliegue.md`.
-- [ ] T028 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/enviar` y `/perfil` (SC-006). Registrar el resultado en `specs/003-transferencias/checklists/accessibility.md`.
-- [ ] T029 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
+- [X] T028 [P] [FE] Revisar la accesibilidad y el diseño adaptable de `/enviar` y `/perfil` (SC-006). Registrar el resultado en `specs/003-transferencias/checklists/accessibility.md`.
+- [X] T029 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) con todo integrado, antes de `/speckit-converge`.
 
 ---
 

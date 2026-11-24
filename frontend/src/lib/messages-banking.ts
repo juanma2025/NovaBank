@@ -4,8 +4,10 @@ export const NAV_MESSAGES = {
   mainNavLabel: 'Navegación principal',
   mobileNavLabel: 'Navegación móvil',
   home: 'Inicio',
+  send: 'Enviar',
   topup: 'Recargar',
   movements: 'Movimientos',
+  profile: 'Perfil',
   accountSectionLabel: 'Cuenta estudiantil en COP',
 } as const;
 
@@ -19,6 +21,7 @@ export const HOME_MESSAGES = {
   balanceHiddenSr: 'Saldo oculto',
   amountHiddenSr: 'Monto oculto',
   topupAction: 'Recargar',
+  sendAction: 'Enviar',
   recentMovementsTitle: 'Últimos movimientos',
   viewAllMovements: 'Ver todos',
   emptyTitle: 'Aún no tienes movimientos',

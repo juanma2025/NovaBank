@@ -181,7 +181,7 @@ Structure» en [plan.md](plan.md).
 
 ### [E2E]
 
-- [ ] T027 [US1] [E2E] Crear `e2e/home.spec.ts`: un usuario nuevo ve «$0», el estado vacío y la tarjeta «Muy pronto»; ocultar el saldo persiste al recargar la página. También en el proyecto de 360 px.
+- [X] T027 [US1] [E2E] Crear `e2e/home.spec.ts`: un usuario nuevo ve «$0», el estado vacío y la tarjeta «Muy pronto»; ocultar el saldo persiste al recargar la página. También en el proyecto de 360 px.
 
 **Checkpoint**: US1 funciona y se puede demostrar por sí sola.
 
@@ -249,7 +249,7 @@ simulada +$50.000»; un doble envío no duplica.
 
 ### [E2E]
 
-- [ ] T034 [US2] [E2E] Crear `e2e/topups.spec.ts`: recargar $50.000 → saldo y movimiento; un monto fuera de rango muestra el aviso; un doble clic en «Confirmar» aplica una sola recarga.
+- [X] T034 [US2] [E2E] Crear `e2e/topups.spec.ts`: recargar $50.000 → saldo y movimiento; un monto fuera de rango muestra el aviso; un doble clic en «Confirmar» aplica una sola recarga.
 
 **Checkpoint**: US1 y US2 funcionan por su cuenta.
 
@@ -275,20 +275,20 @@ siguientes sin repetir.
 
 ### [FE]
 
-- [ ] T037 [P] [US3] [FE] Crear `frontend/tests/MovementsPage.test.tsx`: primera página, «Cargar más», estado vacío y error sin perder las páginas cargadas.
-- [ ] T038 [US3] [FE] Crear `frontend/src/features/movements/pages/MovementsPage.tsx` con `useMovements` y «Cargar más»; agregar la ruta `/movimientos` en `frontend/src/app/router.tsx` y conectar «Ver todos» de `HomePage`.
+- [X] T037 [P] [US3] [FE] Crear `frontend/tests/MovementsPage.test.tsx`: primera página, «Cargar más», estado vacío y error sin perder las páginas cargadas.
+- [X] T038 [US3] [FE] Crear `frontend/src/features/movements/pages/MovementsPage.tsx` con `useMovements` y «Cargar más»; agregar la ruta `/movimientos` en `frontend/src/app/router.tsx` y conectar «Ver todos» de `HomePage`.
 
 ### [E2E]
 
-- [ ] T039 [US3] [E2E] Crear `e2e/movements.spec.ts`: con más de 20 recargas (sembradas por la API), «Ver todos» y «Cargar más» sin repetidos.
+- [X] T039 [US3] [E2E] Crear `e2e/movements.spec.ts`: con más de 20 recargas (sembradas por la API), «Ver todos» y «Cargar más» sin repetidos.
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
 - [X] T040 [P] [BE] Agregar `TOPUP_MIN_AMOUNT`, `TOPUP_MAX_AMOUNT` y `TOPUP_DAILY_LIMIT` a la tabla de variables de `docs/despliegue.md`.
-- [ ] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Medir además que el saldo aparece en menos de 2 s después de iniciar sesión (SC-001). Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
-- [ ] T042 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) (secciones 2–4, incluidas las consultas del libro contable) con todo integrado en `main`, antes de `/speckit-converge`.
+- [X] T041 [P] [FE] Revisar la accesibilidad y el diseño adaptable de inicio, recarga e historial (SC-006): teclado, lector de pantalla, 360 px, contraste en los dos temas y `prefers-reduced-motion`. Medir además que el saldo aparece en menos de 2 s después de iniciar sesión (SC-001). Registrar el resultado en `specs/002-cuentas-ledger/checklists/accessibility.md`.
+- [X] T042 [E2E] Ejecutar la validación de [quickstart.md](quickstart.md) (secciones 2–4, incluidas las consultas del libro contable) con todo integrado en `main`, antes de `/speckit-converge`.
 
 ---
 

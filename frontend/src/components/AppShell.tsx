@@ -1,4 +1,4 @@
-import { Home, List, LogOut, PlusCircle } from 'lucide-react';
+import { Home, List, LogOut, PlusCircle, Send, User } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
 
@@ -13,8 +13,17 @@ export interface AppShellProps {
   children: ReactNode;
 }
 
-const NAV_ITEMS = [
+const DESKTOP_NAV_ITEMS = [
   { to: '/inicio', label: NAV_MESSAGES.home, icon: Home },
+  { to: '/enviar', label: NAV_MESSAGES.send, icon: Send },
+  { to: '/recargar', label: NAV_MESSAGES.topup, icon: PlusCircle },
+  { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
+  { to: '/perfil', label: NAV_MESSAGES.profile, icon: User },
+] as const;
+
+const MOBILE_NAV_ITEMS = [
+  { to: '/inicio', label: NAV_MESSAGES.home, icon: Home },
+  { to: '/enviar', label: NAV_MESSAGES.send, icon: Send },
   { to: '/recargar', label: NAV_MESSAGES.topup, icon: PlusCircle },
   { to: '/movimientos', label: NAV_MESSAGES.movements, icon: List },
 ] as const;
@@ -25,8 +34,8 @@ function isRouteActive(pathname: string, target: string): boolean {
 
 /**
  * App Shell adaptativo (Principio IV):
- * - Móvil (desde 360 px): barra superior compacta + barra inferior flotante de vidrio esmerilado
- *   con pastilla deslizante (`16-tabs-sliding`).
+ * - Móvil (desde 360 px): barra superior compacta con Perfil + ThemeToggle + salir y barra inferior
+ *   flotante de vidrio con pastilla deslizante (`16-tabs-sliding`).
  * - Escritorio (≥ 1024 px): menú lateral fijo de vidrio esmerilado + área de trabajo en cuadrícula.
  */
 export function AppShell({ children }: AppShellProps) {
@@ -37,18 +46,21 @@ export function AppShell({ children }: AppShellProps) {
   const mobileTabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const mountedRef = useRef(false);
 
-  const activeIndex = Math.max(
-    0,
-    NAV_ITEMS.findIndex((item) => isRouteActive(pathname, item.to)),
-  );
+  const activeMobileIndex = MOBILE_NAV_ITEMS.findIndex((item) => isRouteActive(pathname, item.to));
 
   const syncMobilePill = useCallback(
     (animate: boolean) => {
       const pill = pillRef.current;
-      const activeTab = mobileTabRefs.current[activeIndex];
-      if (!pill || !activeTab) return;
+      const activeTab = activeMobileIndex >= 0 ? mobileTabRefs.current[activeMobileIndex] : null;
+      if (!pill) return;
+
+      if (!activeTab) {
+        pill.style.opacity = '0';
+        return;
+      }
 
       const apply = () => {
+        pill.style.opacity = '1';
         pill.style.transform = `translateX(${activeTab.offsetLeft}px)`;
         pill.style.width = `${activeTab.offsetWidth}px`;
       };
@@ -63,7 +75,7 @@ export function AppShell({ children }: AppShellProps) {
         apply();
       }
     },
-    [activeIndex],
+    [activeMobileIndex],
   );
 
   useLayoutEffect(() => {
@@ -77,19 +89,33 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, [syncMobilePill]);
 
+  const profileActive = isRouteActive(pathname, '/perfil');
+
   return (
     <div className="nova-canvas flex min-h-dvh flex-col lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
       {/* Barra superior móvil (< 1024 px) */}
-      <header className="nova-glass-header sticky top-0 z-20 flex min-h-15 items-center justify-between gap-3 px-4 sm:px-6 lg:hidden">
+      <header className="nova-glass-header sticky top-0 z-20 flex min-h-15 items-center justify-between gap-2 px-3 sm:px-6 lg:hidden">
         <Link
           to="/inicio"
-          className="inline-flex min-h-11 items-center gap-2.5 rounded-[var(--radius-sm)] pr-2 text-lg font-semibold tracking-[-0.02em] text-text"
+          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] pr-2 text-lg font-semibold tracking-[-0.02em] text-text"
         >
           <NovaMark className="h-7 w-7 shrink-0" />
           <span>{APP_MESSAGES.brandName}</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Link
+            to="/perfil"
+            aria-label={NAV_MESSAGES.profile}
+            aria-current={profileActive ? 'page' : undefined}
+            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ${
+              profileActive
+                ? 'border-brand/40 bg-brand-soft text-brand-text'
+                : 'border-border bg-surface/85 text-text-secondary hover:bg-surface-subtle hover:text-text'
+            }`}
+          >
+            <User aria-hidden="true" className="h-[18px] w-[18px]" />
+          </Link>
           <ThemeToggle />
           {session && (
             <Button
@@ -123,7 +149,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           <nav aria-label={NAV_MESSAGES.mainNavLabel} className="space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {DESKTOP_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const active = isRouteActive(pathname, item.to);
               return (
@@ -147,10 +173,13 @@ export function AppShell({ children }: AppShellProps) {
 
         {session && (
           <div className="space-y-3 border-t border-border pt-4">
-            <div className="min-w-0 px-2">
+            <Link
+              to="/perfil"
+              className="block min-w-0 rounded-[var(--radius-md)] px-2 py-1.5 transition-colors duration-[var(--duration-quick)] hover:bg-surface-subtle"
+            >
               <p className="truncate text-sm font-semibold text-text">{session.user.fullName}</p>
               <p className="truncate text-xs text-text-muted">{session.user.email}</p>
-            </div>
+            </Link>
             <Button
               variant="secondary"
               fullWidth
@@ -178,9 +207,9 @@ export function AppShell({ children }: AppShellProps) {
         aria-label={NAV_MESSAGES.mobileNavLabel}
         className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-md lg:hidden"
       >
-        <div className="nova-glass t-tabs grid w-full grid-cols-3 rounded-[var(--radius-pill)] p-1">
+        <div className="nova-glass t-tabs grid w-full grid-cols-4 rounded-[var(--radius-pill)] p-1">
           <span ref={pillRef} aria-hidden="true" className="t-tabs-pill" />
-          {NAV_ITEMS.map((item, index) => {
+          {MOBILE_NAV_ITEMS.map((item, index) => {
             const Icon = item.icon;
             const active = isRouteActive(pathname, item.to);
             return (
@@ -191,12 +220,12 @@ export function AppShell({ children }: AppShellProps) {
                 }}
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
-                className={`t-tab flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-pill)] px-2 py-1.5 text-[11px] font-medium ${
+                className={`t-tab flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-pill)] px-1.5 py-1.5 text-[11px] font-medium ${
                   active ? 'font-semibold text-brand-text' : 'text-text-secondary hover:text-text'
                 }`}
               >
                 <Icon aria-hidden="true" className="h-[18px] w-[18px] shrink-0" />
-                <span>{item.label}</span>
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}

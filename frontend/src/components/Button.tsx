@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 import { Spinner } from './Spinner.tsx';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -19,6 +19,8 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   secondary:
     'bg-surface text-text hover:bg-surface-subtle active:bg-surface-subtle border border-border-strong shadow-[var(--shadow-control)]',
   ghost: 'bg-transparent text-brand-text hover:bg-brand-soft border border-transparent',
+  danger:
+    'bg-danger-bg text-danger border border-danger-border hover:opacity-90 shadow-[var(--shadow-control)]',
 };
 
 export function Button({
