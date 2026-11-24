@@ -4,6 +4,7 @@ export * from './landing-messages.ts';
 export * from './messages-auth.ts';
 export * from './messages-banking.ts';
 export * from './messages-cards.ts';
+export * from './messages-savings.ts';
 export * from './messages-transfers.ts';
 
 /** Catálogo único de errores de la API en español (es-CO). */
@@ -156,6 +157,19 @@ export function formatApiErrorMessage(
   }
   if (code === 'CARD_PAYMENTS_LOCKED' && details?.retryAfterSeconds !== undefined) {
     return `Demasiados pagos rechazados. Intenta de nuevo en ${formatMinutesRemaining(details.retryAfterSeconds)}.`;
+  }
+  if (
+    code === 'SAVINGS_AMOUNT_OUT_OF_RANGE' &&
+    details?.minAmount !== undefined &&
+    details?.maxAmount !== undefined
+  ) {
+    return `El monto debe estar entre ${formatCOP(details.minAmount)} y ${formatCOP(details.maxAmount)}.`;
+  }
+  if (code === 'SAVINGS_DAILY_LIMIT' && details?.remainingToday !== undefined) {
+    if (details.remainingToday <= 0) {
+      return 'Ya alcanzaste tu tope diario de movimientos de metas. Vuelve mañana.';
+    }
+    return `Superas el tope diario de metas. Puedes mover hasta ${formatCOP(details.remainingToday)} hoy.`;
   }
   return ERROR_MESSAGES[code] ?? fallbackMessage ?? ERROR_MESSAGES.INTERNAL_ERROR;
 }
