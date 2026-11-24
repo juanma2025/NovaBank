@@ -7,6 +7,7 @@ import { useSession } from '../features/auth/hooks/useSession.ts';
 import { APP_MESSAGES } from '../lib/messages.ts';
 import { Button } from './Button.tsx';
 import { NovaMark } from './NovaMark.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
 
 export interface AppHeaderProps {
   actions?: ReactNode;
@@ -28,6 +29,7 @@ export function AppHeader({ actions }: AppHeaderProps) {
         </Link>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {actions}
           {session && (
             <Button
