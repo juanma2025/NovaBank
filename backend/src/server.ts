@@ -33,7 +33,7 @@ function start(): void {
     prisma,
     logger,
     clock,
-    rateLimits: config.NODE_ENV !== 'test',
+    rateLimits: config.RATE_LIMITS_ENABLED,
   });
 
   // Registro de preparadores y limpiezas de cada dueño antes de arrancar (research R6).

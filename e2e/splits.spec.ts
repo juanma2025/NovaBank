@@ -20,11 +20,11 @@ test.describe('Gastos compartidos (spec 007 · T016 & T022)', () => {
     const juanPage = await juanContext.newPage();
 
     try {
-      const anaEmail = 'split-ana-e2e@nova-test.edu.co';
-      const juanEmail = 'split-juan-e2e@nova-test.edu.co';
+      const anaEmail = 'destino-e2e@nova-test.edu.co';
+      const juanEmail = 'emisor-e2e@nova-test.edu.co';
 
-      await ensureVerifiedStudent(anaPage, { email: anaEmail, fullName: 'Ana División' });
-      await ensureVerifiedStudent(juanPage, { email: juanEmail, fullName: 'Juan Participante' });
+      await ensureVerifiedStudent(anaPage, { email: anaEmail, fullName: 'Laura Díaz' });
+      await ensureVerifiedStudent(juanPage, { email: juanEmail, fullName: 'Carlos Gómez' });
 
       // Asegura saldo disponible en Juan ≥ $ 40.000
       if ((await getMyBalance(juanPage)) < 40_000) {
