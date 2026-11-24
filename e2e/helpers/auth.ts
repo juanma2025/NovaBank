@@ -19,6 +19,20 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function findVerificationMessages(
+  request: APIRequestContext,
+  email: string,
+): Promise<MailpitSearchResponse> {
+  const searchUrl = `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`;
+  const response = await request.get(searchUrl);
+  if (!response.ok()) {
+    throw new Error(
+      `No se pudieron consultar los correos de verificación para ${email}: HTTP ${response.status()}`,
+    );
+  }
+  return (await response.json()) as MailpitSearchResponse;
+}
+
 /** Genera un correo institucional único permitido por `STUDENT_EMAIL_DOMAINS` en E2E. */
 export function uniqueStudentEmail(prefix: string): string {
   const token = randomUUID().slice(0, 8);
@@ -30,23 +44,20 @@ export async function waitForVerificationCode(
   request: APIRequestContext,
   email: string,
   timeoutMs = 15_000,
+  previousMessageIds: ReadonlySet<string> = new Set(),
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    const searchUrl = `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`;
-    const listRes = await request.get(searchUrl);
-    if (listRes.ok()) {
-      const payload = (await listRes.json()) as MailpitSearchResponse;
-      const latestId = payload.messages?.[0]?.ID;
-      if (latestId) {
-        const msgRes = await request.get(`${MAILPIT_URL}/api/v1/message/${latestId}`);
-        if (msgRes.ok()) {
-          const msg = (await msgRes.json()) as MailpitMessageResponse;
-          const body = `${msg.Text ?? ''} ${msg.HTML ?? ''}`;
-          const match = /\b(\d{6})\b/.exec(body);
-          if (match?.[1]) return match[1];
-        }
+    const payload = await findVerificationMessages(request, email);
+    const newMessage = payload.messages?.find((message) => !previousMessageIds.has(message.ID));
+    if (newMessage) {
+      const msgRes = await request.get(`${MAILPIT_URL}/api/v1/message/${newMessage.ID}`);
+      if (msgRes.ok()) {
+        const msg = (await msgRes.json()) as MailpitMessageResponse;
+        const body = `${msg.Text ?? ''} ${msg.HTML ?? ''}`;
+        const match = /\b(\d{6})\b/.exec(body);
+        if (match?.[1]) return match[1];
       }
     }
     await delay(250);
@@ -66,12 +77,14 @@ export async function registerVerifiedStudent(
   page: Page,
   { email, fullName, password = DEFAULT_PASSWORD }: StudentCredentials,
 ): Promise<void> {
+  const previousMessages = await findVerificationMessages(page.request, email);
+  const previousMessageIds = new Set(previousMessages.messages?.map((message) => message.ID));
   const startRes = await page.request.post('/api/v1/auth/register', {
     data: { email, acceptedPolicyVersion: PRIVACY_POLICY_VERSION },
   });
   expect(startRes.status(), `POST /auth/register falló para ${email}`).toBe(202);
 
-  const code = await waitForVerificationCode(page.request, email);
+  const code = await waitForVerificationCode(page.request, email, 15_000, previousMessageIds);
 
   const verifyRes = await page.request.post('/api/v1/auth/verify-email', {
     data: { code },
