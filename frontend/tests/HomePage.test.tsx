@@ -91,6 +91,22 @@ function renderHome(store?: BalanceVisibilityStore) {
   );
 }
 
+function mockHomeFetch(accountResponses: Response[]) {
+  let accountIndex = 0;
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    if (url.includes('/accounts/me')) {
+      const next = accountResponses[Math.min(accountIndex, accountResponses.length - 1)];
+      accountIndex += 1;
+      return next ?? jsonResponse(EMPTY_ACCOUNT, 200);
+    }
+    return jsonResponse(
+      { error: { code: 'NOT_FOUND', message: 'Not found', requestId: REQUEST_ID } },
+      404,
+    );
+  });
+}
+
 describe('HomePage (US1 · T024)', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -106,7 +122,7 @@ describe('HomePage (US1 · T024)', () => {
   });
 
   it('muestra saldo $ 0, estado vacío con botón «Recargar» y tarjeta «Muy pronto» en cuenta nueva', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse(EMPTY_ACCOUNT, 200));
+    mockHomeFetch([jsonResponse(EMPTY_ACCOUNT, 200)]);
 
     renderHome();
 
@@ -118,7 +134,7 @@ describe('HomePage (US1 · T024)', () => {
   });
 
   it('muestra movimientos recientes con signo explícito, color semántico, nota y enlace «Ver todos»', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse(POPULATED_ACCOUNT, 200));
+    mockHomeFetch([jsonResponse(POPULATED_ACCOUNT, 200)]);
 
     renderHome();
 
@@ -138,9 +154,7 @@ describe('HomePage (US1 · T024)', () => {
 
   it('oculta y muestra el saldo y montos, persiste en localStorage y tolera fallos de localStorage', async () => {
     const user = userEvent.setup();
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(jsonResponse(POPULATED_ACCOUNT, 200))
-      .mockResolvedValueOnce(jsonResponse(POPULATED_ACCOUNT, 200));
+    mockHomeFetch([jsonResponse(POPULATED_ACCOUNT, 200), jsonResponse(POPULATED_ACCOUNT, 200)]);
 
     const firstRender = renderHome();
     expect(await screen.findByText(/\$\s*131\.500/)).toBeTruthy();
@@ -177,7 +191,7 @@ describe('HomePage (US1 · T024)', () => {
         throw new Error('Blocked');
       },
     };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse(POPULATED_ACCOUNT, 200));
+    mockHomeFetch([jsonResponse(POPULATED_ACCOUNT, 200)]);
     renderHome(new BalanceVisibilityStore({ storage: brokenStorage }));
 
     expect(await screen.findByText(/\$\s*131\.500/)).toBeTruthy();
@@ -189,20 +203,18 @@ describe('HomePage (US1 · T024)', () => {
 
   it('la tarjeta «Muy pronto» abre un diálogo informativo sin llamar a la API', async () => {
     const user = userEvent.setup();
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(jsonResponse(EMPTY_ACCOUNT, 200));
+    const fetchSpy = mockHomeFetch([jsonResponse(EMPTY_ACCOUNT, 200)]);
 
     renderHome();
     await screen.findByText(/\$\s*0/);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const callsBeforeDialog = fetchSpy.mock.calls.length;
 
     const trigger = screen.getByRole('button', { name: /wallet cripto/i });
     await user.click(trigger);
 
     const dialog = screen.getByRole('dialog');
     expect(dialog.textContent).toMatch(/próxima fase/i);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(callsBeforeDialog);
 
     await user.click(screen.getByRole('button', { name: /entendido/i }));
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -211,20 +223,19 @@ describe('HomePage (US1 · T024)', () => {
 
   it('muestra Alert de error con «Reintentar» y recupera la cuenta al reintentar', async () => {
     const user = userEvent.setup();
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        jsonResponse(
-          {
-            error: {
-              code: 'INTERNAL_ERROR',
-              message: 'Error temporal',
-              requestId: REQUEST_ID,
-            },
+    mockHomeFetch([
+      jsonResponse(
+        {
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Error temporal',
+            requestId: REQUEST_ID,
           },
-          500,
-        ),
-      )
-      .mockResolvedValueOnce(jsonResponse(POPULATED_ACCOUNT, 200));
+        },
+        500,
+      ),
+      jsonResponse(POPULATED_ACCOUNT, 200),
+    ]);
 
     renderHome();
 

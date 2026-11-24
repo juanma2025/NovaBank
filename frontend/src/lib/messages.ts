@@ -3,8 +3,10 @@ import { type ErrorCode, type ErrorDetails, formatCOP } from '@nova/shared';
 export * from './landing-messages.ts';
 export * from './messages-auth.ts';
 export * from './messages-banking.ts';
+export * from './messages-budgets.ts';
 export * from './messages-cards.ts';
 export * from './messages-savings.ts';
+export * from './messages-splits.ts';
 export * from './messages-transfers.ts';
 
 /** Catálogo único de errores de la API en español (es-CO). */
@@ -170,6 +172,22 @@ export function formatApiErrorMessage(
       return 'Ya alcanzaste tu tope diario de movimientos de metas. Vuelve mañana.';
     }
     return `Superas el tope diario de metas. Puedes mover hasta ${formatCOP(details.remainingToday)} hoy.`;
+  }
+  if (
+    code === 'SPLIT_SHARE_OUT_OF_RANGE' &&
+    details?.minAmount !== undefined &&
+    details?.maxAmount !== undefined
+  ) {
+    return `Cada parte debe estar entre ${formatCOP(details.minAmount)} y ${formatCOP(details.maxAmount)}.`;
+  }
+  if (code === 'SPLIT_REMINDER_TOO_SOON' && details?.retryAfterSeconds !== undefined) {
+    const nextDate = new Date(Date.now() + details.retryAfterSeconds * 1000);
+    const nextHour = new Intl.DateTimeFormat('es-CO', {
+      timeZone: 'America/Bogota',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(nextDate);
+    return `Ya enviaste un recordatorio hoy. Podrás enviar otro a las ${nextHour}.`;
   }
   return ERROR_MESSAGES[code] ?? fallbackMessage ?? ERROR_MESSAGES.INTERNAL_ERROR;
 }

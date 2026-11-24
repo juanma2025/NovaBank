@@ -19,6 +19,7 @@ import { APP_MESSAGES, STORE_MESSAGES } from '../../../lib/messages.ts';
 import { useAccount } from '../../accounts/hooks/useAccount.ts';
 import { useBalanceVisibility } from '../../accounts/hooks/useBalanceVisibility.ts';
 import { movementPresenter } from '../../accounts/services/movement-presenter.ts';
+import { BudgetAlertToast } from '../../budgets/components/BudgetAlertToast.tsx';
 import { AmountInput } from '../../topups/components/AmountInput.tsx';
 import { CardPaymentFields } from '../components/CardPaymentFields.tsx';
 import { MerchantPicker } from '../components/MerchantPicker.tsx';
@@ -150,12 +151,15 @@ export default function StorePage() {
         </Alert>
 
         {completed ? (
-          <StoreSuccessView
-            result={completed.result}
-            merchantName={completed.merchantName}
-            balanceHidden={balanceHidden}
-            onStartAnother={handleStartAnother}
-          />
+          <div className="space-y-4">
+            <BudgetAlertToast active />
+            <StoreSuccessView
+              result={completed.result}
+              merchantName={completed.merchantName}
+              balanceHidden={balanceHidden}
+              onStartAnother={handleStartAnother}
+            />
+          </div>
         ) : limitsQuery.isError ? (
           <GlassCard>
             <Alert

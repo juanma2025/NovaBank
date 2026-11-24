@@ -17,6 +17,7 @@ import { ApiError } from '../../../lib/http-client.ts';
 import { APP_MESSAGES, TRANSFER_MESSAGES } from '../../../lib/messages.ts';
 import { useAccount } from '../../accounts/hooks/useAccount.ts';
 import { useBalanceVisibility } from '../../accounts/hooks/useBalanceVisibility.ts';
+import { BudgetAlertToast } from '../../budgets/components/BudgetAlertToast.tsx';
 import { RecipientField } from '../components/RecipientField.tsx';
 import { TransferAmountForm } from '../components/TransferAmountForm.tsx';
 import { TransferConfirmDialog } from '../components/TransferConfirmDialog.tsx';
@@ -172,12 +173,15 @@ export default function SendPage() {
         </div>
 
         {completed ? (
-          <TransferSuccessView
-            result={completed.result}
-            recipientName={completed.recipientName}
-            balanceHidden={balanceHidden}
-            onStartAnother={handleStartAnother}
-          />
+          <div className="space-y-4">
+            <BudgetAlertToast active />
+            <TransferSuccessView
+              result={completed.result}
+              recipientName={completed.recipientName}
+              balanceHidden={balanceHidden}
+              onStartAnother={handleStartAnother}
+            />
+          </div>
         ) : limitsQuery.isError ? (
           <GlassCard>
             <Alert

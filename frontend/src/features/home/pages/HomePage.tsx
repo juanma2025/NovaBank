@@ -10,9 +10,11 @@ import { useAccount } from '../../accounts/hooks/useAccount.ts';
 import { useBalanceVisibility } from '../../accounts/hooks/useBalanceVisibility.ts';
 import { useSession } from '../../auth/hooks/useSession.ts';
 import { BalanceCard } from '../components/BalanceCard.tsx';
+import { BudgetAlertBanner } from '../components/BudgetAlertBanner.tsx';
 import { ComingSoonCard } from '../components/ComingSoonCard.tsx';
 import { EmptyMovements } from '../components/EmptyMovements.tsx';
 import { MovementList } from '../components/MovementList.tsx';
+import { SplitsSummaryCard } from '../components/SplitsSummaryCard.tsx';
 
 function extractFirstName(fullName: string): string {
   const first = fullName.trim().split(/\s+/)[0];
@@ -72,6 +74,8 @@ export default function HomePage() {
           </h1>
           <p className="text-sm leading-relaxed text-text-secondary">{HOME_MESSAGES.subtitle}</p>
         </div>
+
+        <BudgetAlertBanner />
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
           <div className="min-w-0">
@@ -142,7 +146,8 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-6">
+            <SplitsSummaryCard />
             <ComingSoonCard />
           </div>
         </div>
