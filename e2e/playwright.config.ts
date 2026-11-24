@@ -29,6 +29,7 @@ const serverEnv: Record<string, string> = {
   APP_ORIGIN: BASE_URL,
   LOG_LEVEL: 'warn',
   SERVE_FRONTEND: String(HAS_FRONTEND),
+  RATE_LIMITS_ENABLED: 'false',
   DATABASE_URL,
   JWT_ACCESS_SECRET: 'e2e-jwt-secret-que-no-se-usa-fuera-de-pruebas-0001',
   CODE_HMAC_SECRET: 'e2e-hmac-secret-que-no-se-usa-fuera-de-pruebas-0002',

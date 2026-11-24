@@ -28,7 +28,13 @@ function start(): void {
   const logger = createLogger(config.LOG_LEVEL);
   const prisma = createPrismaClient(config.DATABASE_URL);
   const clock = systemClock;
-  const { app, auth, banking } = createApp({ config, prisma, logger, clock });
+  const { app, auth, banking } = createApp({
+    config,
+    prisma,
+    logger,
+    clock,
+    rateLimits: config.RATE_LIMITS_ENABLED,
+  });
 
   // Registro de preparadores y limpiezas de cada dueño antes de arrancar (research R6).
   const worker = new OutboxWorker(prisma, createSmtpProvider(config), clock, logger);

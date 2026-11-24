@@ -10,6 +10,10 @@ const booleanString = z
   .enum(['true', 'false'])
   .default('false')
   .transform((v) => v === 'true');
+const enabledBooleanString = z
+  .enum(['true', 'false'])
+  .default('true')
+  .transform((v) => v === 'true');
 const optionalPositiveInt = z.preprocess(
   (v) => (v === '' ? undefined : v),
   z.coerce.number().int().positive().optional(),
@@ -25,6 +29,7 @@ const EnvSchema = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     SERVE_FRONTEND: booleanString,
+    RATE_LIMITS_ENABLED: enabledBooleanString,
     DATABASE_URL: z.string().min(1),
     JWT_ACCESS_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
     CODE_HMAC_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
@@ -72,6 +77,13 @@ const EnvSchema = z
       'SESSION_IDLE_WARNING_SECONDS_OVERRIDE',
     ] as const;
     if (env.NODE_ENV === 'production') {
+      if (!env.RATE_LIMITS_ENABLED) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['RATE_LIMITS_ENABLED'],
+          message: 'los límites de tasa no se pueden desactivar en producción',
+        });
+      }
       for (const key of overrides) {
         if (env[key] !== undefined) {
           ctx.addIssue({ code: 'custom', path: [key], message: 'prohibida en producción' });

@@ -1,14 +1,4 @@
-import {
-  CreditCard,
-  Eye,
-  EyeOff,
-  PieChart,
-  PiggyBank,
-  PlusCircle,
-  Send,
-  ShoppingBag,
-  Users,
-} from 'lucide-react';
+import { Eye, EyeOff, PlusCircle, Send } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { GlassCard } from '../../../components/GlassCard.tsx';
@@ -65,10 +55,10 @@ export function BalanceCard({ balance, hidden, onToggleHidden }: BalanceCardProp
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 border-t border-border pt-4 sm:flex sm:flex-wrap sm:items-center">
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
         <Link
           to="/recargar"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-brand px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-on-brand shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-brand-hover active:bg-brand-active"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-brand px-5 py-2.5 text-[15px] font-semibold tracking-[-0.01em] text-on-brand shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-brand-hover active:bg-brand-active sm:flex-initial"
         >
           <PlusCircle aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span>{HOME_MESSAGES.topupAction}</span>
@@ -76,50 +66,10 @@ export function BalanceCard({ balance, hidden, onToggleHidden }: BalanceCardProp
 
         <Link
           to="/enviar"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-5 py-2.5 text-[15px] font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle sm:flex-initial"
         >
           <Send aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span>{HOME_MESSAGES.sendAction}</span>
-        </Link>
-
-        <Link
-          to="/tarjetas"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
-        >
-          <CreditCard aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span>{HOME_MESSAGES.cardsAction}</span>
-        </Link>
-
-        <Link
-          to="/tienda"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
-        >
-          <ShoppingBag aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span>{HOME_MESSAGES.storeAction}</span>
-        </Link>
-
-        <Link
-          to="/metas"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
-        >
-          <PiggyBank aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span>{HOME_MESSAGES.goalsAction}</span>
-        </Link>
-
-        <Link
-          to="/presupuesto"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
-        >
-          <PieChart aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span>{HOME_MESSAGES.budgetAction}</span>
-        </Link>
-
-        <Link
-          to="/compartidos"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border-strong bg-surface/90 px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] text-text shadow-[var(--shadow-control)] transition-colors duration-[var(--duration-quick)] ease-[var(--ease-smooth-out)] hover:bg-surface-subtle"
-        >
-          <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span>{HOME_MESSAGES.splitsAction}</span>
         </Link>
       </div>
     </GlassCard>

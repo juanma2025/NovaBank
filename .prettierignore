@@ -15,6 +15,7 @@ specs/
 .agents/
 .claude/
 .github/skills/
+.impeccable/
 skills-lock.json
 
 # Plantilla pendiente de migrar a /frontend (T010)
