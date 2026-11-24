@@ -88,7 +88,7 @@ configuración en la raíz. Ver «Project Structure» en [plan.md](plan.md).
 
 ### [FE] Migración de la plantilla existente
 
-- [ ] T010 [P] [FE] Migrar `Nova_Front/` (plantilla por defecto de Vite subida a `main`) al workspace `frontend/`:
+- [X] T010 [P] [FE] Migrar `Nova_Front/` (plantilla por defecto de Vite subida a `main`) al workspace `frontend/`:
   - **Package**: crear `frontend/package.json` (`@nova/frontend`, dependencias del plan: React 19, React Router 7, TanStack Query 5, `lucide-react`, `@nova/shared`; devDependencies `@vitejs/plugin-react`, `@tailwindcss/vite`, `tailwindcss@4`, Vitest, Testing Library, `jsdom`).
   - **Archivos a mover**: `index.html`, `src/main.tsx`, `vite.config.ts` y los `tsconfig*.json`, ajustados para extender `tsconfig.base.json`.
   - **Vite**: proxy `/api` → `http://localhost:3000` y plugin `@tailwindcss/vite`.
@@ -256,33 +256,33 @@ queda congelado y empiezan las ramas `-be` y `-fe`.
 
 ### [FE] Armazón del frontend
 
-- [ ] T038 [P] [FE] Crear `frontend/src/styles/tokens.css` y `frontend/src/styles/index.css`:
+- [X] T038 [P] [FE] Crear `frontend/src/styles/tokens.css` y `frontend/src/styles/index.css`:
   - Tailwind 4 con `@theme`;
   - tokens de color para el modo claro y oscuro (`prefers-color-scheme`), radios, sombras y desenfoque de vidrio;
   - fuente del sistema con respaldo `Inter`;
   - transiciones ≤ 400 ms y `prefers-reduced-motion` (constitución, Principio IV).
-- [ ] T039 [P] [FE] Crear `frontend/src/lib/messages.ts`:
+- [X] T039 [P] [FE] Crear `frontend/src/lib/messages.ts`:
   - catálogo único en español con un mensaje accionable para cada `ErrorCode` de `@nova/shared`;
   - todos los textos de las pantallas de esta spec, incluidos los avisos de `?motivo=` (`inactividad`, `expirada`, `clave-cambiada`).
-- [ ] T040 [FE] Crear `frontend/src/lib/api-client.ts`:
+- [X] T040 [FE] Crear `frontend/src/lib/api-client.ts`:
   - `fetch` con `credentials: 'same-origin'` y JSON;
   - expone `lastServerContactAt`, actualizado en cada respuesta 2xx, para programar el aviso de inactividad (research R3);
   - `ApiError` construido con `ErrorResponseSchema`, y errores de red como `ApiError('NETWORK')`;
   - ante `ACCESS_TOKEN_EXPIRED`, un solo reintento tras `POST /auth/refresh` dentro de `navigator.locks.request('nova-refresh')` (research R2);
   - ante `SESSION_EXPIRED`, un callback configurable.
-- [ ] T041 [P] [FE] Crear `frontend/src/lib/safe-redirect.ts` (solo rutas que empiezan con `/` y no con `//` ni `/\`) y `frontend/tests/safe-redirect.test.ts`.
-- [ ] T042 [P] [FE] Crear en `frontend/src/components/` los componentes base:
+- [X] T041 [P] [FE] Crear `frontend/src/lib/safe-redirect.ts` (solo rutas que empiezan con `/` y no con `//` ni `/\`) y `frontend/tests/safe-redirect.test.ts`.
+- [X] T042 [P] [FE] Crear en `frontend/src/components/` los componentes base:
   - `Button.tsx` (estado de carga), `TextField.tsx`, `PasswordField.tsx` (mostrar/ocultar), `Alert.tsx` (`aria-live`), `GlassCard.tsx` y `Spinner.tsx`;
   - objetivo táctil ≥ 44 px, foco visible y errores con `aria-describedby`.
-- [ ] T043 [FE] Crear `frontend/src/components/AuthLayout.tsx` (tarjeta de vidrio centrada, responsive desde 360 px), `frontend/src/components/AppHeader.tsx` (logo y espacio para acciones) y `frontend/src/components/NotFoundPage.tsx`.
-- [ ] T044 [FE] Crear `frontend/src/features/auth/api.ts` (una función tipada por cada operación de [contracts/auth.openapi.json](contracts/auth.openapi.json), con tipos de `@nova/shared`) y `frontend/src/features/auth/hooks/useSession.ts` (consulta `['session']` a `GET /auth/session`; un 401 equivale a «sin sesión»).
-- [ ] T045 [FE] Crear el enrutamiento y los proveedores:
+- [X] T043 [FE] Crear `frontend/src/components/AuthLayout.tsx` (tarjeta de vidrio centrada, responsive desde 360 px), `frontend/src/components/AppHeader.tsx` (logo y espacio para acciones) y `frontend/src/components/NotFoundPage.tsx`.
+- [X] T044 [FE] Crear `frontend/src/features/auth/api.ts` (una función tipada por cada operación de [contracts/auth.openapi.json](contracts/auth.openapi.json), con tipos de `@nova/shared`) y `frontend/src/features/auth/hooks/useSession.ts` (consulta `['session']` a `GET /auth/session`; un 401 equivale a «sin sesión»).
+- [X] T045 [FE] Crear el enrutamiento y los proveedores:
   - `frontend/src/app/providers.tsx`: `QueryClient` y `SessionProvider`, que conecta el callback de `SESSION_EXPIRED`;
   - `frontend/src/app/RequireAuth.tsx`: redirige a `/ingresar?redirect=<ruta>`;
   - `frontend/src/app/PublicOnly.tsx`: con sesión, envía a `/inicio`;
   - `frontend/src/app/router.tsx`: rutas con carga diferida según la tabla «Rutas» de [plan.md](plan.md), incluidas `/` y `*`;
   - `frontend/src/main.tsx`: pantalla de arranque mientras se resuelve `['session']`, y error de red con «Reintentar».
-- [ ] T046 [P] [FE] Crear `frontend/vitest.config.ts` (entorno `jsdom`, condición `development`), `frontend/tests/setup.ts`, `frontend/tests/api-client.test.ts` (parseo de errores, un solo reintento tras refrescar, error de red) y `frontend/tests/RequireAuth.test.tsx` (redirección con `redirect`).
+- [X] T046 [P] [FE] Crear `frontend/vitest.config.ts` (entorno `jsdom`, condición `development`), `frontend/tests/setup.ts`, `frontend/tests/api-client.test.ts` (parseo de errores, un solo reintento tras refrescar, error de red) y `frontend/tests/RequireAuth.test.tsx` (redirección con `redirect`).
 
 **Checkpoint**: la base está lista; las historias de usuario pueden empezar.
 
@@ -351,7 +351,7 @@ código debe retomar ese paso.
 
 ### [FE] Frontend de US1
 
-- [ ] T053 [P] [US1] [FE] Crear `frontend/tests/RegisterPage.test.tsx`. Debe comprobar:
+- [X] T053 [P] [US1] [FE] Crear `frontend/tests/RegisterPage.test.tsx`. Debe comprobar:
   - retoma el paso según `GET /auth/verification` (404 → paso 1, `code` → código, `complete` → perfil);
   - `DOMAIN_NOT_ALLOWED` aparece en el campo;
   - sin aceptar la política no se puede continuar;
@@ -359,19 +359,19 @@ código debe retomar ese paso.
   - las reglas de contraseña se actualizan mientras se escribe;
   - el éxito navega a `/inicio`;
   - el foco se mueve al título de cada paso.
-- [ ] T054 [P] [US1] [FE] Crear en `frontend/src/features/auth/components/`:
+- [X] T054 [P] [US1] [FE] Crear en `frontend/src/features/auth/components/`:
   - `CodeInput.tsx`: 6 casillas con `inputMode="numeric"` y `autoComplete="one-time-code"`, acepta pegar el código, se envía al completarse, errores con `aria-live`;
   - `PasswordRules.tsx`: lista en vivo de `validatePasswordRules`, más la regla `common` cuando la reporta el servidor;
   - `ConsentCheckbox.tsx`: enlace a `/privacidad`.
-- [ ] T055 [P] [US1] [FE] Crear `frontend/src/features/legal/PrivacyPolicyPage.tsx`, con el texto de la política de tratamiento de datos (Ley 1581 de 2012) en `frontend/src/lib/messages.ts` y la versión `PRIVACY_POLICY_VERSION` visible.
-- [ ] T056 [US1] [FE] Crear:
+- [X] T055 [P] [US1] [FE] Crear `frontend/src/features/legal/PrivacyPolicyPage.tsx`, con el texto de la política de tratamiento de datos (Ley 1581 de 2012) en `frontend/src/lib/messages.ts` y la versión `PRIVACY_POLICY_VERSION` visible.
+- [X] T056 [US1] [FE] Crear:
   - `frontend/src/features/auth/hooks/useVerification.ts`: consulta `['verification', purpose]` y mutaciones `start` / `verify`;
   - `frontend/src/features/auth/steps/EmailStep.tsx`: genérico por `purpose`; valida el formato del correo mientras se escribe con `InstitutionalEmailSchema` (FR-024); en registro muestra `ConsentCheckbox`;
   - `frontend/src/features/auth/steps/CodeStep.tsx`: correo enmascarado y «Usar otro correo»;
   - `frontend/src/features/auth/steps/ProfileStep.tsx`: nombre y `PasswordField` con `PasswordRules`.
 
   Los estados de carga y error siguen la tabla de [plan.md](plan.md).
-- [ ] T057 [US1] [FE] Crear:
+- [X] T057 [US1] [FE] Crear:
   - `frontend/src/features/auth/pages/RegisterPage.tsx`: orquesta los pasos y retoma tras recargar (FR-009a), envuelto en `PublicOnly`;
   - `frontend/src/features/auth/pages/WelcomePage.tsx`: «Hola, {primer nombre}» (primera palabra de `fullName`) con esqueleto de carga, dentro de `RequireAuth` (FR-019).
 
@@ -431,20 +431,20 @@ comprobar que `/inicio` redirige a `/ingresar`. Sin actividad, a los 14 min apar
 
 ### [FE] Frontend de US2
 
-- [ ] T064 [P] [US2] [FE] Crear:
+- [X] T064 [P] [US2] [FE] Crear:
   - `frontend/tests/LoginPage.test.tsx`: error genérico, bloqueo con los minutos restantes, redirección con `redirect`, avisos según `motivo`;
   - `frontend/tests/useIdleTimer.test.tsx`, con temporizadores falsos: el aviso aparece en `idleTimeoutSeconds − idleWarningSeconds` contados desde el último contacto exitoso con el servidor (no desde la última interacción local); «Seguir conectado» llama a `refresh`; al terminar la cuenta regresiva se llama a `logout`; con `BroadcastChannel` simulado, una interacción en otra pestaña reinicia el contador, y `keepalive` y `logout` cierran el aviso o la sesión en todas las pestañas.
-- [ ] T065 [US2] [FE] Crear `frontend/src/features/auth/pages/LoginPage.tsx`, dentro de `PublicOnly`, y `frontend/src/features/auth/hooks/useLogin.ts`:
+- [X] T065 [US2] [FE] Crear `frontend/src/features/auth/pages/LoginPage.tsx`, dentro de `PublicOnly`, y `frontend/src/features/auth/hooks/useLogin.ts`:
   - al entrar, navega a `safeRedirect(redirect)` o a `/inicio`;
   - muestra el aviso según `?motivo=`;
   - con `LOGIN_LOCKED`, muestra los minutos restantes.
-- [ ] T066 [US2] [FE] Crear `frontend/src/features/auth/hooks/useIdleTimer.ts` y `frontend/src/features/auth/components/InactivityDialog.tsx` (modal accesible con foco atrapado y cuenta regresiva de 60 s). Integrarlos en `SessionProvider` (`frontend/src/app/providers.tsx`) (FR-016a, research R3):
+- [X] T066 [US2] [FE] Crear `frontend/src/features/auth/hooks/useIdleTimer.ts` y `frontend/src/features/auth/components/InactivityDialog.tsx` (modal accesible con foco atrapado y cuenta regresiva de 60 s). Integrarlos en `SessionProvider` (`frontend/src/app/providers.tsx`) (FR-016a, research R3):
   - escucha `pointerdown`, `keydown`, `scroll` y la navegación;
   - programa el aviso desde el último contacto exitoso con el servidor (lo registra `api-client` en cada respuesta 2xx), no desde la última interacción local (research R3);
   - sincroniza las pestañas con `BroadcastChannel('nova-session')`, difundiendo `activity`, `keepalive` y `logout`;
   - llama a `refresh` con un límite de una vez cada 60 s;
   - toma los tiempos de `SessionInfo`.
-- [ ] T067 [US2] [FE] Agregar «Cerrar sesión» en `frontend/src/components/AppHeader.tsx` con `frontend/src/features/auth/hooks/useLogout.ts`: llama a `POST /auth/logout`, limpia la caché de consultas y navega a `/ingresar`. En `api-client` / `SessionProvider`, `SESSION_EXPIRED` redirige a `/ingresar?motivo=inactividad` o `?motivo=expirada` según `details.reason`, agregando `&redirect=<ruta actual>` para volver donde estaba (caso límite de la spec). El cierre de sesión se difunde a las demás pestañas.
+- [X] T067 [US2] [FE] Agregar «Cerrar sesión» en `frontend/src/components/AppHeader.tsx` con `frontend/src/features/auth/hooks/useLogout.ts`: llama a `POST /auth/logout`, limpia la caché de consultas y navega a `/ingresar`. En `api-client` / `SessionProvider`, `SESSION_EXPIRED` redirige a `/ingresar?motivo=inactividad` o `?motivo=expirada` según `details.reason`, agregando `&redirect=<ruta actual>` para volver donde estaba (caso límite de la spec). El cierre de sesión se difunde a las demás pestañas.
 
 ### [E2E] Extremo a extremo de US2
 
@@ -494,8 +494,8 @@ contexto B. La contraseña anterior falla, la nueva funciona y la sesión de A s
 
 ### [FE] Frontend de US3
 
-- [ ] T072 [P] [US3] [FE] Crear `frontend/tests/PasswordResetPage.test.tsx`: retoma el paso, pasa por los tres pasos y al terminar navega a `/ingresar?motivo=clave-cambiada`.
-- [ ] T073 [US3] [FE] Crear:
+- [X] T072 [P] [US3] [FE] Crear `frontend/tests/PasswordResetPage.test.tsx`: retoma el paso, pasa por los tres pasos y al terminar navega a `/ingresar?motivo=clave-cambiada`.
+- [X] T073 [US3] [FE] Crear:
   - `frontend/src/features/auth/steps/NewPasswordStep.tsx`;
   - `frontend/src/features/auth/pages/PasswordResetPage.tsx`: reutiliza `EmailStep` y `CodeStep` con `purpose="password_reset"`, dentro de `PublicOnly`.
 
@@ -535,8 +535,8 @@ que el código anterior falla y el nuevo funciona.
 
 ### [FE] Frontend de US4
 
-- [ ] T077 [P] [US4] [FE] Crear `frontend/tests/ResendButton.test.tsx`: cuenta regresiva desde `resendAvailableAt`, deshabilitado mientras corre y manejo de `RESEND_TOO_SOON` y `CODE_SEND_LIMIT`.
-- [ ] T078 [US4] [FE] Crear `frontend/src/features/auth/components/ResendButton.tsx` e integrarlo en `CodeStep.tsx`. Con `CODE_EXPIRED` o `CODE_ATTEMPTS_EXHAUSTED`, destacar «Pedir código nuevo».
+- [X] T077 [P] [US4] [FE] Crear `frontend/tests/ResendButton.test.tsx`: cuenta regresiva desde `resendAvailableAt`, deshabilitado mientras corre y manejo de `RESEND_TOO_SOON` y `CODE_SEND_LIMIT`.
+- [X] T078 [US4] [FE] Crear `frontend/src/features/auth/components/ResendButton.tsx` e integrarlo en `CodeStep.tsx`. Con `CODE_EXPIRED` o `CODE_ATTEMPTS_EXHAUSTED`, destacar «Pedir código nuevo».
 
 ### [E2E] Extremo a extremo de US4
 
@@ -551,8 +551,8 @@ que el código anterior falla y el nuevo funciona.
 - [X] T080 [BE] Ampliar `backend/tests/contract/openapi.contract.test.ts` para exigir que las 12 operaciones del contrato existan en el documento generado. Ninguna puede faltar ni sobrar; la única excepción es `GET /openapi.json`, que sirve el propio documento y no forma parte del contrato.
 - [X] T081 [P] [BE] Crear `backend/tests/integration/logging.test.ts`: captura la salida de `pino` durante registro, login y recuperación, y comprueba que no aparecen contraseñas, códigos ni valores de cookies (SC-005).
 - [X] T082 [P] [BE] Crear `docs/despliegue.md` (Render + Neon + Brevo según research R14: variables, `TRUST_PROXY=1`, `SERVE_FRONTEND=true`, `prisma migrate deploy`). Actualizar en `README.md` la sección «Primeros pasos» con los comandos de [quickstart.md](quickstart.md).
-- [ ] T083 [P] [FE] Revisar la accesibilidad (SC-009): navegación solo con teclado, lector de pantalla en los cuatro flujos, contraste AA en los dos temas, 360 px y `prefers-reduced-motion`. Corregir lo que falle en `frontend/src/` y registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
-- [ ] T084 [P] [FE] Revisar el rendimiento: carga diferida de cada ruta en el build, Lighthouse móvil de `/ingresar` con primera carga interactiva < 2,5 s, y menos de 2 s desde enviar el login hasta ver la bienvenida (SC-004). Registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
+- [X] T083 [P] [FE] Revisar la accesibilidad (SC-009): navegación solo con teclado, lector de pantalla en los cuatro flujos, contraste AA en los dos temas, 360 px y `prefers-reduced-motion`. Corregir lo que falle en `frontend/src/` y registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
+- [X] T084 [P] [FE] Revisar el rendimiento: carga diferida de cada ruta en el build, Lighthouse móvil de `/ingresar` con primera carga interactiva < 2,5 s, y menos de 2 s desde enviar el login hasta ver la bienvenida (SC-004). Registrar el resultado en `specs/001-auth-onboarding/checklists/accessibility.md`.
 - [ ] T085 [E2E] Ejecutar la validación completa de [quickstart.md](quickstart.md), secciones 4–6, con la aplicación integrada en `main`, y anotar en el PR cualquier diferencia antes de `/speckit-converge`.
 
 ---

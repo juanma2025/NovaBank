@@ -1,0 +1,137 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.5;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-soft);
+    color: var(--color-text);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--color-brand);
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Fondo ambiental sutil que da profundidad real al vidrio esmerilado */
+.nova-canvas {
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(48rem 32rem at 15% -6%, var(--color-ambient-ice), transparent 65%),
+    radial-gradient(42rem 30rem at 88% 104%, var(--color-ambient-violet), transparent 65%);
+}
+
+/* Superficie de vidrio esmerilado (tarjetas, barras y hojas modales) */
+.nova-glass {
+  background-color: var(--color-surface-glass);
+  backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  border: 1px solid var(--color-border-glass-edge);
+  box-shadow: var(--shadow-glass);
+}
+
+.nova-glass-header {
+  background-color: var(--color-surface-glass-strong);
+  backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Microtransiciones reutilizables (≤ 400 ms, basadas en tokens transitions-dev) */
+@keyframes nova-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-base));
+    filter: blur(var(--blur-transition));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes nova-modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(var(--scale-modal));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes nova-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(calc(var(--distance-small) * -1));
+  }
+  60% {
+    transform: translateX(var(--distance-small));
+  }
+  85% {
+    transform: translateX(calc(var(--distance-micro) * -1));
+  }
+}
+
+.nova-animate-enter {
+  animation: nova-enter var(--duration-fast) var(--ease-smooth-out) both;
+}
+
+.nova-animate-modal {
+  animation: nova-modal-enter var(--duration-fast) var(--ease-smooth-out) both;
+}
+
+.nova-animate-shake {
+  animation: nova-shake var(--duration-medium) var(--ease-smooth-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .nova-animate-enter,
+  .nova-animate-modal,
+  .nova-animate-shake {
+    animation: none !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
